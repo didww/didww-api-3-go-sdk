@@ -1,0 +1,59 @@
+name: Lint
+
+on:
+  push:
+    branches: [ main, master, develop ]
+  pull_request:
+    branches: [ main, master, develop ]
+
+jobs:
+  golangci:
+    name: golangci-lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+        
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+          
+      - name: Run golangci-lint
+        uses: golangci/golangci-lint-action@v6
+        with:
+          version: latest
+          args: --timeout=5m --verbose
+
+  format:
+    name: Format Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+        
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+          
+      - name: Check formatting
+        run: |
+          gofmt_output=$(gofmt -l .)
+          if [ -n "$gofmt_output" ]; then
+            echo "The following files need formatting:"
+            echo "$gofmt_output"
+            exit 1
+          fi
+          
+      - name: Check imports
+        run: |
+          if ! command -v goimports &> /dev/null; then
+            go install golang.org/x/tools/cmd/goimports@latest
+          fi
+          goimports_output=$(goimports -l .)
+          if [ -n "$goimports_output" ]; then
+            echo "The following files need import formatting:"
+            echo "$goimports_output"
+            exit 1
+          fi

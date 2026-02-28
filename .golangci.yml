@@ -1,0 +1,80 @@
+run:
+  timeout: 5m
+  modules-download-mode: readonly
+
+linters-settings:
+  govet:
+    enable-all: true
+  gocyclo:
+    min-complexity: 10
+  goconst:
+    min-len: 3
+    min-occurrences: 2
+  misspell:
+    locale: US
+  lll:
+    line-length: 120
+  goimports:
+    local-prefixes: github.com/didww/didww-api-3-go-sdk
+  gocritic:
+    enabled-tags:
+      - diagnostic
+      - experimental
+      - opinionated
+      - performance
+      - style
+
+linters:
+  enable:
+    - bodyclose
+    - deadcode
+    - depguard
+    - dogsled
+    - dupl
+    - errcheck
+    - gochecknoinits
+    - goconst
+    - gocritic
+    - gocyclo
+    - gofmt
+    - goimports
+    - gosec
+    - gosimple
+    - govet
+    - ineffassign
+    - lll
+    - misspell
+    - nakedret
+    - rowserrcheck
+    - staticcheck
+    - structcheck
+    - stylecheck
+    - typecheck
+    - unconvert
+    - unparam
+    - unused
+    - varcheck
+    - whitespace
+
+issues:
+  exclude-rules:
+    - path: _test\.go
+      linters:
+        - gocyclo
+        - errcheck
+        - dupl
+        - gosec
+        - lll
+    - path: testhelper_test\.go
+      linters:
+        - gochecknoinits
+  exclude-use-default: false
+  exclude:
+    # EXC0002 golint: Annoying issue about not having a comment. The rare codebase has such comments
+    - "missing comment on exported"
+    # EXC0003 golint: False positive when tests are defined in package 'test'
+    - "func name will be used as test\.Test.* by other packages, and that stutters; consider calling this"
+    # EXC0004 govet: Common false positives
+    - "possible misuse of unsafe.Pointer"
+    # EXC0005 staticcheck: Developers tend to write in C-style with an explicit 'break' in a 'switch', so it's ok to ignore
+    - "ineffective break statement. Did you mean to break out of the outer loop"
