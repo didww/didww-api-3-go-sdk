@@ -52,6 +52,11 @@ func ToOneRelationship(ref RelationshipRef) map[string]any {
 	return map[string]any{"data": ref}
 }
 
+// NullRelationship builds a null to-one relationship entry ({"data": null}).
+func NullRelationship() map[string]any {
+	return map[string]any{"data": nil}
+}
+
 // ToManyRelationship builds a to-many relationship entry.
 func ToManyRelationship(refs []RelationshipRef) map[string]any {
 	return map[string]any{"data": refs}
