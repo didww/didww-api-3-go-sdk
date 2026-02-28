@@ -403,21 +403,21 @@ func (d *DID) ResolveRelationships(included IncludedResources, rels map[string]j
 
 // OrderItemAttributes contains the attributes of an order item.
 type OrderItemAttributes struct {
-	Qty              int     `json:"qty,omitempty"`
-	Nrc              string  `json:"nrc,omitempty" api:"readonly"`
-	Mrc              string  `json:"mrc,omitempty" api:"readonly"`
-	ProratedMrc      bool    `json:"prorated_mrc" api:"readonly"`
-	BilledFrom       *string `json:"billed_from" api:"readonly"`
-	BilledTo         *string `json:"billed_to" api:"readonly"`
-	SetupPrice       string  `json:"setup_price,omitempty" api:"readonly"`
-	MonthlyPrice     string  `json:"monthly_price,omitempty" api:"readonly"`
-	DIDGroupID       string  `json:"did_group_id,omitempty"`
-	SkuID            string  `json:"sku_id,omitempty"`
-	AvailableDidID   string  `json:"available_did_id,omitempty"`
-	DidReservationID string  `json:"did_reservation_id,omitempty"`
-	CapacityPoolID   string  `json:"capacity_pool_id,omitempty"`
-	BillingCyclesCount *int  `json:"billing_cycles_count,omitempty"`
-	NanpaPrefixID  string   `json:"nanpa_prefix_id,omitempty"`
+	Qty                int     `json:"qty,omitempty"`
+	Nrc                string  `json:"nrc,omitempty" api:"readonly"`
+	Mrc                string  `json:"mrc,omitempty" api:"readonly"`
+	ProratedMrc        bool    `json:"prorated_mrc" api:"readonly"`
+	BilledFrom         *string `json:"billed_from" api:"readonly"`
+	BilledTo           *string `json:"billed_to" api:"readonly"`
+	SetupPrice         string  `json:"setup_price,omitempty" api:"readonly"`
+	MonthlyPrice       string  `json:"monthly_price,omitempty" api:"readonly"`
+	DIDGroupID         string  `json:"did_group_id,omitempty"`
+	SkuID              string  `json:"sku_id,omitempty"`
+	AvailableDidID     string  `json:"available_did_id,omitempty"`
+	DidReservationID   string  `json:"did_reservation_id,omitempty"`
+	CapacityPoolID     string  `json:"capacity_pool_id,omitempty"`
+	BillingCyclesCount *int    `json:"billing_cycles_count,omitempty"`
+	NanpaPrefixID      string  `json:"nanpa_prefix_id,omitempty"`
 }
 
 // MarshalJSON implements custom marshalling for OrderItemAttributes to exclude read-only fields.
@@ -832,14 +832,14 @@ type PublicKey struct {
 
 // AddressVerification represents an address verification request.
 type AddressVerification struct {
-	ID                 string  `json:"-"`
-	ServiceDescription *string `json:"service_description,omitempty"`
-	CallbackURL        *string `json:"callback_url,omitempty"`
-	CallbackMethod     *string `json:"callback_method,omitempty"`
+	ID                 string                          `json:"-"`
+	ServiceDescription *string                         `json:"service_description,omitempty"`
+	CallbackURL        *string                         `json:"callback_url,omitempty"`
+	CallbackMethod     *string                         `json:"callback_method,omitempty"`
 	Status             enums.AddressVerificationStatus `json:"status" api:"readonly"`
-	RejectReasons      *string `json:"reject_reasons" api:"readonly"`
-	CreatedAt          string  `json:"created_at" api:"readonly"`
-	Reference          string  `json:"reference" api:"readonly"`
+	RejectReasons      *string                         `json:"reject_reasons" api:"readonly"`
+	CreatedAt          string                          `json:"created_at" api:"readonly"`
+	Reference          string                          `json:"reference" api:"readonly"`
 	// Relationship IDs for create/update
 	AddressID string   `json:"-"`
 	DIDIDs    []string `json:"-"`

@@ -20,21 +20,21 @@ func main() {
 	// Helper for SIP config with all required fields
 	sipConfig := func(host string) *didww.SIPConfiguration {
 		return &didww.SIPConfiguration{
-			Host:                   host,
-			Port:                   5060,
-			CodecIDs:               []enums.Codec{enums.CodecPCMU, enums.CodecPCMA},
-			TransportProtocolID:    enums.TransportProtocolUDP,
-			RxDtmfFormatID:         enums.RxDtmfFormatRFC2833,
-			TxDtmfFormatID:         enums.TxDtmfFormatRFC2833,
-			SstRefreshMethodID:     enums.SstRefreshMethodInvite,
-			SstMinTimer:            600,
-			SstMaxTimer:            900,
-			SstSessionExpires:      examples.Ptr(900),
-			SipTimerB:              8000,
-			DnsSrvFailoverTimer:    2000,
-			RtpTimeout:             30,
-			MediaEncryptionMode:    enums.MediaEncryptionModeDisabled,
-			StirShakenMode:         enums.StirShakenModeDisabled,
+			Host:                host,
+			Port:                5060,
+			CodecIDs:            []enums.Codec{enums.CodecPCMU, enums.CodecPCMA},
+			TransportProtocolID: enums.TransportProtocolUDP,
+			RxDtmfFormatID:      enums.RxDtmfFormatRFC2833,
+			TxDtmfFormatID:      enums.TxDtmfFormatRFC2833,
+			SstRefreshMethodID:  enums.SstRefreshMethodInvite,
+			SstMinTimer:         600,
+			SstMaxTimer:         900,
+			SstSessionExpires:   examples.Ptr(900),
+			SipTimerB:           8000,
+			DnsSrvFailoverTimer: 2000,
+			RtpTimeout:          30,
+			MediaEncryptionMode: enums.MediaEncryptionModeDisabled,
+			StirShakenMode:      enums.StirShakenModeDisabled,
 		}
 	}
 

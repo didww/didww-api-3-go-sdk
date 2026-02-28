@@ -122,4 +122,3 @@ func TestProofsCreateResponseParsesProofTypeFromRelationships(t *testing.T) {
 		t.Errorf("expected empty entity ID (no data in response), got %q", proof.EntityID)
 	}
 }
-
