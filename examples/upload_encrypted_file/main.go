@@ -2,9 +2,10 @@
 //
 // Usage:
 //
+//	DIDWW_API_KEY=your_api_key go run ./examples/upload_encrypted_file/
 //	DIDWW_API_KEY=your_api_key FILE_PATH=/path/to/file.pdf go run ./examples/upload_encrypted_file/
 //
-// If FILE_PATH is not set, a sample text file is created and uploaded.
+// If FILE_PATH is not set, the bundled example.pdf ("Hello From Go SDK") is used.
 package main
 
 import (
@@ -12,6 +13,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 
 	didww "github.com/didww/didww-api-3-go-sdk"
 	"github.com/didww/didww-api-3-go-sdk/examples"
@@ -26,17 +28,20 @@ func main() {
 	var fileContent []byte
 	var originalName string
 	if filePath == "" {
-		fileContent = []byte("Example document content for DIDWW encrypted upload.")
-		originalName = "example.txt"
-		fmt.Println("FILE_PATH not set, using sample content")
+		// Use bundled example.pdf next to this source file
+		_, thisFile, _, _ := runtime.Caller(0)
+		filePath = filepath.Join(filepath.Dir(thisFile), "example.pdf")
+		originalName = "example.pdf"
+		fmt.Println("FILE_PATH not set, using bundled example.pdf")
 	} else {
-		var err error
-		fileContent, err = os.ReadFile(filePath)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "failed to read file: %v\n", err)
-			os.Exit(1)
-		}
 		originalName = filepath.Base(filePath)
+	}
+
+	var err error
+	fileContent, err = os.ReadFile(filePath)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to read file: %v\n", err)
+		os.Exit(1)
 	}
 	fmt.Printf("Original file: %s (%d bytes)\n", originalName, len(fileContent))
 
