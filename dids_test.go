@@ -2,6 +2,7 @@ package didww
 
 import (
 	"context"
+	"io"
 	"net/http"
 	"testing"
 )
@@ -120,5 +121,113 @@ func TestDIDsUpdateRequiresID(t *testing.T) {
 	_, err := client.DIDs().Update(context.Background(), &DID{})
 	if err == nil {
 		t.Fatal("expected error when updating without ID")
+	}
+}
+
+func TestDIDsUpdateAssignTrunk(t *testing.T) {
+	var capturedBody []byte
+	server := newTestServerWithInspector(t, map[string]testRoute{
+		"PATCH /v3/dids/9df99644-f1a5-4a3c-99a4-559d758eb96b": {status: http.StatusOK, fixture: "dids/show_with_trunk.json"},
+	}, func(r *http.Request) {
+		capturedBody, _ = io.ReadAll(r.Body)
+	})
+
+	did, err := server.client.DIDs().Update(context.Background(), &DID{
+		ID:             "9df99644-f1a5-4a3c-99a4-559d758eb96b",
+		VoiceInTrunkID: "41b94706-325e-4704-a433-d65105758836",
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	assertRequestJSON(t, capturedBody, "dids/update_assign_trunk_request.json")
+
+	if did.VoiceInTrunk == nil {
+		t.Fatal("expected non-nil VoiceInTrunk")
+	}
+	if did.VoiceInTrunk.ID != "41b94706-325e-4704-a433-d65105758836" {
+		t.Errorf("expected VoiceInTrunk ID '41b94706-325e-4704-a433-d65105758836', got %q", did.VoiceInTrunk.ID)
+	}
+	if did.VoiceInTrunk.Name != "hello, test pstn trunk" {
+		t.Errorf("expected VoiceInTrunk Name 'hello, test pstn trunk', got %q", did.VoiceInTrunk.Name)
+	}
+}
+
+func TestDIDsUpdateAssignTrunkGroup(t *testing.T) {
+	var capturedBody []byte
+	server := newTestServerWithInspector(t, map[string]testRoute{
+		"PATCH /v3/dids/9df99644-f1a5-4a3c-99a4-559d758eb96b": {status: http.StatusOK, fixture: "dids/show_with_trunk_group.json"},
+	}, func(r *http.Request) {
+		capturedBody, _ = io.ReadAll(r.Body)
+	})
+
+	did, err := server.client.DIDs().Update(context.Background(), &DID{
+		ID:                  "9df99644-f1a5-4a3c-99a4-559d758eb96b",
+		VoiceInTrunkGroupID: "b2319703-ce6c-480d-bb53-614e7abcfc96",
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	assertRequestJSON(t, capturedBody, "dids/update_assign_trunk_group_request.json")
+
+	if did.VoiceInTrunkGroup == nil {
+		t.Fatal("expected non-nil VoiceInTrunkGroup")
+	}
+	if did.VoiceInTrunkGroup.ID != "b2319703-ce6c-480d-bb53-614e7abcfc96" {
+		t.Errorf("expected VoiceInTrunkGroup ID 'b2319703-ce6c-480d-bb53-614e7abcfc96', got %q", did.VoiceInTrunkGroup.ID)
+	}
+	if did.VoiceInTrunkGroup.Name != "trunk group sample with 2 trunks" {
+		t.Errorf("expected VoiceInTrunkGroup Name 'trunk group sample with 2 trunks', got %q", did.VoiceInTrunkGroup.Name)
+	}
+}
+
+func TestDIDsFindWithTrunkResolved(t *testing.T) {
+	_, client := newTestServer(t, map[string]testRoute{
+		"GET /v3/dids/9df99644-f1a5-4a3c-99a4-559d758eb96b": {status: http.StatusOK, fixture: "dids/show_with_trunk.json"},
+	})
+
+	params := NewQueryParams().Include("voice_in_trunk")
+	did, err := client.DIDs().Find(context.Background(), "9df99644-f1a5-4a3c-99a4-559d758eb96b", params)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if did.VoiceInTrunk == nil {
+		t.Fatal("expected non-nil VoiceInTrunk")
+	}
+	if did.VoiceInTrunk.ID != "41b94706-325e-4704-a433-d65105758836" {
+		t.Errorf("expected VoiceInTrunk ID '41b94706-325e-4704-a433-d65105758836', got %q", did.VoiceInTrunk.ID)
+	}
+	if did.VoiceInTrunk.Name != "hello, test pstn trunk" {
+		t.Errorf("expected VoiceInTrunk Name 'hello, test pstn trunk', got %q", did.VoiceInTrunk.Name)
+	}
+	if did.VoiceInTrunkGroup != nil {
+		t.Error("expected nil VoiceInTrunkGroup (mutual exclusivity)")
+	}
+}
+
+func TestDIDsFindWithTrunkGroupResolved(t *testing.T) {
+	_, client := newTestServer(t, map[string]testRoute{
+		"GET /v3/dids/9df99644-f1a5-4a3c-99a4-559d758eb96b": {status: http.StatusOK, fixture: "dids/show_with_trunk_group.json"},
+	})
+
+	params := NewQueryParams().Include("voice_in_trunk_group")
+	did, err := client.DIDs().Find(context.Background(), "9df99644-f1a5-4a3c-99a4-559d758eb96b", params)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if did.VoiceInTrunkGroup == nil {
+		t.Fatal("expected non-nil VoiceInTrunkGroup")
+	}
+	if did.VoiceInTrunkGroup.ID != "b2319703-ce6c-480d-bb53-614e7abcfc96" {
+		t.Errorf("expected VoiceInTrunkGroup ID 'b2319703-ce6c-480d-bb53-614e7abcfc96', got %q", did.VoiceInTrunkGroup.ID)
+	}
+	if did.VoiceInTrunkGroup.Name != "trunk group sample with 2 trunks" {
+		t.Errorf("expected VoiceInTrunkGroup Name 'trunk group sample with 2 trunks', got %q", did.VoiceInTrunkGroup.Name)
+	}
+	if did.VoiceInTrunk != nil {
+		t.Error("expected nil VoiceInTrunk (mutual exclusivity)")
 	}
 }

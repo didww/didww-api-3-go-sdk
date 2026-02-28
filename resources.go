@@ -257,10 +257,28 @@ type DID struct {
 	ExpiresAt              string  `json:"expires_at" api:"readonly"`
 	ChannelsIncludedCount  int     `json:"channels_included_count" api:"readonly"`
 	DedicatedChannelsCount int     `json:"dedicated_channels_count"`
+	// Relationship IDs for create/update
+	VoiceInTrunkID      string `json:"-" rel:"voice_in_trunk,voice_in_trunks"`
+	VoiceInTrunkGroupID string `json:"-" rel:"voice_in_trunk_group,voice_in_trunk_groups"`
 	// Resolved relationships
 	Order               *Order               `json:"-" rel:"order"`
 	AddressVerification *AddressVerification `json:"-" rel:"address_verification"`
 	DIDGroup            *DIDGroup            `json:"-" rel:"did_group"`
+	VoiceInTrunk        *VoiceInTrunk        `json:"-" rel:"voice_in_trunk"`
+	VoiceInTrunkGroup   *VoiceInTrunkGroup   `json:"-" rel:"voice_in_trunk_group"`
+}
+
+// MarshalRelationships implements RelationshipMarshaler for DID.
+// Ensures mutual exclusivity: setting a trunk nullifies the trunk group and vice versa.
+func (d *DID) MarshalRelationships() (map[string]any, error) {
+	rels := make(map[string]any)
+	if d.VoiceInTrunkID != "" {
+		rels["voice_in_trunk_group"] = jsonapi.NullRelationship()
+	}
+	if d.VoiceInTrunkGroupID != "" {
+		rels["voice_in_trunk"] = jsonapi.NullRelationship()
+	}
+	return rels, nil
 }
 
 // OrderItemAttributes contains the attributes of an order item.
