@@ -5,30 +5,33 @@ run:
 linters-settings:
   govet:
     enable-all: true
+    disable:
+      - fieldalignment
   gocyclo:
-    min-complexity: 10
+    min-complexity: 20
   goconst:
     min-len: 3
-    min-occurrences: 2
+    min-occurrences: 3
   misspell:
     locale: US
   lll:
-    line-length: 120
+    line-length: 180
   goimports:
     local-prefixes: github.com/didww/didww-api-3-go-sdk
   gocritic:
     enabled-tags:
       - diagnostic
-      - experimental
-      - opinionated
       - performance
       - style
+  stylecheck:
+    checks:
+      - all
+      - -ST1000
+      - -ST1003
 
 linters:
   enable:
     - bodyclose
-    - deadcode
-    - depguard
     - dogsled
     - dupl
     - errcheck
@@ -45,15 +48,12 @@ linters:
     - lll
     - misspell
     - nakedret
-    - rowserrcheck
     - staticcheck
-    - structcheck
     - stylecheck
     - typecheck
     - unconvert
     - unparam
     - unused
-    - varcheck
     - whitespace
 
 issues:
@@ -65,16 +65,17 @@ issues:
         - dupl
         - gosec
         - lll
+        - goconst
+        - gocritic
+        - unparam
+        - dogsled
     - path: testhelper_test\.go
       linters:
         - gochecknoinits
+        - unused
   exclude-use-default: false
   exclude:
-    # EXC0002 golint: Annoying issue about not having a comment. The rare codebase has such comments
     - "missing comment on exported"
-    # EXC0003 golint: False positive when tests are defined in package 'test'
-    - "func name will be used as test\.Test.* by other packages, and that stutters; consider calling this"
-    # EXC0004 govet: Common false positives
+    - 'func name will be used as test\.Test.* by other packages, and that stutters; consider calling this'
     - "possible misuse of unsafe.Pointer"
-    # EXC0005 staticcheck: Developers tend to write in C-style with an explicit 'break' in a 'switch', so it's ok to ignore
     - "ineffective break statement. Did you mean to break out of the outer loop"

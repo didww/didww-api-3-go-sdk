@@ -47,12 +47,12 @@ func TestEncryptWithKeysRoundTrip(t *testing.T) {
 	}
 
 	// Extract the three parts
-	encryptedRSA_A := encrypted[:rsaBlockSize]
-	encryptedRSA_B := encrypted[rsaBlockSize : rsaBlockSize*2]
+	encRSAa := encrypted[:rsaBlockSize]
+	encRSAb := encrypted[rsaBlockSize : rsaBlockSize*2]
 	encryptedAES := encrypted[rsaBlockSize*2:]
 
 	// Decrypt AES credentials with private key A
-	aesCredentials, err := rsa.DecryptOAEP(sha256.New(), rand.Reader, privA, encryptedRSA_A, nil)
+	aesCredentials, err := rsa.DecryptOAEP(sha256.New(), rand.Reader, privA, encRSAa, nil)
 	if err != nil {
 		t.Fatalf("failed to decrypt RSA A: %v", err)
 	}
@@ -82,7 +82,7 @@ func TestEncryptWithKeysRoundTrip(t *testing.T) {
 	}
 
 	// Verify key B can also decrypt the same AES credentials
-	aesCredentialsB, err := rsa.DecryptOAEP(sha256.New(), rand.Reader, privB, encryptedRSA_B, nil)
+	aesCredentialsB, err := rsa.DecryptOAEP(sha256.New(), rand.Reader, privB, encRSAb, nil)
 	if err != nil {
 		t.Fatalf("failed to decrypt RSA B: %v", err)
 	}

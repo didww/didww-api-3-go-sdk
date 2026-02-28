@@ -202,7 +202,7 @@ type VoiceInTrunk struct {
 	VoiceInTrunkGroup *VoiceInTrunkGroup `json:"-"`
 }
 
-// UnmarshalJSON implements custom unmarshalling for VoiceInTrunk.
+// UnmarshalJSON implements custom unmarshaling for VoiceInTrunk.
 func (v *VoiceInTrunk) UnmarshalJSON(data []byte) error {
 	type Alias VoiceInTrunk
 	aux := &struct {
@@ -224,14 +224,14 @@ func (v *VoiceInTrunk) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-// MarshalJSON implements custom marshalling for VoiceInTrunk.
-func (v VoiceInTrunk) MarshalJSON() ([]byte, error) {
+// MarshalJSON implements custom marshaling for VoiceInTrunk.
+func (v VoiceInTrunk) MarshalJSON() ([]byte, error) { //nolint:gocritic // value receiver required for json.Marshal
 	type Alias VoiceInTrunk
 	aux := &struct {
 		Alias
 		RawConfig json.RawMessage `json:"configuration,omitempty"`
 	}{
-		Alias: (Alias)(v),
+		Alias: Alias(v),
 	}
 	if v.Configuration != nil {
 		configData := map[string]any{
@@ -420,8 +420,8 @@ type OrderItemAttributes struct {
 	NanpaPrefixID      string  `json:"nanpa_prefix_id,omitempty"`
 }
 
-// MarshalJSON implements custom marshalling for OrderItemAttributes to exclude read-only fields.
-func (a OrderItemAttributes) MarshalJSON() ([]byte, error) {
+// MarshalJSON implements custom marshaling for OrderItemAttributes to exclude read-only fields.
+func (a OrderItemAttributes) MarshalJSON() ([]byte, error) { //nolint:gocritic // value receiver required for json.Marshal
 	type Alias OrderItemAttributes
 	return marshalWritableAttrs(Alias(a))
 }

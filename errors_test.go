@@ -179,13 +179,13 @@ func TestErrorDetailJSONRoundTrip(t *testing.T) {
 
 	data, err := json.Marshal(original)
 	if err != nil {
-		t.Fatalf("unexpected error marshalling: %v", err)
+		t.Fatalf("unexpected error marshaling: %v", err)
 	}
 
 	var decoded ErrorDetail
 	err = json.Unmarshal(data, &decoded)
 	if err != nil {
-		t.Fatalf("unexpected error unmarshalling: %v", err)
+		t.Fatalf("unexpected error unmarshaling: %v", err)
 	}
 
 	if decoded.Title != original.Title {

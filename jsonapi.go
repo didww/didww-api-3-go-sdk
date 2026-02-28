@@ -6,6 +6,8 @@ import (
 	"reflect"
 )
 
+const jsonNull = "null"
+
 // jsonapiDocument represents a JSON:API response document.
 type jsonapiDocument struct {
 	Data     json.RawMessage `json:"data"`
@@ -129,7 +131,7 @@ func ResolveToMany[T any](included IncludedResources, rels map[string]json.RawMe
 
 // parseIncluded builds an IncludedResources map from the raw included array.
 func parseIncluded(raw json.RawMessage) (IncludedResources, error) {
-	if len(raw) == 0 || string(raw) == "null" {
+	if len(raw) == 0 || string(raw) == jsonNull {
 		return nil, nil
 	}
 	var resources []json.RawMessage
@@ -158,7 +160,7 @@ func unmarshalOne[T any](body []byte) (*T, error) {
 		return nil, fmt.Errorf("failed to parse JSON:API document: %w", err)
 	}
 
-	if len(doc.Data) == 0 || string(doc.Data) == "null" {
+	if len(doc.Data) == 0 || string(doc.Data) == jsonNull {
 		return nil, fmt.Errorf("no data in response")
 	}
 
@@ -182,7 +184,7 @@ func unmarshalMany[T any](body []byte) ([]*T, error) {
 		return nil, fmt.Errorf("failed to parse JSON:API document: %w", err)
 	}
 
-	if len(doc.Data) == 0 || string(doc.Data) == "null" {
+	if len(doc.Data) == 0 || string(doc.Data) == jsonNull {
 		return []*T{}, nil
 	}
 
@@ -225,7 +227,7 @@ func unmarshalResourceWithIncluded[T any](data []byte, included IncludedResource
 	}
 
 	var result T
-	if len(res.Attributes) > 0 && string(res.Attributes) != "null" {
+	if len(res.Attributes) > 0 && string(res.Attributes) != jsonNull {
 		if err := json.Unmarshal(res.Attributes, &result); err != nil {
 			return nil, fmt.Errorf("failed to parse attributes: %w", err)
 		}

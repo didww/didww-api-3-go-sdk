@@ -14,7 +14,7 @@ func testStringEnumJSON[T ~string](t *testing.T, value T, expectedJSON string) {
 		t.Fatalf("unexpected marshal error: %v", err)
 	}
 	if string(data) != expectedJSON {
-		t.Errorf("expected marshalled %s, got %s", expectedJSON, string(data))
+		t.Errorf("expected marshaled %s, got %s", expectedJSON, string(data))
 	}
 
 	// Unmarshal
@@ -24,7 +24,7 @@ func testStringEnumJSON[T ~string](t *testing.T, value T, expectedJSON string) {
 		t.Fatalf("unexpected unmarshal error: %v", err)
 	}
 	if decoded != value {
-		t.Errorf("expected unmarshalled %v, got %v", value, decoded)
+		t.Errorf("expected unmarshaled %v, got %v", value, decoded)
 	}
 }
 
@@ -37,7 +37,7 @@ func testIntEnumJSON[T ~int](t *testing.T, value T, expectedJSON string) {
 		t.Fatalf("unexpected marshal error: %v", err)
 	}
 	if string(data) != expectedJSON {
-		t.Errorf("expected marshalled %s, got %s", expectedJSON, string(data))
+		t.Errorf("expected marshaled %s, got %s", expectedJSON, string(data))
 	}
 
 	// Unmarshal
@@ -47,6 +47,6 @@ func testIntEnumJSON[T ~int](t *testing.T, value T, expectedJSON string) {
 		t.Fatalf("unexpected unmarshal error: %v", err)
 	}
 	if decoded != value {
-		t.Errorf("expected unmarshalled %v, got %v", value, decoded)
+		t.Errorf("expected unmarshaled %v, got %v", value, decoded)
 	}
 }

@@ -8,7 +8,7 @@ import (
 	"crypto/cipher"
 	"crypto/rand"
 	"crypto/rsa"
-	"crypto/sha1"
+	"crypto/sha1" //nolint:gosec // SHA-1 required for DIDWW fingerprint protocol
 	"crypto/sha256"
 	"crypto/x509"
 	"encoding/hex"
@@ -104,19 +104,19 @@ func EncryptWithKeys(data []byte, publicKeyA, publicKeyB string) ([]byte, error)
 	copy(aesCredentials[32:], aesIV)
 
 	// RSA-OAEP encrypt credentials with each public key
-	encryptedRSA_A, err := encryptRSAOAEP(publicKeyA, aesCredentials)
+	encRSAa, err := encryptRSAOAEP(publicKeyA, aesCredentials)
 	if err != nil {
 		return nil, fmt.Errorf("failed to encrypt with key A: %w", err)
 	}
-	encryptedRSA_B, err := encryptRSAOAEP(publicKeyB, aesCredentials)
+	encRSAb, err := encryptRSAOAEP(publicKeyB, aesCredentials)
 	if err != nil {
 		return nil, fmt.Errorf("failed to encrypt with key B: %w", err)
 	}
 
 	// Concatenate: RSA_A + RSA_B + AES_encrypted
-	result := make([]byte, 0, len(encryptedRSA_A)+len(encryptedRSA_B)+len(encryptedAES))
-	result = append(result, encryptedRSA_A...)
-	result = append(result, encryptedRSA_B...)
+	result := make([]byte, 0, len(encRSAa)+len(encRSAb)+len(encryptedAES))
+	result = append(result, encRSAa...)
+	result = append(result, encRSAb...)
 	result = append(result, encryptedAES...)
 	return result, nil
 }
@@ -143,11 +143,11 @@ func (c *Client) UploadEncryptedFile(ctx context.Context, encryptedData []byte, 
 	if err != nil {
 		return nil, fmt.Errorf("failed to create file part: %w", err)
 	}
-	if _, err := part.Write(encryptedData); err != nil {
-		return nil, fmt.Errorf("failed to write file data: %w", err)
+	if _, writeErr := part.Write(encryptedData); writeErr != nil {
+		return nil, fmt.Errorf("failed to write file data: %w", writeErr)
 	}
-	if err := w.Close(); err != nil {
-		return nil, fmt.Errorf("failed to close multipart writer: %w", err)
+	if closeErr := w.Close(); closeErr != nil {
+		return nil, fmt.Errorf("failed to close multipart writer: %w", closeErr)
 	}
 
 	u := c.buildURL("encrypted_files")
@@ -163,7 +163,7 @@ func (c *Client) UploadEncryptedFile(ctx context.Context, encryptedData []byte, 
 	if err != nil {
 		return nil, &ClientError{Message: fmt.Sprintf("request failed: %v", err)}
 	}
-	defer resp.Body.Close()
+	defer resp.Body.Close() //nolint:errcheck // best-effort close
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -203,16 +203,11 @@ func encryptRSAOAEP(publicKeyPEM string, data []byte) ([]byte, error) {
 }
 
 func fingerprintFor(publicKeyPEM string) string {
-	base64Data := strings.ReplaceAll(publicKeyPEM, "-----BEGIN PUBLIC KEY-----", "")
-	base64Data = strings.ReplaceAll(base64Data, "-----END PUBLIC KEY-----", "")
-	base64Data = strings.ReplaceAll(base64Data, "\n", "")
-	base64Data = strings.TrimSpace(base64Data)
-
 	block, _ := pem.Decode([]byte(normalizePublicKey(publicKeyPEM)))
 	if block == nil {
 		return ""
 	}
-	digest := sha1.Sum(block.Bytes)
+	digest := sha1.Sum(block.Bytes) //nolint:gosec // SHA-1 required for DIDWW fingerprint protocol
 	return hex.EncodeToString(digest[:])
 }
 

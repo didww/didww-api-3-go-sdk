@@ -129,7 +129,7 @@ func (c *Client) doRequest(ctx context.Context, method, path string, params *Que
 	if err != nil {
 		return nil, &ClientError{Message: fmt.Sprintf("request failed: %v", err)}
 	}
-	defer resp.Body.Close()
+	defer resp.Body.Close() //nolint:errcheck // best-effort close
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
