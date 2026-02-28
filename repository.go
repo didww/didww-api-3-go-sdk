@@ -14,13 +14,21 @@ import (
 // Repository provides CRUD operations for a JSON:API resource.
 type Repository[T any] struct {
 	client       *Client
-	resourcePath string
-	resourceType string
+	resourceType string // JSON:API type, also used as URL path
+}
+
+// NewRepository creates a Repository for resource type T.
+// The JSON:API type is read from T's struct tag.
+func NewRepository[T any](client *Client) *Repository[T] {
+	return &Repository[T]{
+		client:       client,
+		resourceType: jsonapi.ResourceType[T](),
+	}
 }
 
 // List retrieves a collection of resources.
 func (r *Repository[T]) List(ctx context.Context, params *QueryParams) ([]*T, error) {
-	body, err := r.client.doRequest(ctx, http.MethodGet, r.resourcePath, params, nil)
+	body, err := r.client.doRequest(ctx, http.MethodGet, r.resourceType, params, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -29,7 +37,7 @@ func (r *Repository[T]) List(ctx context.Context, params *QueryParams) ([]*T, er
 
 // Find retrieves a single resource by ID.
 func (r *Repository[T]) Find(ctx context.Context, id string, params ...*QueryParams) (*T, error) {
-	path := r.resourcePath + "/" + id
+	path := r.resourceType + "/" + id
 	var qp *QueryParams
 	if len(params) > 0 {
 		qp = params[0]
@@ -43,11 +51,11 @@ func (r *Repository[T]) Find(ctx context.Context, id string, params ...*QueryPar
 
 // Create creates a new resource.
 func (r *Repository[T]) Create(ctx context.Context, resource *T) (*T, error) {
-	reqBody, err := jsonapi.MarshalResource(resource, r.resourceType)
+	reqBody, err := jsonapi.Marshal(resource)
 	if err != nil {
 		return nil, &ClientError{Message: fmt.Sprintf("failed to serialize resource: %v", err)}
 	}
-	body, err := r.client.doRequest(ctx, http.MethodPost, r.resourcePath, nil, reqBody)
+	body, err := r.client.doRequest(ctx, http.MethodPost, r.resourceType, nil, reqBody)
 	if err != nil {
 		return nil, err
 	}
@@ -60,8 +68,8 @@ func (r *Repository[T]) Update(ctx context.Context, resource *T) (*T, error) {
 	if id == "" {
 		return nil, &ClientError{Message: "resource ID is required for update"}
 	}
-	path := r.resourcePath + "/" + id
-	reqBody, err := jsonapi.MarshalResource(resource, r.resourceType)
+	path := r.resourceType + "/" + id
+	reqBody, err := jsonapi.Marshal(resource)
 	if err != nil {
 		return nil, &ClientError{Message: fmt.Sprintf("failed to serialize resource: %v", err)}
 	}
@@ -74,7 +82,7 @@ func (r *Repository[T]) Update(ctx context.Context, resource *T) (*T, error) {
 
 // Delete removes a resource by ID.
 func (r *Repository[T]) Delete(ctx context.Context, id string) error {
-	path := r.resourcePath + "/" + id
+	path := r.resourceType + "/" + id
 	_, err := r.client.doRequest(ctx, http.MethodDelete, path, nil, nil)
 	return err
 }
@@ -82,12 +90,21 @@ func (r *Repository[T]) Delete(ctx context.Context, id string) error {
 // SingletonRepository provides read access to a singleton resource.
 type SingletonRepository[T any] struct {
 	client       *Client
-	resourcePath string
+	resourceType string // JSON:API type, also used as URL path
+}
+
+// NewSingletonRepository creates a SingletonRepository for resource type T.
+// The JSON:API type is read from T's struct tag.
+func NewSingletonRepository[T any](client *Client) *SingletonRepository[T] {
+	return &SingletonRepository[T]{
+		client:       client,
+		resourceType: jsonapi.ResourceType[T](),
+	}
 }
 
 // Find retrieves the singleton resource.
 func (r *SingletonRepository[T]) Find(ctx context.Context) (*T, error) {
-	body, err := r.client.doRequest(ctx, http.MethodGet, r.resourcePath, nil, nil)
+	body, err := r.client.doRequest(ctx, http.MethodGet, r.resourceType, nil, nil)
 	if err != nil {
 		return nil, err
 	}

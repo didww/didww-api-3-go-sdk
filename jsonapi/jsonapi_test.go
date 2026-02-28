@@ -8,7 +8,7 @@ import (
 // --- test helper types ---
 
 type testResource struct {
-	ID   string `json:"-"`
+	ID   string `json:"-" jsonapi:"test_resources"`
 	Name string `json:"name"`
 	Age  int    `json:"age"`
 }
@@ -1028,5 +1028,142 @@ func TestUnmarshalManyWithTags(t *testing.T) {
 		if r.Parent.Name != "Shared" {
 			t.Errorf("results[%d].Parent.Name = %q, want %q", i, r.Parent.Name, "Shared")
 		}
+	}
+}
+
+// --- ResourceType and Marshal tests ---
+
+func TestResourceType(t *testing.T) {
+	t.Run("reads jsonapi tag", func(t *testing.T) {
+		got := ResourceType[testResource]()
+		if got != "test_resources" {
+			t.Errorf("ResourceType[testResource]() = %q, want %q", got, "test_resources")
+		}
+	})
+
+	t.Run("panics on missing tag", func(t *testing.T) {
+		type noTag struct {
+			ID   string `json:"-"`
+			Name string `json:"name"`
+		}
+		defer func() {
+			r := recover()
+			if r == nil {
+				t.Fatal("expected panic for missing jsonapi tag")
+			}
+		}()
+		ResourceType[noTag]()
+	})
+
+	t.Run("panics on no ID field", func(t *testing.T) {
+		type noID struct {
+			Name string `json:"name"`
+		}
+		defer func() {
+			r := recover()
+			if r == nil {
+				t.Fatal("expected panic for struct without ID field")
+			}
+		}()
+		ResourceType[noID]()
+	})
+}
+
+func TestMarshalGeneric(t *testing.T) {
+	t.Run("derives type from tag", func(t *testing.T) {
+		r := &testResource{Name: "Alice", Age: 30}
+		data, err := Marshal(r)
+		if err != nil {
+			t.Fatalf("Marshal() error = %v", err)
+		}
+		var doc struct {
+			Data struct {
+				Type string `json:"type"`
+			} `json:"data"`
+		}
+		if err := json.Unmarshal(data, &doc); err != nil {
+			t.Fatalf("unmarshal error = %v", err)
+		}
+		if doc.Data.Type != "test_resources" {
+			t.Errorf("type = %q, want %q", doc.Data.Type, "test_resources")
+		}
+	})
+
+	t.Run("includes ID when set", func(t *testing.T) {
+		r := &testResource{ID: "42", Name: "Bob", Age: 25}
+		data, err := Marshal(r)
+		if err != nil {
+			t.Fatalf("Marshal() error = %v", err)
+		}
+		var doc struct {
+			Data struct {
+				ID   string `json:"id"`
+				Type string `json:"type"`
+			} `json:"data"`
+		}
+		if err := json.Unmarshal(data, &doc); err != nil {
+			t.Fatalf("unmarshal error = %v", err)
+		}
+		if doc.Data.ID != "42" {
+			t.Errorf("id = %q, want %q", doc.Data.ID, "42")
+		}
+		if doc.Data.Type != "test_resources" {
+			t.Errorf("type = %q, want %q", doc.Data.Type, "test_resources")
+		}
+	})
+}
+
+func TestResourceTypeFromTag(t *testing.T) {
+	t.Run("finds tag on struct value", func(t *testing.T) {
+		r := testResource{}
+		got := resourceTypeFromTag(r)
+		if got != "test_resources" {
+			t.Errorf("resourceTypeFromTag() = %q, want %q", got, "test_resources")
+		}
+	})
+
+	t.Run("finds tag on pointer", func(t *testing.T) {
+		r := &testResource{}
+		got := resourceTypeFromTag(r)
+		if got != "test_resources" {
+			t.Errorf("resourceTypeFromTag() = %q, want %q", got, "test_resources")
+		}
+	})
+
+	t.Run("returns empty for non-struct", func(t *testing.T) {
+		got := resourceTypeFromTag("hello")
+		if got != "" {
+			t.Errorf("resourceTypeFromTag() = %q, want empty", got)
+		}
+	})
+
+	t.Run("returns empty for missing tag", func(t *testing.T) {
+		type noTag struct {
+			ID   string `json:"-"`
+			Name string `json:"name"`
+		}
+		got := resourceTypeFromTag(noTag{})
+		if got != "" {
+			t.Errorf("resourceTypeFromTag() = %q, want empty", got)
+		}
+	})
+}
+
+func TestMarshalResourceAutoDetectsType(t *testing.T) {
+	r := testResource{Name: "Alice", Age: 30}
+	data, err := MarshalResource(r, "")
+	if err != nil {
+		t.Fatalf("MarshalResource() error = %v", err)
+	}
+	var doc struct {
+		Data struct {
+			Type string `json:"type"`
+		} `json:"data"`
+	}
+	if err := json.Unmarshal(data, &doc); err != nil {
+		t.Fatalf("unmarshal error = %v", err)
+	}
+	if doc.Data.Type != "test_resources" {
+		t.Errorf("type = %q, want %q", doc.Data.Type, "test_resources")
 	}
 }

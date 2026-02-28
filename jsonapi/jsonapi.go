@@ -306,9 +306,59 @@ func GetID(resource any) string {
 	return ""
 }
 
+// ResourceType returns the JSON:API type string for resource T,
+// read from the `jsonapi` struct tag on the ID field (tagged `json:"-"`).
+// Panics if no jsonapi tag is found.
+func ResourceType[T any]() string {
+	var zero T
+	t := reflect.TypeOf(zero)
+	if t.Kind() == reflect.Ptr {
+		t = t.Elem()
+	}
+	for i := 0; i < t.NumField(); i++ {
+		f := t.Field(i)
+		if f.Tag.Get("json") == "-" {
+			if apiType := f.Tag.Get("jsonapi"); apiType != "" {
+				return apiType
+			}
+		}
+	}
+	panic(fmt.Sprintf("jsonapi: type %s has no jsonapi struct tag on its ID field", t.Name()))
+}
+
+// Marshal serializes a resource to JSON:API format, deriving the type from the struct tag.
+func Marshal[T any](resource *T) ([]byte, error) {
+	return MarshalResource(resource, ResourceType[T]())
+}
+
+// resourceTypeFromTag extracts the JSON:API type from a resource's struct tag.
+// Returns an empty string if no tag is found.
+func resourceTypeFromTag(resource any) string {
+	t := reflect.TypeOf(resource)
+	if t.Kind() == reflect.Ptr {
+		t = t.Elem()
+	}
+	if t.Kind() != reflect.Struct {
+		return ""
+	}
+	for i := 0; i < t.NumField(); i++ {
+		f := t.Field(i)
+		if f.Tag.Get("json") == "-" {
+			if apiType := f.Tag.Get("jsonapi"); apiType != "" {
+				return apiType
+			}
+		}
+	}
+	return ""
+}
+
 // MarshalResource serializes a resource into a JSON:API request body.
 // Fields tagged with `api:"readonly"` (read-only) are excluded from the serialized attributes.
+// If resourceType is empty, it is auto-detected from the struct's jsonapi tag.
 func MarshalResource(resource any, resourceType string) ([]byte, error) {
+	if resourceType == "" {
+		resourceType = resourceTypeFromTag(resource)
+	}
 	attrs, err := MarshalWritableAttrs(resource)
 	if err != nil {
 		return nil, err

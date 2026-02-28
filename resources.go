@@ -9,7 +9,7 @@ import (
 
 // Balance represents a DIDWW account balance.
 type Balance struct {
-	ID           string `json:"-"`
+	ID           string `json:"-" jsonapi:"balance"`
 	TotalBalance string `json:"total_balance"`
 	Credit       string `json:"credit"`
 	Balance      string `json:"balance"`
@@ -17,7 +17,7 @@ type Balance struct {
 
 // Country represents a country resource.
 type Country struct {
-	ID     string `json:"-"`
+	ID     string `json:"-" jsonapi:"countries"`
 	Name   string `json:"name"`
 	Prefix string `json:"prefix"`
 	ISO    string `json:"iso"`
@@ -27,7 +27,7 @@ type Country struct {
 
 // Region represents a geographic region.
 type Region struct {
-	ID   string  `json:"-"`
+	ID   string  `json:"-" jsonapi:"regions"`
 	Name string  `json:"name"`
 	ISO  *string `json:"iso"`
 	// Resolved relationships
@@ -36,7 +36,7 @@ type Region struct {
 
 // City represents a city.
 type City struct {
-	ID   string `json:"-"`
+	ID   string `json:"-" jsonapi:"cities"`
 	Name string `json:"name"`
 	// Resolved relationships
 	Country *Country `json:"-" rel:"country"`
@@ -46,7 +46,7 @@ type City struct {
 
 // Area represents a geographic area.
 type Area struct {
-	ID   string `json:"-"`
+	ID   string `json:"-" jsonapi:"areas"`
 	Name string `json:"name"`
 	// Resolved relationships
 	Country *Country `json:"-" rel:"country"`
@@ -54,7 +54,7 @@ type Area struct {
 
 // Pop represents a Point of Presence.
 type Pop struct {
-	ID   string `json:"-"`
+	ID   string `json:"-" jsonapi:"pops"`
 	Name string `json:"name"`
 }
 
@@ -137,7 +137,7 @@ func parseTrunkConfiguration(data []byte) (TrunkConfiguration, error) {
 
 // VoiceInTrunk represents a voice inbound trunk.
 type VoiceInTrunk struct {
-	ID             string             `json:"-"`
+	ID             string             `json:"-" jsonapi:"voice_in_trunks"`
 	Priority       int                `json:"priority,omitempty"`
 	CapacityLimit  *int               `json:"capacity_limit,omitempty"`
 	Weight         int                `json:"weight,omitempty"`
@@ -204,7 +204,7 @@ func (v VoiceInTrunk) MarshalJSON() ([]byte, error) { //nolint:gocritic // value
 
 // VoiceInTrunkGroup represents a group of voice inbound trunks.
 type VoiceInTrunkGroup struct {
-	ID            string `json:"-"`
+	ID            string `json:"-" jsonapi:"voice_in_trunk_groups"`
 	Name          string `json:"name,omitempty"`
 	CapacityLimit *int   `json:"capacity_limit,omitempty"`
 	CreatedAt     string `json:"created_at" api:"readonly"`
@@ -216,7 +216,7 @@ type VoiceInTrunkGroup struct {
 
 // VoiceOutTrunk represents a voice outbound trunk.
 type VoiceOutTrunk struct {
-	ID                  string                    `json:"-"`
+	ID                  string                    `json:"-" jsonapi:"voice_out_trunks"`
 	AllowedSipIPs       []string                  `json:"allowed_sip_ips,omitempty"`
 	AllowedRtpIPs       []string                  `json:"allowed_rtp_ips,omitempty"`
 	AllowAnyDidAsCli    bool                      `json:"allow_any_did_as_cli,omitempty"`
@@ -245,7 +245,7 @@ type VoiceOutTrunk struct {
 
 // DID represents a DID (phone number) resource.
 type DID struct {
-	ID                     string  `json:"-"`
+	ID                     string  `json:"-" jsonapi:"dids"`
 	Blocked                bool    `json:"blocked" api:"readonly"`
 	CapacityLimit          *int    `json:"capacity_limit"`
 	Description            *string `json:"description"`
@@ -296,7 +296,7 @@ type OrderItem struct {
 
 // Order represents a DIDWW order.
 type Order struct {
-	ID                string            `json:"-"`
+	ID                string            `json:"-" jsonapi:"orders"`
 	Amount            string            `json:"amount" api:"readonly"`
 	Status            enums.OrderStatus `json:"status" api:"readonly"`
 	CreatedAt         string            `json:"created_at" api:"readonly"`
@@ -310,7 +310,7 @@ type Order struct {
 
 // Identity represents a customer identity.
 type Identity struct {
-	ID                  string             `json:"-"`
+	ID                  string             `json:"-" jsonapi:"identities"`
 	FirstName           string             `json:"first_name"`
 	LastName            string             `json:"last_name"`
 	PhoneNumber         string             `json:"phone_number"`
@@ -333,7 +333,7 @@ type Identity struct {
 
 // Export represents a CDR export.
 type Export struct {
-	ID             string                 `json:"-"`
+	ID             string                 `json:"-" jsonapi:"exports"`
 	Status         enums.ExportStatus     `json:"status" api:"readonly"`
 	CreatedAt      string                 `json:"created_at" api:"readonly"`
 	URL            *string                `json:"url" api:"readonly"`
@@ -345,7 +345,7 @@ type Export struct {
 
 // DIDGroup represents a DID group.
 type DIDGroup struct {
-	ID                      string          `json:"-"`
+	ID                      string          `json:"-" jsonapi:"did_groups"`
 	Prefix                  string          `json:"prefix"`
 	LocalPrefix             string          `json:"local_prefix"`
 	Features                []enums.Feature `json:"features"`
@@ -362,7 +362,7 @@ type DIDGroup struct {
 
 // DIDGroupType represents a type of DID group.
 type DIDGroupType struct {
-	ID   string `json:"-"`
+	ID   string `json:"-" jsonapi:"did_group_types"`
 	Name string `json:"name"`
 }
 
@@ -384,7 +384,7 @@ type QtyBasedPricing struct {
 
 // CapacityPool represents a capacity pool.
 type CapacityPool struct {
-	ID                    string `json:"-"`
+	ID                    string `json:"-" jsonapi:"capacity_pools"`
 	Name                  string `json:"name,omitempty"`
 	RenewDate             string `json:"renew_date" api:"readonly"`
 	TotalChannelsCount    int    `json:"total_channels_count"`
@@ -402,7 +402,7 @@ type CapacityPool struct {
 
 // SharedCapacityGroup represents a shared capacity group.
 type SharedCapacityGroup struct {
-	ID                   string `json:"-"`
+	ID                   string `json:"-" jsonapi:"shared_capacity_groups"`
 	Name                 string `json:"name"`
 	SharedChannelsCount  int    `json:"shared_channels_count"`
 	CreatedAt            string `json:"created_at" api:"readonly"`
@@ -416,7 +416,7 @@ type SharedCapacityGroup struct {
 
 // Address represents a customer address.
 type Address struct {
-	ID          string `json:"-"`
+	ID          string `json:"-" jsonapi:"addresses"`
 	CityName    string `json:"city_name"`
 	PostalCode  string `json:"postal_code"`
 	Address     string `json:"address"`
@@ -434,7 +434,7 @@ type Address struct {
 
 // AvailableDID represents a DID available for purchase.
 type AvailableDID struct {
-	ID     string `json:"-"`
+	ID     string `json:"-" jsonapi:"available_dids"`
 	Number string `json:"number"`
 	// Resolved relationships
 	DIDGroup    *DIDGroup    `json:"-" rel:"did_group"`
@@ -443,7 +443,7 @@ type AvailableDID struct {
 
 // DIDReservation represents a reserved DID.
 type DIDReservation struct {
-	ID          string `json:"-"`
+	ID          string `json:"-" jsonapi:"did_reservations"`
 	ExpireAt    string `json:"expire_at" api:"readonly"`
 	CreatedAt   string `json:"created_at" api:"readonly"`
 	Description string `json:"description"`
@@ -455,7 +455,7 @@ type DIDReservation struct {
 
 // Proof represents a proof document.
 type Proof struct {
-	ID        string  `json:"-"`
+	ID        string  `json:"-" jsonapi:"proofs"`
 	CreatedAt string  `json:"created_at" api:"readonly"`
 	ExpiresAt *string `json:"expires_at" api:"readonly"`
 	// Polymorphic entity relationship (type: "identities" or "addresses")
@@ -504,13 +504,13 @@ func (p *Proof) UnmarshalRelationships(rels map[string]json.RawMessage) error {
 
 // PublicKey represents a DIDWW public key for encryption.
 type PublicKey struct {
-	ID  string `json:"-"`
+	ID  string `json:"-" jsonapi:"public_keys"`
 	Key string `json:"key"`
 }
 
 // AddressVerification represents an address verification request.
 type AddressVerification struct {
-	ID                 string                          `json:"-"`
+	ID                 string                          `json:"-" jsonapi:"address_verifications"`
 	ServiceDescription *string                         `json:"service_description,omitempty"`
 	CallbackURL        *string                         `json:"callback_url,omitempty"`
 	CallbackMethod     *string                         `json:"callback_method,omitempty"`
@@ -527,14 +527,14 @@ type AddressVerification struct {
 
 // EncryptedFile represents an encrypted file upload.
 type EncryptedFile struct {
-	ID          string  `json:"-"`
+	ID          string  `json:"-" jsonapi:"encrypted_files"`
 	Description string  `json:"description"`
 	ExpireAt    *string `json:"expire_at" api:"readonly"`
 }
 
 // NanpaPrefix represents an NANPA prefix.
 type NanpaPrefix struct {
-	ID  string `json:"-"`
+	ID  string `json:"-" jsonapi:"nanpa_prefixes"`
 	NPA string `json:"npa"`
 	NXX string `json:"nxx"`
 	// Resolved relationships
@@ -543,7 +543,7 @@ type NanpaPrefix struct {
 
 // Requirement represents a regulatory requirement.
 type Requirement struct {
-	ID                         string   `json:"-"`
+	ID                         string   `json:"-" jsonapi:"requirements"`
 	IdentityType               string   `json:"identity_type"`
 	PersonalAreaLevel          string   `json:"personal_area_level"`
 	BusinessAreaLevel          string   `json:"business_area_level"`
@@ -569,7 +569,7 @@ type Requirement struct {
 
 // RequirementValidation represents a requirement validation result.
 type RequirementValidation struct {
-	ID string `json:"-"`
+	ID string `json:"-" jsonapi:"requirement_validations"`
 	// Relationship IDs for create
 	AddressID     string `json:"-" rel:"address,addresses"`
 	IdentityID    string `json:"-" rel:"identity,identities"`
@@ -578,14 +578,14 @@ type RequirementValidation struct {
 
 // ProofType represents a type of proof document.
 type ProofType struct {
-	ID         string `json:"-"`
+	ID         string `json:"-" jsonapi:"proof_types"`
 	Name       string `json:"name"`
 	EntityType string `json:"entity_type"`
 }
 
 // SupportingDocumentTemplate represents a supporting document template.
 type SupportingDocumentTemplate struct {
-	ID        string `json:"-"`
+	ID        string `json:"-" jsonapi:"supporting_document_templates"`
 	Name      string `json:"name"`
 	Permanent bool   `json:"permanent"`
 	URL       string `json:"url"`
@@ -593,7 +593,7 @@ type SupportingDocumentTemplate struct {
 
 // PermanentSupportingDocument represents a permanent supporting document.
 type PermanentSupportingDocument struct {
-	ID        string `json:"-"`
+	ID        string `json:"-" jsonapi:"permanent_supporting_documents"`
 	CreatedAt string `json:"created_at" api:"readonly"`
 	// Relationship IDs for create/update
 	TemplateID string   `json:"-" rel:"template,supporting_document_templates"`
@@ -605,5 +605,5 @@ type PermanentSupportingDocument struct {
 
 // VoiceOutTrunkRegenerateCredential represents a credential regeneration for voice out trunks.
 type VoiceOutTrunkRegenerateCredential struct {
-	ID string `json:"-"`
+	ID string `json:"-" jsonapi:"voice_out_trunk_regenerate_credentials"`
 }
