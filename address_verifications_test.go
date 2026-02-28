@@ -64,3 +64,24 @@ func TestAddressVerificationsCreate(t *testing.T) {
 
 	assertRequestJSON(t, capturedBody, "address_verifications/create_request.json")
 }
+
+func TestAddressVerificationsFind(t *testing.T) {
+	_, client := newTestServer(t, map[string]testRoute{
+		"GET /v3/address_verifications/c8e004b0-87ec-4987-b4fb-ee89db099f0e": {status: http.StatusOK, fixture: "address_verifications/show.json"},
+	})
+
+	av, err := client.AddressVerifications().Find(context.Background(), "c8e004b0-87ec-4987-b4fb-ee89db099f0e")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if av.ID != "c8e004b0-87ec-4987-b4fb-ee89db099f0e" {
+		t.Errorf("expected ID 'c8e004b0-87ec-4987-b4fb-ee89db099f0e', got %q", av.ID)
+	}
+	if av.Status != enums.AddressVerificationStatusApproved {
+		t.Errorf("expected Status 'Approved', got %q", av.Status)
+	}
+	if av.Reference != "SHB-485120" {
+		t.Errorf("expected Reference 'SHB-485120', got %q", av.Reference)
+	}
+}

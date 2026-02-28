@@ -129,6 +129,110 @@ func TestVoiceInTrunksCreateSipWithReroutingCodes(t *testing.T) {
 	assertRequestJSON(t, capturedBody, "voice_in_trunks/create_sip_request.json")
 }
 
+func TestVoiceInTrunksCreateSip(t *testing.T) {
+	_, client := newTestServer(t, map[string]testRoute{
+		"POST /v3/voice_in_trunks": {status: http.StatusCreated, fixture: "voice_in_trunks/create_sip.json"},
+	})
+
+	trunk, err := client.VoiceInTrunks().Create(context.Background(), &VoiceInTrunk{
+		Name: "hello, test sip trunk",
+		Configuration: &SIPConfiguration{
+			Username: "username",
+			Host:     "216.58.215.110",
+			Port:     5060,
+		},
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if trunk.ID != "a80006b6-4183-4865-8b99-7ebbd359a762" {
+		t.Errorf("expected ID 'a80006b6-4183-4865-8b99-7ebbd359a762', got %q", trunk.ID)
+	}
+	if trunk.Name != "hello, test sip trunk" {
+		t.Errorf("expected Name 'hello, test sip trunk', got %q", trunk.Name)
+	}
+	sipCfg, ok := trunk.Configuration.(*SIPConfiguration)
+	if !ok {
+		t.Fatal("expected SIP configuration")
+	}
+	if sipCfg.Username != "username" {
+		t.Errorf("expected Username 'username', got %q", sipCfg.Username)
+	}
+	if sipCfg.Host != "216.58.215.110" {
+		t.Errorf("expected Host '216.58.215.110', got %q", sipCfg.Host)
+	}
+}
+
+func TestVoiceInTrunksUpdatePstn(t *testing.T) {
+	_, client := newTestServer(t, map[string]testRoute{
+		"PATCH /v3/voice_in_trunks/41b94706-325e-4704-a433-d65105758836": {status: http.StatusOK, fixture: "voice_in_trunks/update_pstn.json"},
+	})
+
+	trunk, err := client.VoiceInTrunks().Update(context.Background(), &VoiceInTrunk{
+		ID:   "41b94706-325e-4704-a433-d65105758836",
+		Name: "hello, updated test pstn trunk",
+		Configuration: &PSTNConfiguration{
+			Dst: "558540420025",
+		},
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if trunk.ID != "41b94706-325e-4704-a433-d65105758836" {
+		t.Errorf("expected ID '41b94706-325e-4704-a433-d65105758836', got %q", trunk.ID)
+	}
+	if trunk.Name != "hello, updated test pstn trunk" {
+		t.Errorf("expected Name 'hello, updated test pstn trunk', got %q", trunk.Name)
+	}
+	pstnCfg, ok := trunk.Configuration.(*PSTNConfiguration)
+	if !ok {
+		t.Fatal("expected PSTN configuration")
+	}
+	if pstnCfg.Dst != "558540420025" {
+		t.Errorf("expected Dst '558540420025', got %q", pstnCfg.Dst)
+	}
+}
+
+func TestVoiceInTrunksUpdateSip(t *testing.T) {
+	_, client := newTestServer(t, map[string]testRoute{
+		"PATCH /v3/voice_in_trunks/a80006b6-4183-4865-8b99-7ebbd359a762": {status: http.StatusOK, fixture: "voice_in_trunks/update_sip.json"},
+	})
+
+	desc := "just a description"
+	trunk, err := client.VoiceInTrunks().Update(context.Background(), &VoiceInTrunk{
+		ID:          "a80006b6-4183-4865-8b99-7ebbd359a762",
+		Name:        "hello, updated test sip trunk",
+		Description: &desc,
+		Configuration: &SIPConfiguration{
+			Username:     "new-username",
+			Host:         "216.58.215.110",
+			MaxTransfers: 5,
+		},
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if trunk.ID != "a80006b6-4183-4865-8b99-7ebbd359a762" {
+		t.Errorf("expected ID 'a80006b6-4183-4865-8b99-7ebbd359a762', got %q", trunk.ID)
+	}
+	if trunk.Name != "hello, updated test sip trunk" {
+		t.Errorf("expected Name 'hello, updated test sip trunk', got %q", trunk.Name)
+	}
+	sipCfg, ok := trunk.Configuration.(*SIPConfiguration)
+	if !ok {
+		t.Fatal("expected SIP configuration")
+	}
+	if sipCfg.Username != "new-username" {
+		t.Errorf("expected Username 'new-username', got %q", sipCfg.Username)
+	}
+	if sipCfg.MaxTransfers != 5 {
+		t.Errorf("expected MaxTransfers 5, got %d", sipCfg.MaxTransfers)
+	}
+}
+
 func TestVoiceInTrunksDelete(t *testing.T) {
 	_, client := newTestServer(t, map[string]testRoute{
 		"DELETE /v3/voice_in_trunks/2b4b1fcf-fe6a-4de9-8a58-7df46820ba13": {status: http.StatusNoContent},

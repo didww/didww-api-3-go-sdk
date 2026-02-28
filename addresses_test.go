@@ -60,6 +60,30 @@ func TestAddressesCreate(t *testing.T) {
 	assertRequestJSON(t, capturedBody, "addresses/create_request.json")
 }
 
+func TestAddressesUpdate(t *testing.T) {
+	_, client := newTestServer(t, map[string]testRoute{
+		"PATCH /v3/addresses/bf69bc70-e1c2-442c-9f30-335ee299b663": {status: http.StatusOK, fixture: "addresses/update.json"},
+	})
+
+	address, err := client.Addresses().Update(context.Background(), &Address{
+		ID:       "bf69bc70-e1c2-442c-9f30-335ee299b663",
+		CityName: "Chicago",
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if address.ID != "bf69bc70-e1c2-442c-9f30-335ee299b663" {
+		t.Errorf("expected ID 'bf69bc70-e1c2-442c-9f30-335ee299b663', got %q", address.ID)
+	}
+	if address.CityName != "Chicago" {
+		t.Errorf("expected CityName 'Chicago', got %q", address.CityName)
+	}
+	if address.PostalCode != "1234" {
+		t.Errorf("expected PostalCode '1234', got %q", address.PostalCode)
+	}
+}
+
 func TestAddressesDelete(t *testing.T) {
 	_, client := newTestServer(t, map[string]testRoute{
 		"DELETE /v3/addresses/bf69bc70-e1c2-442c-9f30-335ee299b663": {status: http.StatusNoContent},

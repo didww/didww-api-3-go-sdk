@@ -111,6 +111,40 @@ func TestVoiceOutTrunksCreate(t *testing.T) {
 	assertRequestJSON(t, capturedBody, "voice_out_trunks/create_request.json")
 }
 
+func TestVoiceOutTrunksUpdate(t *testing.T) {
+	_, client := newTestServer(t, map[string]testRoute{
+		"PATCH /v3/voice_out_trunks/425ce763-a3a9-49b4-af5b-ada1a65c8864": {status: http.StatusOK, fixture: "voice_out_trunks/update.json"},
+	})
+
+	trunk, err := client.VoiceOutTrunks().Update(context.Background(), &VoiceOutTrunk{
+		ID:            "425ce763-a3a9-49b4-af5b-ada1a65c8864",
+		AllowedSipIPs: []string{"10.11.12.13/32"},
+		CapacityLimit: intPtr(123),
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if trunk.ID != "425ce763-a3a9-49b4-af5b-ada1a65c8864" {
+		t.Errorf("expected ID '425ce763-a3a9-49b4-af5b-ada1a65c8864', got %q", trunk.ID)
+	}
+	if trunk.Name != "test" {
+		t.Errorf("expected Name 'test', got %q", trunk.Name)
+	}
+	if trunk.CapacityLimit == nil || *trunk.CapacityLimit != 123 {
+		t.Errorf("expected CapacityLimit 123, got %v", trunk.CapacityLimit)
+	}
+	if len(trunk.AllowedSipIPs) != 1 || trunk.AllowedSipIPs[0] != "10.11.12.13/32" {
+		t.Errorf("expected AllowedSipIPs ['10.11.12.13/32'], got %v", trunk.AllowedSipIPs)
+	}
+	if !trunk.ForceSymmetricRtp {
+		t.Error("expected ForceSymmetricRtp to be true")
+	}
+	if !trunk.RtpPing {
+		t.Error("expected RtpPing to be true")
+	}
+}
+
 func TestVoiceOutTrunksDelete(t *testing.T) {
 	_, client := newTestServer(t, map[string]testRoute{
 		"DELETE /v3/voice_out_trunks/425ce763-a3a9-49b4-af5b-ada1a65c8864": {status: http.StatusNoContent},
