@@ -1,4 +1,4 @@
-package didww
+package jsonapi
 
 import (
 	"encoding/json"
@@ -153,8 +153,8 @@ func parseIncluded(raw json.RawMessage) (IncludedResources, error) {
 	return included, nil
 }
 
-// unmarshalOne parses a JSON:API document with a single data object into T.
-func unmarshalOne[T any](body []byte) (*T, error) {
+// UnmarshalOne parses a JSON:API document with a single data object into T.
+func UnmarshalOne[T any](body []byte) (*T, error) {
 	var doc jsonapiDocument
 	if err := json.Unmarshal(body, &doc); err != nil {
 		return nil, fmt.Errorf("failed to parse JSON:API document: %w", err)
@@ -177,8 +177,8 @@ func unmarshalOne[T any](body []byte) (*T, error) {
 	return unmarshalResourceWithIncluded[T](doc.Data, included)
 }
 
-// unmarshalMany parses a JSON:API document with an array of data objects into []*T.
-func unmarshalMany[T any](body []byte) ([]*T, error) {
+// UnmarshalMany parses a JSON:API document with an array of data objects into []*T.
+func UnmarshalMany[T any](body []byte) ([]*T, error) {
 	var doc jsonapiDocument
 	if err := json.Unmarshal(body, &doc); err != nil {
 		return nil, fmt.Errorf("failed to parse JSON:API document: %w", err)
@@ -246,6 +246,11 @@ func unmarshalResourceWithIncluded[T any](data []byte, included IncludedResource
 
 	// Resolve included relationships
 	if len(included) > 0 && len(res.Relationships) > 0 {
+		// Resolve from rel tags
+		if err := resolveRelsFromTags(&result, included, res.Relationships); err != nil {
+			return nil, fmt.Errorf("failed to resolve relationships: %w", err)
+		}
+		// Then interface (backward compat)
 		if rr, ok := any(&result).(RelationshipResolver); ok {
 			if err := rr.ResolveRelationships(included, res.Relationships); err != nil {
 				return nil, fmt.Errorf("failed to resolve relationships: %w", err)
@@ -285,8 +290,8 @@ func setID(resource any, id string) {
 	}
 }
 
-// getID uses reflection to get the ID field from a resource struct.
-func getID(resource any) string {
+// GetID uses reflection to get the ID field from a resource struct.
+func GetID(resource any) string {
 	v := reflect.ValueOf(resource)
 	if v.Kind() == reflect.Ptr {
 		v = v.Elem()
@@ -301,15 +306,15 @@ func getID(resource any) string {
 	return ""
 }
 
-// marshalResource serializes a resource into a JSON:API request body.
+// MarshalResource serializes a resource into a JSON:API request body.
 // Fields tagged with `api:"readonly"` (read-only) are excluded from the serialized attributes.
-func marshalResource(resource any, resourceType string) ([]byte, error) {
-	attrs, err := marshalWritableAttrs(resource)
+func MarshalResource(resource any, resourceType string) ([]byte, error) {
+	attrs, err := MarshalWritableAttrs(resource)
 	if err != nil {
 		return nil, err
 	}
 
-	id := getID(resource)
+	id := GetID(resource)
 
 	data := map[string]any{
 		"type":       resourceType,
@@ -320,23 +325,33 @@ func marshalResource(resource any, resourceType string) ([]byte, error) {
 		data["id"] = id
 	}
 
-	// Include relationships if the resource marshals them
+	// 1. Tag-based relationships
+	rels := marshalRelsFromTags(resource)
+
+	// 2. Merge interface-based relationships (overrides tags)
 	if rm, ok := resource.(RelationshipMarshaler); ok {
-		rels, err := rm.MarshalRelationships()
+		ifaceRels, err := rm.MarshalRelationships()
 		if err != nil {
 			return nil, err
 		}
-		if len(rels) > 0 {
-			data["relationships"] = rels
+		for k, v := range ifaceRels {
+			if rels == nil {
+				rels = make(map[string]any)
+			}
+			rels[k] = v
 		}
+	}
+
+	if len(rels) > 0 {
+		data["relationships"] = rels
 	}
 
 	return json.Marshal(map[string]any{"data": data})
 }
 
-// marshalWritableAttrs serializes a resource to JSON, excluding fields tagged `api:"readonly"`.
+// MarshalWritableAttrs serializes a resource to JSON, excluding fields tagged `api:"readonly"`.
 // It first marshals normally via json.Marshal, then removes read-only keys.
-func marshalWritableAttrs(resource any) ([]byte, error) {
+func MarshalWritableAttrs(resource any) ([]byte, error) {
 	// Collect read-only JSON keys by inspecting struct tags.
 	roKeys := readOnlyKeys(resource)
 
@@ -378,7 +393,7 @@ func readOnlyKeys(resource any) []string {
 			if jsonTag == "" || jsonTag == "-" {
 				continue
 			}
-			// Parse "name,omitempty" → "name"
+			// Parse "name,omitempty" -> "name"
 			name := jsonTag
 			if idx := len(name); idx > 0 {
 				if comma := jsonTagName(jsonTag); comma != "" {
@@ -399,4 +414,202 @@ func jsonTagName(tag string) string {
 		}
 	}
 	return tag
+}
+
+// splitRelTag parses a rel struct tag into name and apiType.
+// Tags with a comma (e.g. "country,countries") are marshal tags (hasSep=true).
+// Tags without a comma (e.g. "country") are resolve tags (hasSep=false).
+func splitRelTag(tag string) (name, apiType string, hasSep bool) {
+	for i := 0; i < len(tag); i++ {
+		if tag[i] == ',' {
+			return tag[:i], tag[i+1:], true
+		}
+	}
+	return tag, "", false
+}
+
+// marshalRelsFromTags scans a struct for `rel:"name,apitype"` tagged fields
+// and builds a relationship map. string → to-one, []string → to-many.
+func marshalRelsFromTags(resource any) map[string]any {
+	v := reflect.ValueOf(resource)
+	if v.Kind() == reflect.Ptr {
+		v = v.Elem()
+	}
+	if v.Kind() != reflect.Struct {
+		return nil
+	}
+	t := v.Type()
+	var rels map[string]any
+	for i := 0; i < t.NumField(); i++ {
+		f := t.Field(i)
+		tag := f.Tag.Get("rel")
+		if tag == "" {
+			continue
+		}
+		name, apiType, hasSep := splitRelTag(tag)
+		if !hasSep {
+			continue // resolve-only tag
+		}
+		fv := v.Field(i)
+		switch f.Type.Kind() {
+		case reflect.String:
+			id := fv.String()
+			if id == "" {
+				continue
+			}
+			if rels == nil {
+				rels = make(map[string]any)
+			}
+			rels[name] = ToOneRelationship(RelationshipRef{Type: apiType, ID: id})
+		case reflect.Slice:
+			if f.Type.Elem().Kind() != reflect.String {
+				continue
+			}
+			if fv.Len() == 0 {
+				continue
+			}
+			refs := make([]RelationshipRef, fv.Len())
+			for j := 0; j < fv.Len(); j++ {
+				refs[j] = RelationshipRef{Type: apiType, ID: fv.Index(j).String()}
+			}
+			if rels == nil {
+				rels = make(map[string]any)
+			}
+			rels[name] = ToManyRelationship(refs)
+		}
+	}
+	return rels
+}
+
+// resolveRelsFromTags scans a struct for `rel:"name"` tagged pointer fields
+// and resolves them from included resources.
+func resolveRelsFromTags(resource any, included IncludedResources, rels map[string]json.RawMessage) error {
+	v := reflect.ValueOf(resource)
+	if v.Kind() == reflect.Ptr {
+		v = v.Elem()
+	}
+	if v.Kind() != reflect.Struct {
+		return nil
+	}
+	t := v.Type()
+	for i := 0; i < t.NumField(); i++ {
+		f := t.Field(i)
+		tag := f.Tag.Get("rel")
+		if tag == "" {
+			continue
+		}
+		name, _, hasSep := splitRelTag(tag)
+		if hasSep {
+			continue // marshal tag, not resolve
+		}
+		fv := v.Field(i)
+		ft := f.Type
+
+		switch {
+		case ft.Kind() == reflect.Ptr && ft.Elem().Kind() == reflect.Struct:
+			if err := resolveToOneReflect(fv, ft.Elem(), name, included, rels); err != nil {
+				return err
+			}
+		case ft.Kind() == reflect.Slice && ft.Elem().Kind() == reflect.Ptr &&
+			ft.Elem().Elem().Kind() == reflect.Struct:
+			if err := resolveToManyReflect(fv, ft, name, included, rels); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+// resolveToOneReflect resolves a to-one relationship field via reflection.
+func resolveToOneReflect(fv reflect.Value, elemType reflect.Type, name string, included IncludedResources, rels map[string]json.RawMessage) error {
+	raw, ok := rels[name]
+	if !ok {
+		return nil
+	}
+	ref, err := ParseToOneRelationship(raw)
+	if err != nil {
+		return err
+	}
+	if ref == nil {
+		return nil
+	}
+	resRaw, ok := included[ref.Type+":"+ref.ID]
+	if !ok {
+		return nil
+	}
+	val, err := unmarshalResourceReflect(resRaw, elemType, included)
+	if err != nil {
+		return err
+	}
+	fv.Set(val)
+	return nil
+}
+
+// resolveToManyReflect resolves a to-many relationship field via reflection.
+func resolveToManyReflect(fv reflect.Value, sliceType reflect.Type, name string, included IncludedResources, rels map[string]json.RawMessage) error {
+	raw, ok := rels[name]
+	if !ok {
+		return nil
+	}
+	refs, err := ParseToManyRelationship(raw)
+	if err != nil {
+		return err
+	}
+	if len(refs) == 0 {
+		return nil
+	}
+	elemType := sliceType.Elem().Elem()
+	slice := reflect.MakeSlice(sliceType, 0, len(refs))
+	for _, ref := range refs {
+		resRaw, ok := included[ref.Type+":"+ref.ID]
+		if !ok {
+			continue
+		}
+		val, err := unmarshalResourceReflect(resRaw, elemType, included)
+		if err != nil {
+			return err
+		}
+		slice = reflect.Append(slice, val)
+	}
+	if slice.Len() > 0 {
+		fv.Set(slice)
+	}
+	return nil
+}
+
+// unmarshalResourceReflect is the reflection-based equivalent of
+// unmarshalResourceWithIncluded[T], used when the target type is known
+// only at runtime (e.g. from rel tag field types).
+func unmarshalResourceReflect(data []byte, elemType reflect.Type, included IncludedResources) (reflect.Value, error) {
+	var res jsonapiResource
+	if err := json.Unmarshal(data, &res); err != nil {
+		return reflect.Value{}, fmt.Errorf("failed to parse resource: %w", err)
+	}
+
+	ptr := reflect.New(elemType)
+	result := ptr.Interface()
+
+	if len(res.Attributes) > 0 && string(res.Attributes) != jsonNull {
+		if err := json.Unmarshal(res.Attributes, result); err != nil {
+			return reflect.Value{}, fmt.Errorf("failed to parse attributes: %w", err)
+		}
+	}
+
+	setID(result, res.ID)
+
+	if len(res.Relationships) > 0 {
+		if ru, ok := result.(RelationshipUnmarshaler); ok {
+			if err := ru.UnmarshalRelationships(res.Relationships); err != nil {
+				return reflect.Value{}, fmt.Errorf("failed to parse relationships: %w", err)
+			}
+		}
+	}
+
+	if len(included) > 0 && len(res.Relationships) > 0 {
+		if err := resolveRelsFromTags(result, included, res.Relationships); err != nil {
+			return reflect.Value{}, fmt.Errorf("failed to resolve relationships: %w", err)
+		}
+	}
+
+	return ptr, nil
 }

@@ -9,6 +9,8 @@ import (
 	"reflect"
 	"runtime"
 	"testing"
+
+	"github.com/didww/didww-api-3-go-sdk/jsonapi"
 )
 
 // fixturesDir returns the absolute path to the testdata/fixtures directory.
@@ -157,7 +159,7 @@ func extractRelationships(t *testing.T, body []byte) map[string]json.RawMessage 
 	return doc.Data.Relationships
 }
 
-func extractRelationshipOne(t *testing.T, body []byte, name string) RelationshipRef {
+func extractRelationshipOne(t *testing.T, body []byte, name string) jsonapi.RelationshipRef {
 	t.Helper()
 	rels := extractRelationships(t, body)
 	raw, ok := rels[name]
@@ -165,7 +167,7 @@ func extractRelationshipOne(t *testing.T, body []byte, name string) Relationship
 		t.Fatalf("relationship %q not found in request body", name)
 	}
 	var wrapper struct {
-		Data RelationshipRef `json:"data"`
+		Data jsonapi.RelationshipRef `json:"data"`
 	}
 	if err := json.Unmarshal(raw, &wrapper); err != nil {
 		t.Fatalf("failed to parse relationship %q: %v", name, err)
@@ -173,7 +175,7 @@ func extractRelationshipOne(t *testing.T, body []byte, name string) Relationship
 	return wrapper.Data
 }
 
-func extractRelationshipMany(t *testing.T, body []byte, name string) []RelationshipRef {
+func extractRelationshipMany(t *testing.T, body []byte, name string) []jsonapi.RelationshipRef {
 	t.Helper()
 	rels := extractRelationships(t, body)
 	raw, ok := rels[name]
@@ -181,7 +183,7 @@ func extractRelationshipMany(t *testing.T, body []byte, name string) []Relations
 		t.Fatalf("relationship %q not found in request body", name)
 	}
 	var wrapper struct {
-		Data []RelationshipRef `json:"data"`
+		Data []jsonapi.RelationshipRef `json:"data"`
 	}
 	if err := json.Unmarshal(raw, &wrapper); err != nil {
 		t.Fatalf("failed to parse relationship %q: %v", name, err)

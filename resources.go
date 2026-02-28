@@ -3,6 +3,7 @@ package didww
 import (
 	"encoding/json"
 
+	"github.com/didww/didww-api-3-go-sdk/jsonapi"
 	"github.com/didww/didww-api-3-go-sdk/resource/enums"
 )
 
@@ -21,17 +22,7 @@ type Country struct {
 	Prefix string `json:"prefix"`
 	ISO    string `json:"iso"`
 	// Resolved relationships
-	Regions []*Region `json:"-"`
-}
-
-// ResolveRelationships resolves included relationships for Country.
-func (c *Country) ResolveRelationships(included IncludedResources, rels map[string]json.RawMessage) error {
-	if regions, err := ResolveToMany[Region](included, rels, "regions"); err != nil {
-		return err
-	} else if regions != nil {
-		c.Regions = regions
-	}
-	return nil
+	Regions []*Region `json:"-" rel:"regions"`
 }
 
 // Region represents a geographic region.
@@ -40,17 +31,7 @@ type Region struct {
 	Name string  `json:"name"`
 	ISO  *string `json:"iso"`
 	// Resolved relationships
-	Country *Country `json:"-"`
-}
-
-// ResolveRelationships resolves included relationships for Region.
-func (r *Region) ResolveRelationships(included IncludedResources, rels map[string]json.RawMessage) error {
-	if country, err := ResolveToOne[Country](included, rels, "country"); err != nil {
-		return err
-	} else if country != nil {
-		r.Country = country
-	}
-	return nil
+	Country *Country `json:"-" rel:"country"`
 }
 
 // City represents a city.
@@ -58,29 +39,9 @@ type City struct {
 	ID   string `json:"-"`
 	Name string `json:"name"`
 	// Resolved relationships
-	Country *Country `json:"-"`
-	Region  *Region  `json:"-"`
-	Area    *Area    `json:"-"`
-}
-
-// ResolveRelationships resolves included relationships for City.
-func (c *City) ResolveRelationships(included IncludedResources, rels map[string]json.RawMessage) error {
-	if country, err := ResolveToOne[Country](included, rels, "country"); err != nil {
-		return err
-	} else if country != nil {
-		c.Country = country
-	}
-	if region, err := ResolveToOne[Region](included, rels, "region"); err != nil {
-		return err
-	} else if region != nil {
-		c.Region = region
-	}
-	if area, err := ResolveToOne[Area](included, rels, "area"); err != nil {
-		return err
-	} else if area != nil {
-		c.Area = area
-	}
-	return nil
+	Country *Country `json:"-" rel:"country"`
+	Region  *Region  `json:"-" rel:"region"`
+	Area    *Area    `json:"-" rel:"area"`
 }
 
 // Area represents a geographic area.
@@ -88,17 +49,7 @@ type Area struct {
 	ID   string `json:"-"`
 	Name string `json:"name"`
 	// Resolved relationships
-	Country *Country `json:"-"`
-}
-
-// ResolveRelationships resolves included relationships for Area.
-func (a *Area) ResolveRelationships(included IncludedResources, rels map[string]json.RawMessage) error {
-	if country, err := ResolveToOne[Country](included, rels, "country"); err != nil {
-		return err
-	} else if country != nil {
-		a.Country = country
-	}
-	return nil
+	Country *Country `json:"-" rel:"country"`
 }
 
 // Pop represents a Point of Presence.
@@ -198,8 +149,8 @@ type VoiceInTrunk struct {
 	Configuration  TrunkConfiguration `json:"-"`
 	CreatedAt      string             `json:"created_at" api:"readonly"`
 	// Resolved relationships
-	Pop               *Pop               `json:"-"`
-	VoiceInTrunkGroup *VoiceInTrunkGroup `json:"-"`
+	Pop               *Pop               `json:"-" rel:"pop"`
+	VoiceInTrunkGroup *VoiceInTrunkGroup `json:"-" rel:"voice_in_trunk_group"`
 }
 
 // UnmarshalJSON implements custom unmarshaling for VoiceInTrunk.
@@ -251,21 +202,6 @@ func (v VoiceInTrunk) MarshalJSON() ([]byte, error) { //nolint:gocritic // value
 	return json.Marshal(aux)
 }
 
-// ResolveRelationships resolves included relationships for VoiceInTrunk.
-func (v *VoiceInTrunk) ResolveRelationships(included IncludedResources, rels map[string]json.RawMessage) error {
-	if pop, err := ResolveToOne[Pop](included, rels, "pop"); err != nil {
-		return err
-	} else if pop != nil {
-		v.Pop = pop
-	}
-	if group, err := ResolveToOne[VoiceInTrunkGroup](included, rels, "voice_in_trunk_group"); err != nil {
-		return err
-	} else if group != nil {
-		v.VoiceInTrunkGroup = group
-	}
-	return nil
-}
-
 // VoiceInTrunkGroup represents a group of voice inbound trunks.
 type VoiceInTrunkGroup struct {
 	ID            string `json:"-"`
@@ -273,32 +209,9 @@ type VoiceInTrunkGroup struct {
 	CapacityLimit *int   `json:"capacity_limit,omitempty"`
 	CreatedAt     string `json:"created_at" api:"readonly"`
 	// Relationship IDs for create/update
-	VoiceInTrunkIDs []string `json:"-"`
+	VoiceInTrunkIDs []string `json:"-" rel:"voice_in_trunks,voice_in_trunks"`
 	// Resolved relationships
-	VoiceInTrunks []*VoiceInTrunk `json:"-"`
-}
-
-// MarshalRelationships implements RelationshipMarshaler for VoiceInTrunkGroup.
-func (g *VoiceInTrunkGroup) MarshalRelationships() (map[string]any, error) {
-	rels := make(map[string]any)
-	if len(g.VoiceInTrunkIDs) > 0 {
-		refs := make([]RelationshipRef, len(g.VoiceInTrunkIDs))
-		for i, id := range g.VoiceInTrunkIDs {
-			refs[i] = RelationshipRef{Type: "voice_in_trunks", ID: id}
-		}
-		rels["voice_in_trunks"] = ToManyRelationship(refs)
-	}
-	return rels, nil
-}
-
-// ResolveRelationships resolves included relationships for VoiceInTrunkGroup.
-func (g *VoiceInTrunkGroup) ResolveRelationships(included IncludedResources, rels map[string]json.RawMessage) error {
-	if trunks, err := ResolveToMany[VoiceInTrunk](included, rels, "voice_in_trunks"); err != nil {
-		return err
-	} else if trunks != nil {
-		g.VoiceInTrunks = trunks
-	}
-	return nil
+	VoiceInTrunks []*VoiceInTrunk `json:"-" rel:"voice_in_trunks"`
 }
 
 // VoiceOutTrunk represents a voice outbound trunk.
@@ -323,42 +236,11 @@ type VoiceOutTrunk struct {
 	RtpPing             bool                      `json:"rtp_ping,omitempty"`
 	CallbackURL         *string                   `json:"callback_url,omitempty"`
 	// Relationship IDs for create/update
-	DefaultDIDID string   `json:"-"`
-	DIDIDs       []string `json:"-"`
+	DefaultDIDID string   `json:"-" rel:"default_did,dids"`
+	DIDIDs       []string `json:"-" rel:"dids,dids"`
 	// Resolved relationships
-	DefaultDID *DID   `json:"-"`
-	DIDs       []*DID `json:"-"`
-}
-
-// MarshalRelationships implements RelationshipMarshaler for VoiceOutTrunk.
-func (v *VoiceOutTrunk) MarshalRelationships() (map[string]any, error) {
-	rels := make(map[string]any)
-	if v.DefaultDIDID != "" {
-		rels["default_did"] = ToOneRelationship(RelationshipRef{Type: "dids", ID: v.DefaultDIDID})
-	}
-	if len(v.DIDIDs) > 0 {
-		refs := make([]RelationshipRef, len(v.DIDIDs))
-		for i, id := range v.DIDIDs {
-			refs[i] = RelationshipRef{Type: "dids", ID: id}
-		}
-		rels["dids"] = ToManyRelationship(refs)
-	}
-	return rels, nil
-}
-
-// ResolveRelationships resolves included relationships for VoiceOutTrunk.
-func (v *VoiceOutTrunk) ResolveRelationships(included IncludedResources, rels map[string]json.RawMessage) error {
-	if defaultDid, err := ResolveToOne[DID](included, rels, "default_did"); err != nil {
-		return err
-	} else if defaultDid != nil {
-		v.DefaultDID = defaultDid
-	}
-	if dids, err := ResolveToMany[DID](included, rels, "dids"); err != nil {
-		return err
-	} else if dids != nil {
-		v.DIDs = dids
-	}
-	return nil
+	DefaultDID *DID   `json:"-" rel:"default_did"`
+	DIDs       []*DID `json:"-" rel:"dids"`
 }
 
 // DID represents a DID (phone number) resource.
@@ -376,29 +258,9 @@ type DID struct {
 	ChannelsIncludedCount  int     `json:"channels_included_count" api:"readonly"`
 	DedicatedChannelsCount int     `json:"dedicated_channels_count"`
 	// Resolved relationships
-	Order               *Order               `json:"-"`
-	AddressVerification *AddressVerification `json:"-"`
-	DIDGroup            *DIDGroup            `json:"-"`
-}
-
-// ResolveRelationships resolves included relationships for DID.
-func (d *DID) ResolveRelationships(included IncludedResources, rels map[string]json.RawMessage) error {
-	if order, err := ResolveToOne[Order](included, rels, "order"); err != nil {
-		return err
-	} else if order != nil {
-		d.Order = order
-	}
-	if av, err := ResolveToOne[AddressVerification](included, rels, "address_verification"); err != nil {
-		return err
-	} else if av != nil {
-		d.AddressVerification = av
-	}
-	if dg, err := ResolveToOne[DIDGroup](included, rels, "did_group"); err != nil {
-		return err
-	} else if dg != nil {
-		d.DIDGroup = dg
-	}
-	return nil
+	Order               *Order               `json:"-" rel:"order"`
+	AddressVerification *AddressVerification `json:"-" rel:"address_verification"`
+	DIDGroup            *DIDGroup            `json:"-" rel:"did_group"`
 }
 
 // OrderItemAttributes contains the attributes of an order item.
@@ -423,7 +285,7 @@ type OrderItemAttributes struct {
 // MarshalJSON implements custom marshaling for OrderItemAttributes to exclude read-only fields.
 func (a OrderItemAttributes) MarshalJSON() ([]byte, error) { //nolint:gocritic // value receiver required for json.Marshal
 	type Alias OrderItemAttributes
-	return marshalWritableAttrs(Alias(a))
+	return jsonapi.MarshalWritableAttrs(Alias(a))
 }
 
 // OrderItem represents an item within an order.
@@ -464,28 +326,9 @@ type Identity struct {
 	ExternalReferenceID *string            `json:"external_reference_id"`
 	Verified            bool               `json:"verified" api:"readonly"`
 	// Relationship IDs for create/update
-	CountryID string `json:"-"`
+	CountryID string `json:"-" rel:"country,countries"`
 	// Resolved relationships
-	Country *Country `json:"-"`
-}
-
-// MarshalRelationships implements RelationshipMarshaler for Identity.
-func (i *Identity) MarshalRelationships() (map[string]any, error) {
-	rels := make(map[string]any)
-	if i.CountryID != "" {
-		rels["country"] = ToOneRelationship(RelationshipRef{Type: "countries", ID: i.CountryID})
-	}
-	return rels, nil
-}
-
-// ResolveRelationships resolves included relationships for Identity.
-func (i *Identity) ResolveRelationships(included IncludedResources, rels map[string]json.RawMessage) error {
-	if country, err := ResolveToOne[Country](included, rels, "country"); err != nil {
-		return err
-	} else if country != nil {
-		i.Country = country
-	}
-	return nil
+	Country *Country `json:"-" rel:"country"`
 }
 
 // Export represents a CDR export.
@@ -510,41 +353,11 @@ type DIDGroup struct {
 	AreaName                string          `json:"area_name"`
 	AllowAdditionalChannels bool            `json:"allow_additional_channels"`
 	// Resolved relationships
-	Country           *Country            `json:"-"`
-	City              *City               `json:"-"`
-	Region            *Region             `json:"-"`
-	DIDGroupType      *DIDGroupType       `json:"-"`
-	StockKeepingUnits []*StockKeepingUnit `json:"-"`
-}
-
-// ResolveRelationships resolves included relationships for DIDGroup.
-func (dg *DIDGroup) ResolveRelationships(included IncludedResources, rels map[string]json.RawMessage) error {
-	if country, err := ResolveToOne[Country](included, rels, "country"); err != nil {
-		return err
-	} else if country != nil {
-		dg.Country = country
-	}
-	if city, err := ResolveToOne[City](included, rels, "city"); err != nil {
-		return err
-	} else if city != nil {
-		dg.City = city
-	}
-	if region, err := ResolveToOne[Region](included, rels, "region"); err != nil {
-		return err
-	} else if region != nil {
-		dg.Region = region
-	}
-	if dgt, err := ResolveToOne[DIDGroupType](included, rels, "did_group_type"); err != nil {
-		return err
-	} else if dgt != nil {
-		dg.DIDGroupType = dgt
-	}
-	if skus, err := ResolveToMany[StockKeepingUnit](included, rels, "stock_keeping_units"); err != nil {
-		return err
-	} else if skus != nil {
-		dg.StockKeepingUnits = skus
-	}
-	return nil
+	Country           *Country            `json:"-" rel:"country"`
+	City              *City               `json:"-" rel:"city"`
+	Region            *Region             `json:"-" rel:"region"`
+	DIDGroupType      *DIDGroupType       `json:"-" rel:"did_group_type"`
+	StockKeepingUnits []*StockKeepingUnit `json:"-" rel:"stock_keeping_units"`
 }
 
 // DIDGroupType represents a type of DID group.
@@ -582,29 +395,9 @@ type CapacityPool struct {
 	MonthlyPrice          string `json:"monthly_price" api:"readonly"`
 	MeteredRate           string `json:"metered_rate" api:"readonly"`
 	// Resolved relationships
-	Countries            []*Country             `json:"-"`
-	SharedCapacityGroups []*SharedCapacityGroup `json:"-"`
-	QtyBasedPricings     []*QtyBasedPricing     `json:"-"`
-}
-
-// ResolveRelationships resolves included relationships for CapacityPool.
-func (cp *CapacityPool) ResolveRelationships(included IncludedResources, rels map[string]json.RawMessage) error {
-	if countries, err := ResolveToMany[Country](included, rels, "countries"); err != nil {
-		return err
-	} else if countries != nil {
-		cp.Countries = countries
-	}
-	if groups, err := ResolveToMany[SharedCapacityGroup](included, rels, "shared_capacity_groups"); err != nil {
-		return err
-	} else if groups != nil {
-		cp.SharedCapacityGroups = groups
-	}
-	if pricings, err := ResolveToMany[QtyBasedPricing](included, rels, "qty_based_pricings"); err != nil {
-		return err
-	} else if pricings != nil {
-		cp.QtyBasedPricings = pricings
-	}
-	return nil
+	Countries            []*Country             `json:"-" rel:"countries"`
+	SharedCapacityGroups []*SharedCapacityGroup `json:"-" rel:"shared_capacity_groups"`
+	QtyBasedPricings     []*QtyBasedPricing     `json:"-" rel:"qty_based_pricings"`
 }
 
 // SharedCapacityGroup represents a shared capacity group.
@@ -615,34 +408,10 @@ type SharedCapacityGroup struct {
 	CreatedAt            string `json:"created_at" api:"readonly"`
 	MeteredChannelsCount int    `json:"metered_channels_count"`
 	// Relationship IDs for create/update
-	CapacityPoolID string `json:"-"`
+	CapacityPoolID string `json:"-" rel:"capacity_pool,capacity_pools"`
 	// Resolved relationships
-	CapacityPool *CapacityPool `json:"-"`
-	DIDs         []*DID        `json:"-"`
-}
-
-// MarshalRelationships implements RelationshipMarshaler for SharedCapacityGroup.
-func (s *SharedCapacityGroup) MarshalRelationships() (map[string]any, error) {
-	rels := make(map[string]any)
-	if s.CapacityPoolID != "" {
-		rels["capacity_pool"] = ToOneRelationship(RelationshipRef{Type: "capacity_pools", ID: s.CapacityPoolID})
-	}
-	return rels, nil
-}
-
-// ResolveRelationships resolves included relationships for SharedCapacityGroup.
-func (s *SharedCapacityGroup) ResolveRelationships(included IncludedResources, rels map[string]json.RawMessage) error {
-	if pool, err := ResolveToOne[CapacityPool](included, rels, "capacity_pool"); err != nil {
-		return err
-	} else if pool != nil {
-		s.CapacityPool = pool
-	}
-	if dids, err := ResolveToMany[DID](included, rels, "dids"); err != nil {
-		return err
-	} else if dids != nil {
-		s.DIDs = dids
-	}
-	return nil
+	CapacityPool *CapacityPool `json:"-" rel:"capacity_pool"`
+	DIDs         []*DID        `json:"-" rel:"dids"`
 }
 
 // Address represents a customer address.
@@ -655,44 +424,12 @@ type Address struct {
 	CreatedAt   string `json:"created_at" api:"readonly"`
 	Verified    bool   `json:"verified" api:"readonly"`
 	// Relationship IDs for create/update
-	IdentityID string `json:"-"`
-	CountryID  string `json:"-"`
+	IdentityID string `json:"-" rel:"identity,identities"`
+	CountryID  string `json:"-" rel:"country,countries"`
 	// Resolved relationships
-	Country  *Country  `json:"-"`
-	Identity *Identity `json:"-"`
-	Proofs   []*Proof  `json:"-"`
-}
-
-// MarshalRelationships implements RelationshipMarshaler for Address.
-func (a *Address) MarshalRelationships() (map[string]any, error) {
-	rels := make(map[string]any)
-	if a.CountryID != "" {
-		rels["country"] = ToOneRelationship(RelationshipRef{Type: "countries", ID: a.CountryID})
-	}
-	if a.IdentityID != "" {
-		rels["identity"] = ToOneRelationship(RelationshipRef{Type: "identities", ID: a.IdentityID})
-	}
-	return rels, nil
-}
-
-// ResolveRelationships resolves included relationships for Address.
-func (a *Address) ResolveRelationships(included IncludedResources, rels map[string]json.RawMessage) error {
-	if country, err := ResolveToOne[Country](included, rels, "country"); err != nil {
-		return err
-	} else if country != nil {
-		a.Country = country
-	}
-	if identity, err := ResolveToOne[Identity](included, rels, "identity"); err != nil {
-		return err
-	} else if identity != nil {
-		a.Identity = identity
-	}
-	if proofs, err := ResolveToMany[Proof](included, rels, "proofs"); err != nil {
-		return err
-	} else if proofs != nil {
-		a.Proofs = proofs
-	}
-	return nil
+	Country  *Country  `json:"-" rel:"country"`
+	Identity *Identity `json:"-" rel:"identity"`
+	Proofs   []*Proof  `json:"-" rel:"proofs"`
 }
 
 // AvailableDID represents a DID available for purchase.
@@ -700,23 +437,8 @@ type AvailableDID struct {
 	ID     string `json:"-"`
 	Number string `json:"number"`
 	// Resolved relationships
-	DIDGroup    *DIDGroup    `json:"-"`
-	NanpaPrefix *NanpaPrefix `json:"-"`
-}
-
-// ResolveRelationships resolves included relationships for AvailableDID.
-func (a *AvailableDID) ResolveRelationships(included IncludedResources, rels map[string]json.RawMessage) error {
-	if dg, err := ResolveToOne[DIDGroup](included, rels, "did_group"); err != nil {
-		return err
-	} else if dg != nil {
-		a.DIDGroup = dg
-	}
-	if np, err := ResolveToOne[NanpaPrefix](included, rels, "nanpa_prefix"); err != nil {
-		return err
-	} else if np != nil {
-		a.NanpaPrefix = np
-	}
-	return nil
+	DIDGroup    *DIDGroup    `json:"-" rel:"did_group"`
+	NanpaPrefix *NanpaPrefix `json:"-" rel:"nanpa_prefix"`
 }
 
 // DIDReservation represents a reserved DID.
@@ -726,28 +448,9 @@ type DIDReservation struct {
 	CreatedAt   string `json:"created_at" api:"readonly"`
 	Description string `json:"description"`
 	// Relationship IDs for create/update
-	AvailableDIDID string `json:"-"`
+	AvailableDIDID string `json:"-" rel:"available_did,available_dids"`
 	// Resolved relationships
-	AvailableDID *AvailableDID `json:"-"`
-}
-
-// MarshalRelationships implements RelationshipMarshaler for DIDReservation.
-func (r *DIDReservation) MarshalRelationships() (map[string]any, error) {
-	rels := make(map[string]any)
-	if r.AvailableDIDID != "" {
-		rels["available_did"] = ToOneRelationship(RelationshipRef{Type: "available_dids", ID: r.AvailableDIDID})
-	}
-	return rels, nil
-}
-
-// ResolveRelationships resolves included relationships for DIDReservation.
-func (r *DIDReservation) ResolveRelationships(included IncludedResources, rels map[string]json.RawMessage) error {
-	if ad, err := ResolveToOne[AvailableDID](included, rels, "available_did"); err != nil {
-		return err
-	} else if ad != nil {
-		r.AvailableDID = ad
-	}
-	return nil
+	AvailableDID *AvailableDID `json:"-" rel:"available_did"`
 }
 
 // Proof represents a proof document.
@@ -759,39 +462,26 @@ type Proof struct {
 	EntityID   string `json:"-"`
 	EntityType string `json:"-"`
 	// Other relationship IDs
-	ProofTypeID string   `json:"-"`
-	FileIDs     []string `json:"-"`
+	ProofTypeID string   `json:"-" rel:"proof_type,proof_types"`
+	FileIDs     []string `json:"-" rel:"files,encrypted_files"`
 	// Resolved relationships
-	ProofType *ProofType `json:"-"`
+	ProofType *ProofType `json:"-" rel:"proof_type"`
 }
 
-// MarshalRelationships implements RelationshipMarshaler for Proof.
+// MarshalRelationships implements RelationshipMarshaler for Proof (polymorphic entity only).
 func (p *Proof) MarshalRelationships() (map[string]any, error) {
 	rels := make(map[string]any)
-
 	if p.EntityID != "" && p.EntityType != "" {
-		rels["entity"] = ToOneRelationship(RelationshipRef{Type: p.EntityType, ID: p.EntityID})
+		rels["entity"] = jsonapi.ToOneRelationship(jsonapi.RelationshipRef{Type: p.EntityType, ID: p.EntityID})
 	}
-
-	if p.ProofTypeID != "" {
-		rels["proof_type"] = ToOneRelationship(RelationshipRef{Type: "proof_types", ID: p.ProofTypeID})
-	}
-
-	if len(p.FileIDs) > 0 {
-		refs := make([]RelationshipRef, len(p.FileIDs))
-		for i, id := range p.FileIDs {
-			refs[i] = RelationshipRef{Type: "encrypted_files", ID: id}
-		}
-		rels["files"] = ToManyRelationship(refs)
-	}
-
 	return rels, nil
 }
 
 // UnmarshalRelationships implements RelationshipUnmarshaler for Proof.
+// Handles polymorphic entity and proof_type ID extraction from response.
 func (p *Proof) UnmarshalRelationships(rels map[string]json.RawMessage) error {
 	if raw, ok := rels["entity"]; ok {
-		ref, err := ParseToOneRelationship(raw)
+		ref, err := jsonapi.ParseToOneRelationship(raw)
 		if err != nil {
 			return err
 		}
@@ -800,26 +490,14 @@ func (p *Proof) UnmarshalRelationships(rels map[string]json.RawMessage) error {
 			p.EntityType = ref.Type
 		}
 	}
-
 	if raw, ok := rels["proof_type"]; ok {
-		ref, err := ParseToOneRelationship(raw)
+		ref, err := jsonapi.ParseToOneRelationship(raw)
 		if err != nil {
 			return err
 		}
 		if ref != nil {
 			p.ProofTypeID = ref.ID
 		}
-	}
-
-	return nil
-}
-
-// ResolveRelationships resolves included relationships for Proof.
-func (p *Proof) ResolveRelationships(included IncludedResources, rels map[string]json.RawMessage) error {
-	if pt, err := ResolveToOne[ProofType](included, rels, "proof_type"); err != nil {
-		return err
-	} else if pt != nil {
-		p.ProofType = pt
 	}
 	return nil
 }
@@ -841,36 +519,10 @@ type AddressVerification struct {
 	CreatedAt          string                          `json:"created_at" api:"readonly"`
 	Reference          string                          `json:"reference" api:"readonly"`
 	// Relationship IDs for create/update
-	AddressID string   `json:"-"`
-	DIDIDs    []string `json:"-"`
+	AddressID string   `json:"-" rel:"address,addresses"`
+	DIDIDs    []string `json:"-" rel:"dids,dids"`
 	// Resolved relationships
-	AddressRel *Address `json:"-"`
-}
-
-// MarshalRelationships implements RelationshipMarshaler for AddressVerification.
-func (av *AddressVerification) MarshalRelationships() (map[string]any, error) {
-	rels := make(map[string]any)
-	if av.AddressID != "" {
-		rels["address"] = ToOneRelationship(RelationshipRef{Type: "addresses", ID: av.AddressID})
-	}
-	if len(av.DIDIDs) > 0 {
-		refs := make([]RelationshipRef, len(av.DIDIDs))
-		for i, id := range av.DIDIDs {
-			refs[i] = RelationshipRef{Type: "dids", ID: id}
-		}
-		rels["dids"] = ToManyRelationship(refs)
-	}
-	return rels, nil
-}
-
-// ResolveRelationships resolves included relationships for AddressVerification.
-func (av *AddressVerification) ResolveRelationships(included IncludedResources, rels map[string]json.RawMessage) error {
-	if addr, err := ResolveToOne[Address](included, rels, "address"); err != nil {
-		return err
-	} else if addr != nil {
-		av.AddressRel = addr
-	}
-	return nil
+	AddressRel *Address `json:"-" rel:"address"`
 }
 
 // EncryptedFile represents an encrypted file upload.
@@ -886,17 +538,7 @@ type NanpaPrefix struct {
 	NPA string `json:"npa"`
 	NXX string `json:"nxx"`
 	// Resolved relationships
-	Country *Country `json:"-"`
-}
-
-// ResolveRelationships resolves included relationships for NanpaPrefix.
-func (n *NanpaPrefix) ResolveRelationships(included IncludedResources, rels map[string]json.RawMessage) error {
-	if country, err := ResolveToOne[Country](included, rels, "country"); err != nil {
-		return err
-	} else if country != nil {
-		n.Country = country
-	}
-	return nil
+	Country *Country `json:"-" rel:"country"`
 }
 
 // Requirement represents a regulatory requirement.
@@ -914,89 +556,24 @@ type Requirement struct {
 	ServiceDescriptionRequired bool     `json:"service_description_required"`
 	RestrictionMessage         string   `json:"restriction_message"`
 	// Resolved relationships
-	Country                   *Country                    `json:"-"`
-	DIDGroupType              *DIDGroupType               `json:"-"`
-	PersonalPermanentDocument *SupportingDocumentTemplate `json:"-"`
-	BusinessPermanentDocument *SupportingDocumentTemplate `json:"-"`
-	PersonalOnetimeDocument   *SupportingDocumentTemplate `json:"-"`
-	BusinessOnetimeDocument   *SupportingDocumentTemplate `json:"-"`
-	PersonalProofTypes        []*ProofType                `json:"-"`
-	BusinessProofTypes        []*ProofType                `json:"-"`
-	AddressProofTypes         []*ProofType                `json:"-"`
-}
-
-// ResolveRelationships resolves included relationships for Requirement.
-func (r *Requirement) ResolveRelationships(included IncludedResources, rels map[string]json.RawMessage) error {
-	if country, err := ResolveToOne[Country](included, rels, "country"); err != nil {
-		return err
-	} else if country != nil {
-		r.Country = country
-	}
-	if dgt, err := ResolveToOne[DIDGroupType](included, rels, "did_group_type"); err != nil {
-		return err
-	} else if dgt != nil {
-		r.DIDGroupType = dgt
-	}
-	if doc, err := ResolveToOne[SupportingDocumentTemplate](included, rels, "personal_permanent_document"); err != nil {
-		return err
-	} else if doc != nil {
-		r.PersonalPermanentDocument = doc
-	}
-	if doc, err := ResolveToOne[SupportingDocumentTemplate](included, rels, "business_permanent_document"); err != nil {
-		return err
-	} else if doc != nil {
-		r.BusinessPermanentDocument = doc
-	}
-	if doc, err := ResolveToOne[SupportingDocumentTemplate](included, rels, "personal_onetime_document"); err != nil {
-		return err
-	} else if doc != nil {
-		r.PersonalOnetimeDocument = doc
-	}
-	if doc, err := ResolveToOne[SupportingDocumentTemplate](included, rels, "business_onetime_document"); err != nil {
-		return err
-	} else if doc != nil {
-		r.BusinessOnetimeDocument = doc
-	}
-	if pts, err := ResolveToMany[ProofType](included, rels, "personal_proof_types"); err != nil {
-		return err
-	} else if pts != nil {
-		r.PersonalProofTypes = pts
-	}
-	if pts, err := ResolveToMany[ProofType](included, rels, "business_proof_types"); err != nil {
-		return err
-	} else if pts != nil {
-		r.BusinessProofTypes = pts
-	}
-	if pts, err := ResolveToMany[ProofType](included, rels, "address_proof_types"); err != nil {
-		return err
-	} else if pts != nil {
-		r.AddressProofTypes = pts
-	}
-	return nil
+	Country                   *Country                    `json:"-" rel:"country"`
+	DIDGroupType              *DIDGroupType               `json:"-" rel:"did_group_type"`
+	PersonalPermanentDocument *SupportingDocumentTemplate `json:"-" rel:"personal_permanent_document"`
+	BusinessPermanentDocument *SupportingDocumentTemplate `json:"-" rel:"business_permanent_document"`
+	PersonalOnetimeDocument   *SupportingDocumentTemplate `json:"-" rel:"personal_onetime_document"`
+	BusinessOnetimeDocument   *SupportingDocumentTemplate `json:"-" rel:"business_onetime_document"`
+	PersonalProofTypes        []*ProofType                `json:"-" rel:"personal_proof_types"`
+	BusinessProofTypes        []*ProofType                `json:"-" rel:"business_proof_types"`
+	AddressProofTypes         []*ProofType                `json:"-" rel:"address_proof_types"`
 }
 
 // RequirementValidation represents a requirement validation result.
 type RequirementValidation struct {
 	ID string `json:"-"`
 	// Relationship IDs for create
-	AddressID     string `json:"-"`
-	IdentityID    string `json:"-"`
-	RequirementID string `json:"-"`
-}
-
-// MarshalRelationships implements RelationshipMarshaler for RequirementValidation.
-func (rv *RequirementValidation) MarshalRelationships() (map[string]any, error) {
-	rels := make(map[string]any)
-	if rv.AddressID != "" {
-		rels["address"] = ToOneRelationship(RelationshipRef{Type: "addresses", ID: rv.AddressID})
-	}
-	if rv.IdentityID != "" {
-		rels["identity"] = ToOneRelationship(RelationshipRef{Type: "identities", ID: rv.IdentityID})
-	}
-	if rv.RequirementID != "" {
-		rels["requirement"] = ToOneRelationship(RelationshipRef{Type: "requirements", ID: rv.RequirementID})
-	}
-	return rels, nil
+	AddressID     string `json:"-" rel:"address,addresses"`
+	IdentityID    string `json:"-" rel:"identity,identities"`
+	RequirementID string `json:"-" rel:"requirement,requirements"`
 }
 
 // ProofType represents a type of proof document.
@@ -1019,40 +596,11 @@ type PermanentSupportingDocument struct {
 	ID        string `json:"-"`
 	CreatedAt string `json:"created_at" api:"readonly"`
 	// Relationship IDs for create/update
-	TemplateID string   `json:"-"`
-	IdentityID string   `json:"-"`
-	FileIDs    []string `json:"-"`
+	TemplateID string   `json:"-" rel:"template,supporting_document_templates"`
+	IdentityID string   `json:"-" rel:"identity,identities"`
+	FileIDs    []string `json:"-" rel:"files,encrypted_files"`
 	// Resolved relationships
-	Template *SupportingDocumentTemplate `json:"-"`
-}
-
-// MarshalRelationships implements RelationshipMarshaler for PermanentSupportingDocument.
-func (d *PermanentSupportingDocument) MarshalRelationships() (map[string]any, error) {
-	rels := make(map[string]any)
-	if d.TemplateID != "" {
-		rels["template"] = ToOneRelationship(RelationshipRef{Type: "supporting_document_templates", ID: d.TemplateID})
-	}
-	if d.IdentityID != "" {
-		rels["identity"] = ToOneRelationship(RelationshipRef{Type: "identities", ID: d.IdentityID})
-	}
-	if len(d.FileIDs) > 0 {
-		refs := make([]RelationshipRef, len(d.FileIDs))
-		for i, id := range d.FileIDs {
-			refs[i] = RelationshipRef{Type: "encrypted_files", ID: id}
-		}
-		rels["files"] = ToManyRelationship(refs)
-	}
-	return rels, nil
-}
-
-// ResolveRelationships resolves included relationships for PermanentSupportingDocument.
-func (d *PermanentSupportingDocument) ResolveRelationships(included IncludedResources, rels map[string]json.RawMessage) error {
-	if tmpl, err := ResolveToOne[SupportingDocumentTemplate](included, rels, "template"); err != nil {
-		return err
-	} else if tmpl != nil {
-		d.Template = tmpl
-	}
-	return nil
+	Template *SupportingDocumentTemplate `json:"-" rel:"template"`
 }
 
 // VoiceOutTrunkRegenerateCredential represents a credential regeneration for voice out trunks.

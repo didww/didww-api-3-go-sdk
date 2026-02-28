@@ -7,6 +7,8 @@ import (
 	"io"
 	"net/http"
 	"strings"
+
+	"github.com/didww/didww-api-3-go-sdk/jsonapi"
 )
 
 // Repository provides CRUD operations for a JSON:API resource.
@@ -22,7 +24,7 @@ func (r *Repository[T]) List(ctx context.Context, params *QueryParams) ([]*T, er
 	if err != nil {
 		return nil, err
 	}
-	return unmarshalMany[T](body)
+	return jsonapi.UnmarshalMany[T](body)
 }
 
 // Find retrieves a single resource by ID.
@@ -36,12 +38,12 @@ func (r *Repository[T]) Find(ctx context.Context, id string, params ...*QueryPar
 	if err != nil {
 		return nil, err
 	}
-	return unmarshalOne[T](body)
+	return jsonapi.UnmarshalOne[T](body)
 }
 
 // Create creates a new resource.
 func (r *Repository[T]) Create(ctx context.Context, resource *T) (*T, error) {
-	reqBody, err := marshalResource(resource, r.resourceType)
+	reqBody, err := jsonapi.MarshalResource(resource, r.resourceType)
 	if err != nil {
 		return nil, &ClientError{Message: fmt.Sprintf("failed to serialize resource: %v", err)}
 	}
@@ -49,17 +51,17 @@ func (r *Repository[T]) Create(ctx context.Context, resource *T) (*T, error) {
 	if err != nil {
 		return nil, err
 	}
-	return unmarshalOne[T](body)
+	return jsonapi.UnmarshalOne[T](body)
 }
 
 // Update updates an existing resource. The resource must have a non-empty ID.
 func (r *Repository[T]) Update(ctx context.Context, resource *T) (*T, error) {
-	id := getID(resource)
+	id := jsonapi.GetID(resource)
 	if id == "" {
 		return nil, &ClientError{Message: "resource ID is required for update"}
 	}
 	path := r.resourcePath + "/" + id
-	reqBody, err := marshalResource(resource, r.resourceType)
+	reqBody, err := jsonapi.MarshalResource(resource, r.resourceType)
 	if err != nil {
 		return nil, &ClientError{Message: fmt.Sprintf("failed to serialize resource: %v", err)}
 	}
@@ -67,7 +69,7 @@ func (r *Repository[T]) Update(ctx context.Context, resource *T) (*T, error) {
 	if err != nil {
 		return nil, err
 	}
-	return unmarshalOne[T](body)
+	return jsonapi.UnmarshalOne[T](body)
 }
 
 // Delete removes a resource by ID.
@@ -89,7 +91,7 @@ func (r *SingletonRepository[T]) Find(ctx context.Context) (*T, error) {
 	if err != nil {
 		return nil, err
 	}
-	return unmarshalOne[T](body)
+	return jsonapi.UnmarshalOne[T](body)
 }
 
 const jsonapiMediaType = "application/vnd.api+json"
