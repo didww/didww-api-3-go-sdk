@@ -9,6 +9,7 @@ import (
 
 	didww "github.com/didww/didww-api-3-go-sdk"
 	"github.com/didww/didww-api-3-go-sdk/examples"
+	"github.com/didww/didww-api-3-go-sdk/resource/enums"
 )
 
 func main() {
@@ -17,7 +18,7 @@ func main() {
 
 	// Create an export
 	export := &didww.Export{
-		ExportType: "cdr_in",
+		ExportType: enums.ExportTypeCdrIn,
 		Filters:    map[string]interface{}{"year": 2025, "month": 1},
 	}
 	created, err := client.Exports().Create(ctx, export)
