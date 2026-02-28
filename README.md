@@ -394,7 +394,7 @@ if err != nil {
 | DIDGroup | `client.DIDGroups()` | list, find |
 | AvailableDID | `client.AvailableDIDs()` | list, find |
 | ProofType | `client.ProofTypes()` | list, find |
-| PublicKey | `client.PublicKeys()` | list, find |
+| PublicKey | `client.PublicKeys()` | list |
 | Requirement | `client.Requirements()` | list, find |
 | SupportingDocumentTemplate | `client.SupportingDocumentTemplates()` | list, find |
 | Balance | `client.Balance()` | find |
