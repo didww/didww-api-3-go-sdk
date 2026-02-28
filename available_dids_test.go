@@ -49,6 +49,27 @@ func TestAvailableDIDsFindWithIncludedDIDGroup(t *testing.T) {
 	}
 }
 
+func TestAvailableDIDsListWithNanpaPrefix(t *testing.T) {
+	_, client := newTestServer(t, map[string]testRoute{
+		"GET /v3/available_dids": {status: http.StatusOK, fixture: "available_dids/index_with_nanpa.json"},
+	})
+
+	dids, err := client.AvailableDIDs().List(context.Background(), nil)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if len(dids) != 1 {
+		t.Fatalf("expected 1 available did, got %d", len(dids))
+	}
+	if dids[0].ID != "aa13b01c-36c8-405c-b5a8-1427aa7966ea" {
+		t.Errorf("expected ID 'aa13b01c-36c8-405c-b5a8-1427aa7966ea', got %q", dids[0].ID)
+	}
+	if dids[0].Number != "18649204444" {
+		t.Errorf("expected Number '18649204444', got %q", dids[0].Number)
+	}
+}
+
 func TestAvailableDIDsFindWithNanpaPrefix(t *testing.T) {
 	_, client := newTestServer(t, map[string]testRoute{
 		"GET /v3/available_dids/ID": {status: http.StatusOK, fixture: "available_dids/show_with_nanpa_prefix.json"},

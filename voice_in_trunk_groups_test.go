@@ -61,6 +61,31 @@ func TestVoiceInTrunkGroupsCreate(t *testing.T) {
 	assertRequestJSON(t, capturedBody, "voice_in_trunk_groups/create_request.json")
 }
 
+func TestVoiceInTrunkGroupsUpdate(t *testing.T) {
+	_, client := newTestServer(t, map[string]testRoute{
+		"PATCH /v3/voice_in_trunk_groups/b2319703-ce6c-480d-bb53-614e7abcfc96": {status: http.StatusOK, fixture: "voice_in_trunk_groups/update.json"},
+	})
+
+	group, err := client.VoiceInTrunkGroups().Update(context.Background(), &VoiceInTrunkGroup{
+		ID:            "b2319703-ce6c-480d-bb53-614e7abcfc96",
+		Name:          "trunk group sample updated with 2 trunks",
+		CapacityLimit: intPtr(500),
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if group.ID != "b2319703-ce6c-480d-bb53-614e7abcfc96" {
+		t.Errorf("expected ID 'b2319703-ce6c-480d-bb53-614e7abcfc96', got %q", group.ID)
+	}
+	if group.Name != "trunk group sample updated with 2 trunks" {
+		t.Errorf("expected Name 'trunk group sample updated with 2 trunks', got %q", group.Name)
+	}
+	if group.CapacityLimit == nil || *group.CapacityLimit != 500 {
+		t.Errorf("expected CapacityLimit 500, got %v", group.CapacityLimit)
+	}
+}
+
 func TestVoiceInTrunkGroupsDelete(t *testing.T) {
 	_, client := newTestServer(t, map[string]testRoute{
 		"DELETE /v3/voice_in_trunk_groups/b2319703-ce6c-480d-bb53-614e7abcfc96": {status: http.StatusNoContent},

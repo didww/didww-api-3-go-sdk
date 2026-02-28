@@ -115,6 +115,104 @@ func TestDIDsUpdate(t *testing.T) {
 	}
 }
 
+func TestDIDsUpdateDescription(t *testing.T) {
+	_, client := newTestServer(t, map[string]testRoute{
+		"PATCH /v3/dids/9df99644-f1a5-4a3c-99a4-559d758eb96b": {status: http.StatusOK, fixture: "dids/update_success.json"},
+	})
+
+	desc := "something"
+	did, err := client.DIDs().Update(context.Background(), &DID{
+		ID:          "9df99644-f1a5-4a3c-99a4-559d758eb96b",
+		Description: &desc,
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if did.Description == nil || *did.Description != "something" {
+		t.Errorf("expected Description 'something', got %v", did.Description)
+	}
+	if did.ExpiresAt != "2019-01-27T10:00:04.755Z" {
+		t.Errorf("expected ExpiresAt '2019-01-27T10:00:04.755Z', got %q", did.ExpiresAt)
+	}
+}
+
+func TestDIDsFindBlockedTerminated(t *testing.T) {
+	_, client := newTestServer(t, map[string]testRoute{
+		"GET /v3/dids/9df99644-f1a5-4a3c-99a4-559d758eb96b": {status: http.StatusOK, fixture: "dids/update_blocked_terminated.json"},
+	})
+
+	did, err := client.DIDs().Find(context.Background(), "9df99644-f1a5-4a3c-99a4-559d758eb96b")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if !did.Blocked {
+		t.Error("expected Blocked to be true")
+	}
+	if !did.Terminated {
+		t.Error("expected Terminated to be true")
+	}
+	if did.BillingCyclesCount == nil || *did.BillingCyclesCount != 0 {
+		t.Errorf("expected BillingCyclesCount 0, got %v", did.BillingCyclesCount)
+	}
+}
+
+func TestDIDsUpdateInvalidParam(t *testing.T) {
+	_, client := newTestServer(t, map[string]testRoute{
+		"PATCH /v3/dids/9df99644-f1a5-4a3c-99a4-559d758eb96b": {status: http.StatusBadRequest, fixture: "dids/update_error_invalid_param.json"},
+	})
+
+	_, err := client.DIDs().Update(context.Background(), &DID{
+		ID: "9df99644-f1a5-4a3c-99a4-559d758eb96b",
+	})
+	if err == nil {
+		t.Fatal("expected error for invalid param")
+	}
+
+	apiErr, ok := err.(*APIError)
+	if !ok {
+		t.Fatalf("expected *APIError, got %T", err)
+	}
+	if apiErr.HTTPStatus != http.StatusBadRequest {
+		t.Errorf("expected HTTP status 400, got %d", apiErr.HTTPStatus)
+	}
+	if len(apiErr.Errors) != 1 {
+		t.Fatalf("expected 1 error, got %d", len(apiErr.Errors))
+	}
+	if apiErr.Errors[0].Code != "105" {
+		t.Errorf("expected error code '105', got %q", apiErr.Errors[0].Code)
+	}
+}
+
+func TestDIDsUpdateInvalidTrunkGroup(t *testing.T) {
+	_, client := newTestServer(t, map[string]testRoute{
+		"PATCH /v3/dids/9df99644-f1a5-4a3c-99a4-559d758eb96b": {status: http.StatusUnprocessableEntity, fixture: "dids/update_error_invalid_trunk_group.json"},
+	})
+
+	_, err := client.DIDs().Update(context.Background(), &DID{
+		ID:                  "9df99644-f1a5-4a3c-99a4-559d758eb96b",
+		VoiceInTrunkGroupID: "invalid-id",
+	})
+	if err == nil {
+		t.Fatal("expected error for invalid trunk group")
+	}
+
+	apiErr, ok := err.(*APIError)
+	if !ok {
+		t.Fatalf("expected *APIError, got %T", err)
+	}
+	if apiErr.HTTPStatus != http.StatusUnprocessableEntity {
+		t.Errorf("expected HTTP status 422, got %d", apiErr.HTTPStatus)
+	}
+	if len(apiErr.Errors) != 1 {
+		t.Fatalf("expected 1 error, got %d", len(apiErr.Errors))
+	}
+	if apiErr.Errors[0].Detail != "voice_in_trunk_group - is invalid" {
+		t.Errorf("expected detail 'voice_in_trunk_group - is invalid', got %q", apiErr.Errors[0].Detail)
+	}
+}
+
 func TestDIDsUpdateRequiresID(t *testing.T) {
 	_, client := newTestServer(t, map[string]testRoute{})
 
