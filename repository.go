@@ -140,7 +140,7 @@ func (c *Client) doRequest(ctx context.Context, method, path string, params *Que
 	req.Header.Set("User-Agent", "didww-go-sdk/0.1.0")
 
 	// Set API key header for non-public endpoints
-	if !strings.Contains(path, "public_keys") {
+	if !isPublicEndpoint(path) {
 		req.Header.Set("Api-Key", c.apiKey)
 	}
 
@@ -173,6 +173,21 @@ func (c *Client) doRequest(ctx context.Context, method, path string, params *Que
 	}
 
 	return body, nil
+}
+
+// publicEndpoints lists resource paths that do not require API key authentication.
+var publicEndpoints = map[string]bool{
+	"public_keys": true,
+}
+
+// isPublicEndpoint returns true if the given path is a public (no auth) endpoint.
+func isPublicEndpoint(path string) bool {
+	// Extract the first path segment (e.g. "public_keys" from "public_keys/some-id")
+	base := path
+	if i := strings.Index(path, "/"); i >= 0 {
+		base = path[:i]
+	}
+	return publicEndpoints[base]
 }
 
 // buildURL constructs the full URL for a resource path.

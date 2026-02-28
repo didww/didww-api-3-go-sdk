@@ -42,26 +42,15 @@ func NewEncrypt(ctx context.Context, client *Client) (*Encrypt, error) {
 
 // Reset fetches fresh public keys from the API.
 func (e *Encrypt) Reset(ctx context.Context) error {
-	body, err := e.client.doRequest(ctx, http.MethodGet, "public_keys", nil, nil)
+	keys, err := e.client.PublicKeys().List(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("failed to fetch public keys: %w", err)
 	}
-
-	var envelope struct {
-		Data []struct {
-			Attributes struct {
-				Key string `json:"key"`
-			} `json:"attributes"`
-		} `json:"data"`
-	}
-	if err := json.Unmarshal(body, &envelope); err != nil {
-		return fmt.Errorf("failed to parse public keys response: %w", err)
-	}
-	if len(envelope.Data) < 2 {
-		return fmt.Errorf("expected at least 2 public keys, got %d", len(envelope.Data))
+	if len(keys) < 2 {
+		return fmt.Errorf("expected at least 2 public keys, got %d", len(keys))
 	}
 
-	e.publicKeys = [2]string{envelope.Data[0].Attributes.Key, envelope.Data[1].Attributes.Key}
+	e.publicKeys = [2]string{keys[0].Key, keys[1].Key}
 	e.fingerprint = CalculateFingerprint(e.publicKeys[0], e.publicKeys[1])
 	return nil
 }

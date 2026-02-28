@@ -111,9 +111,7 @@ func (c *Client) CapacityPools() *Repository[CapacityPool] { return NewRepositor
 func (c *Client) SharedCapacityGroups() *Repository[SharedCapacityGroup] {
 	return NewRepository[SharedCapacityGroup](c)
 }
-func (c *Client) PublicKeys() *SingletonRepository[PublicKey] {
-	return NewSingletonRepository[PublicKey](c)
-}
+func (c *Client) PublicKeys() *Repository[PublicKey]         { return NewRepository[PublicKey](c) }
 func (c *Client) EncryptedFiles() *Repository[EncryptedFile] { return NewRepository[EncryptedFile](c) }
 func (c *Client) SupportingDocumentTemplates() *Repository[SupportingDocumentTemplate] {
 	return NewRepository[SupportingDocumentTemplate](c)
