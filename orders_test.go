@@ -79,7 +79,7 @@ func TestOrdersCreate(t *testing.T) {
 func TestOrdersCreateAvailableDid(t *testing.T) {
 	var capturedBody []byte
 	server := newTestServerWithInspector(t, map[string]testRoute{
-		"POST /v3/orders": {status: http.StatusCreated, fixture: "orders/create_1.json"},
+		"POST /v3/orders": {status: http.StatusCreated, fixture: "orders/create_available_did.json"},
 	}, func(r *http.Request) {
 		capturedBody, _ = io.ReadAll(r.Body)
 	})
@@ -105,7 +105,7 @@ func TestOrdersCreateAvailableDid(t *testing.T) {
 func TestOrdersCreateReservation(t *testing.T) {
 	var capturedBody []byte
 	server := newTestServerWithInspector(t, map[string]testRoute{
-		"POST /v3/orders": {status: http.StatusCreated, fixture: "orders/create_3.json"},
+		"POST /v3/orders": {status: http.StatusCreated, fixture: "orders/create_reservation.json"},
 	}, func(r *http.Request) {
 		capturedBody, _ = io.ReadAll(r.Body)
 	})
@@ -131,7 +131,7 @@ func TestOrdersCreateReservation(t *testing.T) {
 func TestOrdersCreateCapacity(t *testing.T) {
 	var capturedBody []byte
 	server := newTestServerWithInspector(t, map[string]testRoute{
-		"POST /v3/orders": {status: http.StatusCreated, fixture: "orders/create_2.json"},
+		"POST /v3/orders": {status: http.StatusCreated, fixture: "orders/create_capacity.json"},
 	}, func(r *http.Request) {
 		capturedBody, _ = io.ReadAll(r.Body)
 	})
@@ -157,7 +157,7 @@ func TestOrdersCreateCapacity(t *testing.T) {
 func TestOrdersCreateBillingCycles(t *testing.T) {
 	var capturedBody []byte
 	server := newTestServerWithInspector(t, map[string]testRoute{
-		"POST /v3/orders": {status: http.StatusCreated, fixture: "orders/create_5.json"},
+		"POST /v3/orders": {status: http.StatusCreated, fixture: "orders/create_billing_cycles.json"},
 	}, func(r *http.Request) {
 		capturedBody, _ = io.ReadAll(r.Body)
 	})
@@ -186,7 +186,7 @@ func TestOrdersCreateBillingCycles(t *testing.T) {
 func TestOrdersCreateNanpa(t *testing.T) {
 	var capturedBody []byte
 	server := newTestServerWithInspector(t, map[string]testRoute{
-		"POST /v3/orders": {status: http.StatusCreated, fixture: "orders/create_6.json"},
+		"POST /v3/orders": {status: http.StatusCreated, fixture: "orders/create_nanpa.json"},
 	}, func(r *http.Request) {
 		capturedBody, _ = io.ReadAll(r.Body)
 	})

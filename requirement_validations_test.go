@@ -33,7 +33,7 @@ func TestRequirementValidationsCreate(t *testing.T) {
 func TestRequirementValidationsCreateError(t *testing.T) {
 	var capturedBody []byte
 	server := newTestServerWithInspector(t, map[string]testRoute{
-		"POST /v3/requirement_validations": {status: http.StatusUnprocessableEntity, fixture: "requirement_validations/create_1.json"},
+		"POST /v3/requirement_validations": {status: http.StatusUnprocessableEntity, fixture: "requirement_validations/create_error_validation.json"},
 	}, func(r *http.Request) {
 		capturedBody, _ = io.ReadAll(r.Body)
 	})

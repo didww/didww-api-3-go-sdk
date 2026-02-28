@@ -55,7 +55,7 @@ func TestSharedCapacityGroupsFindWithIncludes(t *testing.T) {
 func TestSharedCapacityGroupsCreate(t *testing.T) {
 	var capturedBody []byte
 	server := newTestServerWithInspector(t, map[string]testRoute{
-		"POST /v3/shared_capacity_groups": {status: http.StatusCreated, fixture: "shared_capacity_groups/update_1.json"},
+		"POST /v3/shared_capacity_groups": {status: http.StatusCreated, fixture: "shared_capacity_groups/create.json"},
 	}, func(r *http.Request) {
 		capturedBody, _ = io.ReadAll(r.Body)
 	})

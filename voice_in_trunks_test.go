@@ -126,7 +126,7 @@ func TestVoiceInTrunksCreateSipWithReroutingCodes(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	assertRequestJSON(t, capturedBody, "voice_in_trunks/create_10_request.json")
+	assertRequestJSON(t, capturedBody, "voice_in_trunks/create_sip_request.json")
 }
 
 func TestVoiceInTrunksDelete(t *testing.T) {
