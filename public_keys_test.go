@@ -7,21 +7,27 @@ import (
 	"testing"
 )
 
-func TestPublicKeysFind(t *testing.T) {
+func TestPublicKeysList(t *testing.T) {
 	_, client := newTestServer(t, map[string]testRoute{
 		"GET /v3/public_keys": {status: http.StatusOK, fixture: "public_keys/index.json"},
 	})
 
-	key, err := client.PublicKeys().Find(context.Background())
+	keys, err := client.PublicKeys().List(context.Background(), nil)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	if key.ID != "dcf2bfcb-a1d0-3b58-bbf0-3ec22a510ba8" {
-		t.Errorf("expected ID 'dcf2bfcb-a1d0-3b58-bbf0-3ec22a510ba8', got %q", key.ID)
+	if len(keys) != 2 {
+		t.Fatalf("expected 2 public keys, got %d", len(keys))
 	}
-	if !strings.HasPrefix(key.Key, "-----BEGIN PUBLIC KEY-----") {
-		t.Errorf("expected key to start with '-----BEGIN PUBLIC KEY-----', got %q", key.Key[:30])
+	if keys[0].ID != "dcf2bfcb-a1d0-3b58-bbf0-3ec22a510ba8" {
+		t.Errorf("expected ID 'dcf2bfcb-a1d0-3b58-bbf0-3ec22a510ba8', got %q", keys[0].ID)
+	}
+	if !strings.HasPrefix(keys[0].Key, "-----BEGIN PUBLIC KEY-----") {
+		t.Errorf("expected key to start with '-----BEGIN PUBLIC KEY-----', got %q", keys[0].Key[:30])
+	}
+	if keys[1].ID != "f40e1176-a4ff-36e6-b2ed-c2c2d18097a3" {
+		t.Errorf("expected ID 'f40e1176-a4ff-36e6-b2ed-c2c2d18097a3', got %q", keys[1].ID)
 	}
 }
 
@@ -33,7 +39,7 @@ func TestPublicKeysNoAuthHeader(t *testing.T) {
 		capturedAuth = r.Header.Get("Api-Key")
 	})
 
-	_, err := server.client.PublicKeys().Find(context.Background())
+	_, err := server.client.PublicKeys().List(context.Background(), nil)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}

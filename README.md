@@ -151,7 +151,7 @@ available, _ := client.AvailableDIDs().List(ctx, params)
 proofTypes, _ := client.ProofTypes().List(ctx, nil)
 
 // Public Keys
-publicKey, _ := client.PublicKeys().Find(ctx)
+publicKeys, _ := client.PublicKeys().List(ctx, nil)
 
 // Requirements
 requirements, _ := client.Requirements().List(ctx, nil)
@@ -394,7 +394,7 @@ if err != nil {
 | DIDGroup | `client.DIDGroups()` | list, find |
 | AvailableDID | `client.AvailableDIDs()` | list, find |
 | ProofType | `client.ProofTypes()` | list, find |
-| PublicKey | `client.PublicKeys()` | find |
+| PublicKey | `client.PublicKeys()` | list |
 | Requirement | `client.Requirements()` | list, find |
 | SupportingDocumentTemplate | `client.SupportingDocumentTemplates()` | list, find |
 | Balance | `client.Balance()` | find |
