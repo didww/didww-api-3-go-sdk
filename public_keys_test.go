@@ -33,10 +33,12 @@ func TestPublicKeysList(t *testing.T) {
 
 func TestPublicKeysNoAuthHeader(t *testing.T) {
 	var capturedAuth string
+	var capturedAPIVersion string
 	server := newTestServerWithInspector(t, map[string]testRoute{
 		"GET /v3/public_keys": {status: http.StatusOK, fixture: "public_keys/index.json"},
 	}, func(r *http.Request) {
 		capturedAuth = r.Header.Get("Api-Key")
+		capturedAPIVersion = r.Header.Get("X-DIDWW-API-Version")
 	})
 
 	_, err := server.client.PublicKeys().List(context.Background(), nil)
@@ -47,14 +49,19 @@ func TestPublicKeysNoAuthHeader(t *testing.T) {
 	if capturedAuth != "" {
 		t.Errorf("expected no Api-Key header for public_keys endpoint, got %q", capturedAuth)
 	}
+	if capturedAPIVersion != apiVersion {
+		t.Errorf("expected X-DIDWW-API-Version %q, got %q", apiVersion, capturedAPIVersion)
+	}
 }
 
 func TestNonPublicEndpointHasAuthHeader(t *testing.T) {
 	var capturedAuth string
+	var capturedAPIVersion string
 	server := newTestServerWithInspector(t, map[string]testRoute{
 		"GET /v3/countries": {status: http.StatusOK, fixture: "countries/index.json"},
 	}, func(r *http.Request) {
 		capturedAuth = r.Header.Get("Api-Key")
+		capturedAPIVersion = r.Header.Get("X-DIDWW-API-Version")
 	})
 
 	_, err := server.client.Countries().List(context.Background(), nil)
@@ -64,5 +71,8 @@ func TestNonPublicEndpointHasAuthHeader(t *testing.T) {
 
 	if capturedAuth != "test-api-key" {
 		t.Errorf("expected Api-Key 'test-api-key', got %q", capturedAuth)
+	}
+	if capturedAPIVersion != apiVersion {
+		t.Errorf("expected X-DIDWW-API-Version %q, got %q", apiVersion, capturedAPIVersion)
 	}
 }

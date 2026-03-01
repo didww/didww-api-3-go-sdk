@@ -153,12 +153,14 @@ func TestUploadEncryptedFile(t *testing.T) {
 	var capturedContentType string
 	var capturedBody []byte
 	var capturedAuth string
+	var capturedAPIVersion string
 
 	server := newTestServerWithInspector(t, map[string]testRoute{
 		"POST /v3/encrypted_files": {status: http.StatusCreated, fixture: "encrypted_files/create.json"},
 	}, func(r *http.Request) {
 		capturedContentType = r.Header.Get("Content-Type")
 		capturedAuth = r.Header.Get("Api-Key")
+		capturedAPIVersion = r.Header.Get("X-DIDWW-API-Version")
 		capturedBody, _ = io.ReadAll(r.Body)
 	})
 
@@ -191,6 +193,9 @@ func TestUploadEncryptedFile(t *testing.T) {
 	// Verify API key is sent
 	if capturedAuth != "test-api-key" {
 		t.Errorf("expected Api-Key 'test-api-key', got %q", capturedAuth)
+	}
+	if capturedAPIVersion != apiVersion {
+		t.Errorf("expected X-DIDWW-API-Version %q, got %q", apiVersion, capturedAPIVersion)
 	}
 
 	// Verify form fields are present in the body

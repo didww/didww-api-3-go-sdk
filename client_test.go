@@ -12,6 +12,7 @@ func TestClientSendsCorrectHeaders(t *testing.T) {
 		receivedContentType string
 		receivedAccept      string
 		receivedAPIKey      string
+		receivedAPIVersion  string
 		receivedUserAgent   string
 	)
 
@@ -19,6 +20,7 @@ func TestClientSendsCorrectHeaders(t *testing.T) {
 		receivedContentType = r.Header.Get("Content-Type")
 		receivedAccept = r.Header.Get("Accept")
 		receivedAPIKey = r.Header.Get("Api-Key")
+		receivedAPIVersion = r.Header.Get("X-DIDWW-API-Version")
 		receivedUserAgent = r.Header.Get("User-Agent")
 
 		w.Header().Set("Content-Type", "application/vnd.api+json")
@@ -45,6 +47,9 @@ func TestClientSendsCorrectHeaders(t *testing.T) {
 	}
 	if receivedAPIKey != "test-api-key" {
 		t.Errorf("expected Api-Key 'test-api-key', got %q", receivedAPIKey)
+	}
+	if receivedAPIVersion != apiVersion {
+		t.Errorf("expected X-DIDWW-API-Version %q, got %q", apiVersion, receivedAPIVersion)
 	}
 	if receivedUserAgent == "" {
 		t.Error("expected non-empty User-Agent header")
