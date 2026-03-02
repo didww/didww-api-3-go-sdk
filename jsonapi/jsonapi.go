@@ -48,9 +48,14 @@ type dirtySnapshot struct {
 	relationships map[string]json.RawMessage
 }
 
+type dirtyKey struct {
+	ptr uintptr
+	typ reflect.Type
+}
+
 var (
 	dirtyStateMu sync.RWMutex
-	dirtyState   = map[uintptr]dirtySnapshot{}
+	dirtyState   = map[dirtyKey]dirtySnapshot{}
 )
 
 // RelationshipRef represents a JSON:API relationship linkage ({type, id}).
@@ -711,15 +716,15 @@ func marshalRelationshipsRaw(resource any) (map[string]json.RawMessage, error) {
 	return rawRels, nil
 }
 
-func cleanStateKey(resource any) (uintptr, bool) {
+func cleanStateKey(resource any) (dirtyKey, bool) {
 	v := reflect.ValueOf(resource)
 	if !v.IsValid() || v.Kind() != reflect.Ptr || v.IsNil() {
-		return 0, false
+		return dirtyKey{}, false
 	}
 	if v.Elem().Kind() != reflect.Struct {
-		return 0, false
+		return dirtyKey{}, false
 	}
-	return v.Pointer(), true
+	return dirtyKey{ptr: v.Pointer(), typ: v.Type()}, true
 }
 
 // ForgetCleanState removes the stored baseline for a resource pointer,
