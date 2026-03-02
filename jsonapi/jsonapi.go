@@ -1,9 +1,11 @@
 package jsonapi
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"reflect"
+	"sync"
 )
 
 const jsonNull = "null"
@@ -40,6 +42,16 @@ type RelationshipUnmarshaler interface {
 type RelationshipResolver interface {
 	ResolveRelationships(included IncludedResources, rels map[string]json.RawMessage) error
 }
+
+type dirtySnapshot struct {
+	attributes    map[string]json.RawMessage
+	relationships map[string]json.RawMessage
+}
+
+var (
+	dirtyStateMu sync.RWMutex
+	dirtyState   = map[uintptr]dirtySnapshot{}
+)
 
 // RelationshipRef represents a JSON:API relationship linkage ({type, id}).
 type RelationshipRef struct {
@@ -263,6 +275,10 @@ func unmarshalResourceWithIncluded[T any](data []byte, included IncludedResource
 		}
 	}
 
+	if err := rememberCleanState(&result); err != nil {
+		return nil, fmt.Errorf("failed to capture clean state: %w", err)
+	}
+
 	return &result, nil
 }
 
@@ -334,6 +350,42 @@ func ResourceType[T any]() string {
 // Marshal serializes a resource to JSON:API format, deriving the type from the struct tag.
 func Marshal[T any](resource *T) ([]byte, error) {
 	return MarshalResource(resource, ResourceType[T]())
+}
+
+// MarshalPatch serializes a resource for PATCH requests using dirty-only fields.
+// Fields changed to zero/nil values are emitted explicitly (e.g. null clears).
+func MarshalPatch[T any](resource *T) ([]byte, error) {
+	current, err := captureSnapshot(resource)
+	if err != nil {
+		return nil, err
+	}
+
+	baseline, err := baselineSnapshot(resource)
+	if err != nil {
+		return nil, err
+	}
+
+	dirtyAttrs := diffRawMaps(current.attributes, baseline.attributes, func(json.RawMessage) json.RawMessage {
+		return json.RawMessage(jsonNull)
+	})
+	if dirtyAttrs == nil {
+		dirtyAttrs = map[string]json.RawMessage{}
+	}
+
+	dirtyRels := diffRawMaps(current.relationships, baseline.relationships, relationshipClearPayload)
+
+	data := map[string]any{
+		"type":       ResourceType[T](),
+		"attributes": dirtyAttrs,
+	}
+	if id := GetID(resource); id != "" {
+		data["id"] = id
+	}
+	if len(dirtyRels) > 0 {
+		data["relationships"] = dirtyRels
+	}
+
+	return json.Marshal(map[string]any{"data": data})
 }
 
 // resourceTypeFromTag extracts the JSON:API type from a resource's struct tag.
@@ -536,6 +588,271 @@ func marshalRelsFromTags(resource any) map[string]any {
 	return rels
 }
 
+func captureSnapshot(resource any) (dirtySnapshot, error) {
+	attrs, err := marshalDirtyAttributes(resource)
+	if err != nil {
+		return dirtySnapshot{}, err
+	}
+	rels, err := marshalRelationshipsRaw(resource)
+	if err != nil {
+		return dirtySnapshot{}, err
+	}
+	return dirtySnapshot{attributes: attrs, relationships: rels}, nil
+}
+
+func marshalDirtyAttributes(resource any) (map[string]json.RawMessage, error) {
+	fieldAttrs, err := marshalAttrFields(resource)
+	if err != nil {
+		return nil, err
+	}
+
+	serializedAttrs, err := marshalWritableAttrsMap(resource)
+	if err != nil {
+		return nil, err
+	}
+
+	// Include attributes produced by custom MarshalJSON implementations
+	// that may not map directly to struct fields.
+	for key, raw := range serializedAttrs {
+		if _, ok := fieldAttrs[key]; !ok {
+			fieldAttrs[key] = cloneRaw(raw)
+		}
+	}
+
+	return fieldAttrs, nil
+}
+
+func marshalAttrFields(resource any) (map[string]json.RawMessage, error) {
+	v := reflect.ValueOf(resource)
+	if !v.IsValid() {
+		return map[string]json.RawMessage{}, nil
+	}
+	if v.Kind() == reflect.Ptr {
+		if v.IsNil() {
+			return map[string]json.RawMessage{}, nil
+		}
+		v = v.Elem()
+	}
+	if v.Kind() != reflect.Struct {
+		return map[string]json.RawMessage{}, nil
+	}
+
+	t := v.Type()
+	attrs := make(map[string]json.RawMessage)
+	for i := 0; i < t.NumField(); i++ {
+		f := t.Field(i)
+		if f.PkgPath != "" {
+			continue
+		}
+		if f.Tag.Get("api") == "readonly" {
+			continue
+		}
+		jsonTag := f.Tag.Get("json")
+		if jsonTag == "" || jsonTag == "-" {
+			continue
+		}
+		name := jsonTagName(jsonTag)
+		if name == "" || name == "-" {
+			continue
+		}
+
+		raw, err := json.Marshal(v.Field(i).Interface())
+		if err != nil {
+			return nil, err
+		}
+		attrs[name] = raw
+	}
+
+	return attrs, nil
+}
+
+func marshalWritableAttrsMap(resource any) (map[string]json.RawMessage, error) {
+	raw, err := MarshalWritableAttrs(resource)
+	if err != nil {
+		return nil, err
+	}
+	var attrs map[string]json.RawMessage
+	if err := json.Unmarshal(raw, &attrs); err != nil {
+		return nil, err
+	}
+	if attrs == nil {
+		attrs = map[string]json.RawMessage{}
+	}
+	return attrs, nil
+}
+
+func marshalRelationshipsRaw(resource any) (map[string]json.RawMessage, error) {
+	rels := marshalRelsFromTags(resource)
+	if rm, ok := resource.(RelationshipMarshaler); ok {
+		ifaceRels, err := rm.MarshalRelationships()
+		if err != nil {
+			return nil, err
+		}
+		for k, v := range ifaceRels {
+			if rels == nil {
+				rels = make(map[string]any)
+			}
+			rels[k] = v
+		}
+	}
+
+	if len(rels) == 0 {
+		return map[string]json.RawMessage{}, nil
+	}
+
+	rawRels := make(map[string]json.RawMessage, len(rels))
+	for k, v := range rels {
+		raw, err := json.Marshal(v)
+		if err != nil {
+			return nil, err
+		}
+		rawRels[k] = raw
+	}
+	return rawRels, nil
+}
+
+func cleanStateKey(resource any) (uintptr, bool) {
+	v := reflect.ValueOf(resource)
+	if !v.IsValid() || v.Kind() != reflect.Ptr || v.IsNil() {
+		return 0, false
+	}
+	if v.Elem().Kind() != reflect.Struct {
+		return 0, false
+	}
+	return v.Pointer(), true
+}
+
+// ForgetCleanState removes the stored baseline for a resource pointer,
+// freeing the associated memory. Safe to call with nil or non-pointer values.
+func ForgetCleanState(resource any) {
+	if key, ok := cleanStateKey(resource); ok {
+		dirtyStateMu.Lock()
+		delete(dirtyState, key)
+		dirtyStateMu.Unlock()
+	}
+}
+
+func rememberCleanState(resource any) error {
+	key, ok := cleanStateKey(resource)
+	if !ok {
+		return nil
+	}
+
+	snapshot, err := captureSnapshot(resource)
+	if err != nil {
+		return err
+	}
+
+	dirtyStateMu.Lock()
+	dirtyState[key] = cloneSnapshot(snapshot)
+	dirtyStateMu.Unlock()
+	return nil
+}
+
+func baselineSnapshot(resource any) (dirtySnapshot, error) {
+	if key, ok := cleanStateKey(resource); ok {
+		dirtyStateMu.RLock()
+		snapshot, exists := dirtyState[key]
+		dirtyStateMu.RUnlock()
+		if exists {
+			return cloneSnapshot(snapshot), nil
+		}
+	}
+
+	zero := zeroResource(resource)
+	if zero == nil {
+		return dirtySnapshot{
+			attributes:    map[string]json.RawMessage{},
+			relationships: map[string]json.RawMessage{},
+		}, nil
+	}
+	return captureSnapshot(zero)
+}
+
+func zeroResource(resource any) any {
+	t := reflect.TypeOf(resource)
+	if t == nil {
+		return nil
+	}
+	if t.Kind() == reflect.Ptr {
+		if t.Elem().Kind() != reflect.Struct {
+			return nil
+		}
+		return reflect.New(t.Elem()).Interface()
+	}
+	if t.Kind() != reflect.Struct {
+		return nil
+	}
+	return reflect.New(t).Interface()
+}
+
+func diffRawMaps(
+	current, baseline map[string]json.RawMessage,
+	missingValue func(previous json.RawMessage) json.RawMessage,
+) map[string]json.RawMessage {
+	var dirty map[string]json.RawMessage
+	for key, currentValue := range current {
+		baselineValue, ok := baseline[key]
+		if ok && bytes.Equal(currentValue, baselineValue) {
+			continue
+		}
+		if dirty == nil {
+			dirty = make(map[string]json.RawMessage)
+		}
+		dirty[key] = cloneRaw(currentValue)
+	}
+	for key, baselineValue := range baseline {
+		if _, ok := current[key]; ok {
+			continue
+		}
+		if dirty == nil {
+			dirty = make(map[string]json.RawMessage)
+		}
+		dirty[key] = cloneRaw(missingValue(baselineValue))
+	}
+	return dirty
+}
+
+func relationshipClearPayload(previous json.RawMessage) json.RawMessage {
+	var rel struct {
+		Data json.RawMessage `json:"data"`
+	}
+	if err := json.Unmarshal(previous, &rel); err == nil {
+		data := bytes.TrimSpace(rel.Data)
+		if len(data) > 0 && data[0] == '[' {
+			return json.RawMessage(`{"data":[]}`)
+		}
+	}
+	return json.RawMessage(`{"data":null}`)
+}
+
+func cloneSnapshot(snapshot dirtySnapshot) dirtySnapshot {
+	return dirtySnapshot{
+		attributes:    cloneRawMap(snapshot.attributes),
+		relationships: cloneRawMap(snapshot.relationships),
+	}
+}
+
+func cloneRawMap(rawMap map[string]json.RawMessage) map[string]json.RawMessage {
+	if len(rawMap) == 0 {
+		return map[string]json.RawMessage{}
+	}
+	out := make(map[string]json.RawMessage, len(rawMap))
+	for key, value := range rawMap {
+		out[key] = cloneRaw(value)
+	}
+	return out
+}
+
+func cloneRaw(raw json.RawMessage) json.RawMessage {
+	if raw == nil {
+		return nil
+	}
+	out := make([]byte, len(raw))
+	copy(out, raw)
+	return out
+}
+
 // resolveRelsFromTags scans a struct for `rel:"name"` tagged pointer fields
 // and resolves them from included resources.
 func resolveRelsFromTags(resource any, included IncludedResources, rels map[string]json.RawMessage) error {
@@ -664,6 +981,10 @@ func unmarshalResourceReflect(data []byte, elemType reflect.Type, included Inclu
 		if err := resolveRelsFromTags(result, included, res.Relationships); err != nil {
 			return reflect.Value{}, fmt.Errorf("failed to resolve relationships: %w", err)
 		}
+	}
+
+	if err := rememberCleanState(result); err != nil {
+		return reflect.Value{}, fmt.Errorf("failed to capture clean state: %w", err)
 	}
 
 	return ptr, nil
