@@ -147,6 +147,7 @@ func (c *Client) UploadEncryptedFile(ctx context.Context, encryptedData []byte, 
 	req.Header.Set("Content-Type", w.FormDataContentType())
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("Api-Key", c.apiKey)
+	req.Header.Set("X-DIDWW-API-Version", apiVersion)
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {

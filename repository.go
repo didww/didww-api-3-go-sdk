@@ -111,7 +111,10 @@ func (r *SingletonRepository[T]) Find(ctx context.Context) (*T, error) {
 	return jsonapi.UnmarshalOne[T](body)
 }
 
-const jsonapiMediaType = "application/vnd.api+json"
+const (
+	jsonapiMediaType = "application/vnd.api+json"
+	apiVersion       = "2022-05-10"
+)
 
 // doRequest executes an HTTP request and returns the response body.
 func (c *Client) doRequest(ctx context.Context, method, path string, params *QueryParams, reqBody []byte) ([]byte, error) {
@@ -138,6 +141,7 @@ func (c *Client) doRequest(ctx context.Context, method, path string, params *Que
 	req.Header.Set("Content-Type", jsonapiMediaType)
 	req.Header.Set("Accept", jsonapiMediaType)
 	req.Header.Set("User-Agent", "didww-go-sdk/0.1.0")
+	req.Header.Set("X-DIDWW-API-Version", apiVersion)
 
 	// Set API key header for non-public endpoints
 	if !isPublicEndpoint(path) {
