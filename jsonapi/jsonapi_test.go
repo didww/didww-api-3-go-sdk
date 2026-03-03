@@ -1405,6 +1405,41 @@ func TestMarshalPatch(t *testing.T) {
 		}
 	})
 
+	t.Run("multiple dirty attributes all included", func(t *testing.T) {
+		body := `{"data":{"id":"1","type":"dirty_resources","attributes":{"name":"Alice","age":30,"description":"hello"}}}`
+		r, err := UnmarshalOne[testDirtyResource]([]byte(body))
+		if err != nil {
+			t.Fatalf("UnmarshalOne() error = %v", err)
+		}
+
+		r.Name = "Bob"
+		r.Age = 31
+
+		data, err := MarshalPatch(r)
+		if err != nil {
+			t.Fatalf("MarshalPatch() error = %v", err)
+		}
+
+		doc := parsePatchDoc(t, data)
+		assertAttrEquals(t, doc.Attrs, "name", `"Bob"`)
+		assertAttrEquals(t, doc.Attrs, "age", `31`)
+		assertAttrMissing(t, doc.Attrs, "description")
+	})
+
+	t.Run("build with fields marks those attrs dirty", func(t *testing.T) {
+		desc := "new"
+		r := &testDirtyResource{ID: "1", Name: "Alice", Age: 25, Description: &desc}
+		data, err := MarshalPatch(r)
+		if err != nil {
+			t.Fatalf("MarshalPatch() error = %v", err)
+		}
+
+		doc := parsePatchDoc(t, data)
+		assertAttrEquals(t, doc.Attrs, "name", `"Alice"`)
+		assertAttrEquals(t, doc.Attrs, "age", `25`)
+		assertAttrEquals(t, doc.Attrs, "description", `"new"`)
+	})
+
 	t.Run("ForgetCleanState makes resource fully dirty", func(t *testing.T) {
 		body := `{"data":{"id":"1","type":"dirty_resources","attributes":{"name":"Alice","age":30}}}`
 		r, err := UnmarshalOne[testDirtyResource]([]byte(body))

@@ -259,6 +259,218 @@ func TestDirtyPatch_ResponseClearsState(t *testing.T) {
 	}
 }
 
+// TestDirtyPatch_UpdateBuiltSingleAttr verifies that building a DID with ID
+// and setting only capacity_limit sends just that attribute.
+func TestDirtyPatch_UpdateBuiltSingleAttr(t *testing.T) {
+	var capturedBody []byte
+	server := newTestServerWithInspector(t, map[string]testRoute{
+		"PATCH /v3/dids/" + testDIDID: {status: http.StatusOK, fixture: "dids/show.json"},
+	}, func(r *http.Request) {
+		capturedBody, _ = io.ReadAll(r.Body)
+	})
+
+	cl := 10
+	_, err := server.client.DIDs().Update(context.Background(), &DID{
+		ID:            testDIDID,
+		CapacityLimit: &cl,
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	assertRequestJSON(t, capturedBody, "dids/update_built_single_attr_request.json")
+}
+
+// TestDirtyPatch_UpdateClearDescription verifies that building a DID with ID
+// and setting Description=nil sends explicit null.
+func TestDirtyPatch_UpdateClearDescription(t *testing.T) {
+	var capturedBody []byte
+	server := newTestServerWithInspector(t, map[string]testRoute{
+		"GET /v3/dids/" + testDIDID:   {status: http.StatusOK, fixture: "dids/show.json"},
+		"PATCH /v3/dids/" + testDIDID: {status: http.StatusOK, fixture: "dids/show.json"},
+	}, func(r *http.Request) {
+		if r.Method == http.MethodPatch {
+			capturedBody, _ = io.ReadAll(r.Body)
+		}
+	})
+
+	did, err := server.client.DIDs().Find(context.Background(), testDIDID)
+	if err != nil {
+		t.Fatalf("Find error: %v", err)
+	}
+
+	did.Description = nil
+
+	_, err = server.client.DIDs().Update(context.Background(), did)
+	if err != nil {
+		t.Fatalf("Update error: %v", err)
+	}
+
+	assertRequestJSON(t, capturedBody, "dids/update_clear_description_request.json")
+}
+
+// TestDirtyPatch_UpdateTerminated verifies that building a DID with ID
+// and setting Terminated=true sends only terminated in the PATCH.
+func TestDirtyPatch_UpdateTerminated(t *testing.T) {
+	var capturedBody []byte
+	server := newTestServerWithInspector(t, map[string]testRoute{
+		"PATCH /v3/dids/" + testDIDID: {status: http.StatusOK, fixture: "dids/show.json"},
+	}, func(r *http.Request) {
+		capturedBody, _ = io.ReadAll(r.Body)
+	})
+
+	_, err := server.client.DIDs().Update(context.Background(), &DID{
+		ID:         testDIDID,
+		Terminated: true,
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	assertRequestJSON(t, capturedBody, "dids/update_terminated_request.json")
+}
+
+// TestDirtyPatch_UpdateFromLoadedSetVoiceInTrunk verifies that after loading
+// from the API, setting VoiceInTrunkID sends only the relationship change.
+func TestDirtyPatch_UpdateFromLoadedSetVoiceInTrunk(t *testing.T) {
+	var capturedBody []byte
+	server := newTestServerWithInspector(t, map[string]testRoute{
+		"GET /v3/dids/" + testDIDID:   {status: http.StatusOK, fixture: "dids/show.json"},
+		"PATCH /v3/dids/" + testDIDID: {status: http.StatusOK, fixture: "dids/show_with_trunk.json"},
+	}, func(r *http.Request) {
+		if r.Method == http.MethodPatch {
+			capturedBody, _ = io.ReadAll(r.Body)
+		}
+	})
+
+	did, err := server.client.DIDs().Find(context.Background(), testDIDID)
+	if err != nil {
+		t.Fatalf("Find error: %v", err)
+	}
+
+	did.VoiceInTrunkID = "41b94706-325e-4704-a433-d65105758836"
+
+	_, err = server.client.DIDs().Update(context.Background(), did)
+	if err != nil {
+		t.Fatalf("Update error: %v", err)
+	}
+
+	assertRequestJSON(t, capturedBody, "dids/update_from_loaded_set_voice_in_trunk_request.json")
+}
+
+// TestDirtyPatch_FindWithIncludedHasNoDirtyFlags verifies that loading a DID
+// with included voice_in_trunk produces no dirty fields on re-update.
+func TestDirtyPatch_FindWithIncludedHasNoDirtyFlags(t *testing.T) {
+	var capturedBody []byte
+	server := newTestServerWithInspector(t, map[string]testRoute{
+		"GET /v3/dids/" + testDIDID:   {status: http.StatusOK, fixture: "dids/show_with_trunk.json"},
+		"PATCH /v3/dids/" + testDIDID: {status: http.StatusOK, fixture: "dids/show_with_trunk.json"},
+	}, func(r *http.Request) {
+		if r.Method == http.MethodPatch {
+			capturedBody, _ = io.ReadAll(r.Body)
+		}
+	})
+
+	params := NewQueryParams().Include("voice_in_trunk")
+	did, err := server.client.DIDs().Find(context.Background(), testDIDID, params)
+	if err != nil {
+		t.Fatalf("Find error: %v", err)
+	}
+	if did.VoiceInTrunk == nil {
+		t.Fatal("expected non-nil VoiceInTrunk after include")
+	}
+
+	_, err = server.client.DIDs().Update(context.Background(), did)
+	if err != nil {
+		t.Fatalf("Update error: %v", err)
+	}
+
+	doc := parsePatchBody(t, capturedBody)
+	if len(doc.Attrs) != 0 {
+		t.Errorf("expected empty attributes, got %v", attrKeys(doc.Attrs))
+	}
+	if len(doc.Rels) != 0 {
+		t.Errorf("expected no relationships, got %v", doc.Rels)
+	}
+}
+
+// TestDirtyPatch_UpdateFailRetainsCleanState verifies that a failed update
+// preserves the clean state so a retry sends the correct (not over-inclusive) PATCH.
+func TestDirtyPatch_UpdateFailRetainsCleanState(t *testing.T) {
+	var patchCount int
+	var capturedBody []byte
+	ts := newTestServerWithDynamicPatch(t, map[string]testRoute{
+		"GET /v3/dids/" + testDIDID: {status: http.StatusOK, fixture: "dids/show.json"},
+	}, func(r *http.Request) {
+		if r.Method == http.MethodPatch {
+			patchCount++
+			capturedBody, _ = io.ReadAll(r.Body)
+		}
+	}, func(patchCall int) testRoute {
+		if patchCall == 1 {
+			return testRoute{status: http.StatusUnprocessableEntity, fixture: "dids/update_error_invalid_trunk_group.json"}
+		}
+		return testRoute{status: http.StatusOK, fixture: "dids/show.json"}
+	})
+
+	did, err := ts.client.DIDs().Find(context.Background(), testDIDID)
+	if err != nil {
+		t.Fatalf("Find error: %v", err)
+	}
+
+	did.DedicatedChannelsCount = 5
+
+	// First update fails (422)
+	_, err = ts.client.DIDs().Update(context.Background(), did)
+	if err == nil {
+		t.Fatal("expected error for first update")
+	}
+
+	// Retry — should still send only the changed field, not become over-inclusive
+	_, err = ts.client.DIDs().Update(context.Background(), did)
+	if err != nil {
+		t.Fatalf("retry update error: %v", err)
+	}
+
+	if patchCount != 2 {
+		t.Fatalf("expected 2 PATCH calls, got %d", patchCount)
+	}
+	doc := parsePatchBody(t, capturedBody)
+	if len(doc.Attrs) != 1 {
+		t.Errorf("expected 1 attribute on retry, got %d: %v", len(doc.Attrs), attrKeys(doc.Attrs))
+	}
+	assertAttr(t, doc.Attrs, "dedicated_channels_count", "5")
+}
+
+// TestDirtyPatch_UpdateFromLoadedChangedDescription verifies that after loading
+// from the API, setting Description sends only that field, validated against fixture.
+func TestDirtyPatch_UpdateFromLoadedChangedDescription(t *testing.T) {
+	var capturedBody []byte
+	server := newTestServerWithInspector(t, map[string]testRoute{
+		"GET /v3/dids/" + testDIDID:   {status: http.StatusOK, fixture: "dids/show.json"},
+		"PATCH /v3/dids/" + testDIDID: {status: http.StatusOK, fixture: "dids/show.json"},
+	}, func(r *http.Request) {
+		if r.Method == http.MethodPatch {
+			capturedBody, _ = io.ReadAll(r.Body)
+		}
+	})
+
+	did, err := server.client.DIDs().Find(context.Background(), testDIDID)
+	if err != nil {
+		t.Fatalf("Find error: %v", err)
+	}
+
+	desc := "patched from loaded resource"
+	did.Description = &desc
+
+	_, err = server.client.DIDs().Update(context.Background(), did)
+	if err != nil {
+		t.Fatalf("Update error: %v", err)
+	}
+
+	assertRequestJSON(t, capturedBody, "dids/update_from_loaded_request.json")
+}
+
 // --- test helpers ---
 
 type patchBodyDoc struct {

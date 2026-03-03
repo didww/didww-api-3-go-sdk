@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
+	"runtime"
 	"sync"
 )
 
@@ -280,9 +281,7 @@ func unmarshalResourceWithIncluded[T any](data []byte, included IncludedResource
 		}
 	}
 
-	if err := rememberCleanState(&result); err != nil {
-		return nil, fmt.Errorf("failed to capture clean state: %w", err)
-	}
+	_ = rememberCleanState(&result)
 
 	return &result, nil
 }
@@ -358,7 +357,7 @@ func Marshal[T any](resource *T) ([]byte, error) {
 }
 
 // MarshalPatch serializes a resource for PATCH requests using dirty-only fields.
-// Fields changed to zero/nil values are emitted explicitly (e.g. null clears).
+// Only fields modified since loading are included. Pointer fields set to nil produce explicit JSON null.
 func MarshalPatch[T any](resource *T) ([]byte, error) {
 	current, err := captureSnapshot(resource)
 	if err != nil {
@@ -751,7 +750,26 @@ func rememberCleanState(resource any) error {
 	dirtyStateMu.Lock()
 	dirtyState[key] = cloneSnapshot(snapshot)
 	dirtyStateMu.Unlock()
+
+	// Register a finalizer to automatically clean up when the resource is GC'd.
+	// This prevents memory leaks and stale pointer reuse.
+	setCleanupFinalizer(resource, key)
+
 	return nil
+}
+
+// setCleanupFinalizer registers a runtime finalizer that removes the dirty
+// state entry when the resource pointer is garbage collected.
+func setCleanupFinalizer(resource any, key dirtyKey) {
+	v := reflect.ValueOf(resource)
+	if v.Kind() != reflect.Ptr {
+		return
+	}
+	runtime.SetFinalizer(resource, func(_ any) {
+		dirtyStateMu.Lock()
+		delete(dirtyState, key)
+		dirtyStateMu.Unlock()
+	})
 }
 
 func baselineSnapshot(resource any) (dirtySnapshot, error) {
@@ -988,9 +1006,7 @@ func unmarshalResourceReflect(data []byte, elemType reflect.Type, included Inclu
 		}
 	}
 
-	if err := rememberCleanState(result); err != nil {
-		return reflect.Value{}, fmt.Errorf("failed to capture clean state: %w", err)
-	}
+	_ = rememberCleanState(result)
 
 	return ptr, nil
 }

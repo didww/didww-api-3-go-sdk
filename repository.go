@@ -63,9 +63,8 @@ func (r *Repository[T]) Create(ctx context.Context, resource *T) (*T, error) {
 }
 
 // Update updates an existing resource. The resource must have a non-empty ID.
-// Only fields changed since loading (or since construction for new objects)
-// are included in the PATCH request. Fields set to zero/nil are sent as
-// explicit null to clear them on the server.
+// Only fields modified since loading are included in the PATCH request.
+// Pointer fields set to nil produce explicit JSON null.
 func (r *Repository[T]) Update(ctx context.Context, resource *T) (*T, error) {
 	id := jsonapi.GetID(resource)
 	if id == "" {
@@ -76,11 +75,11 @@ func (r *Repository[T]) Update(ctx context.Context, resource *T) (*T, error) {
 	if err != nil {
 		return nil, &ClientError{Message: fmt.Sprintf("failed to serialize resource: %v", err)}
 	}
-	jsonapi.ForgetCleanState(resource)
 	body, err := r.client.doRequest(ctx, http.MethodPatch, path, nil, reqBody)
 	if err != nil {
 		return nil, err
 	}
+	jsonapi.ForgetCleanState(resource)
 	return jsonapi.UnmarshalOne[T](body)
 }
 
