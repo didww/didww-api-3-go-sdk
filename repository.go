@@ -65,6 +65,10 @@ func (r *Repository[T]) Create(ctx context.Context, resource *T) (*T, error) {
 // Update updates an existing resource. The resource must have a non-empty ID.
 // Only fields modified since loading are included in the PATCH request.
 // Pointer fields set to nil produce explicit JSON null.
+//
+// The returned resource has a fresh clean-state snapshot, so use it for any
+// subsequent updates. The input resource's tracking state is consumed by the
+// call and should not be reused.
 func (r *Repository[T]) Update(ctx context.Context, resource *T) (*T, error) {
 	id := jsonapi.GetID(resource)
 	if id == "" {
