@@ -158,6 +158,38 @@ func TestDIDsFindBlockedTerminated(t *testing.T) {
 	}
 }
 
+func TestDIDsUpdateTerminated(t *testing.T) {
+	var capturedBody []byte
+	server := newTestServerWithInspector(t, map[string]testRoute{
+		"PATCH /v3/dids/9df99644-f1a5-4a3c-99a4-559d758eb96b": {status: http.StatusOK, fixture: "dids/update_blocked_terminated.json"},
+	}, func(r *http.Request) {
+		capturedBody, _ = io.ReadAll(r.Body)
+	})
+
+	did, err := server.client.DIDs().Update(context.Background(), &DID{
+		ID:         "9df99644-f1a5-4a3c-99a4-559d758eb96b",
+		Terminated: true,
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	assertRequestJSON(t, capturedBody, "dids/update_terminated_request.json")
+
+	if did.ID != "9df99644-f1a5-4a3c-99a4-559d758eb96b" {
+		t.Errorf("expected ID '9df99644-f1a5-4a3c-99a4-559d758eb96b', got %q", did.ID)
+	}
+	if !did.Blocked {
+		t.Error("expected Blocked to be true")
+	}
+	if !did.Terminated {
+		t.Error("expected Terminated to be true")
+	}
+	if did.BillingCyclesCount == nil || *did.BillingCyclesCount != 0 {
+		t.Errorf("expected BillingCyclesCount 0, got %v", did.BillingCyclesCount)
+	}
+}
+
 func TestDIDsUpdateInvalidParam(t *testing.T) {
 	_, client := newTestServer(t, map[string]testRoute{
 		"PATCH /v3/dids/9df99644-f1a5-4a3c-99a4-559d758eb96b": {status: http.StatusBadRequest, fixture: "dids/update_error_invalid_param.json"},
