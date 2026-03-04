@@ -5,6 +5,9 @@ import (
 	"io"
 	"net/http"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestPermanentSupportingDocumentsCreate(t *testing.T) {
@@ -20,24 +23,14 @@ func TestPermanentSupportingDocumentsCreate(t *testing.T) {
 		IdentityID: "5e9df058-50d2-4e34-b0d4-d1746b86f41a",
 		FileIDs:    []string{"254b3c2d-c40c-4ff7-93b1-a677aee7fa10"},
 	})
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	require.NoError(t, err)
 
-	if doc.ID != "19510da3-c07e-4fa9-a696-6b9ab89cc172" {
-		t.Errorf("expected ID '19510da3-c07e-4fa9-a696-6b9ab89cc172', got %q", doc.ID)
-	}
+	assert.Equal(t, "19510da3-c07e-4fa9-a696-6b9ab89cc172", doc.ID)
 
 	// Verify included template
-	if doc.Template == nil {
-		t.Fatal("expected non-nil Template")
-	}
-	if doc.Template.Name != "Germany Special Registration Form" {
-		t.Errorf("expected template name 'Germany Special Registration Form', got %q", doc.Template.Name)
-	}
-	if !doc.Template.Permanent {
-		t.Error("expected template Permanent to be true")
-	}
+	require.NotNil(t, doc.Template)
+	assert.Equal(t, "Germany Special Registration Form", doc.Template.Name)
+	assert.True(t, doc.Template.Permanent)
 
 	assertRequestJSON(t, capturedBody, "permanent_supporting_documents/create_request.json")
 }
@@ -48,7 +41,5 @@ func TestPermanentSupportingDocumentsDelete(t *testing.T) {
 	})
 
 	err := client.PermanentSupportingDocuments().Delete(context.Background(), "19510da3-c07e-4fa9-a696-6b9ab89cc172")
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	require.NoError(t, err)
 }

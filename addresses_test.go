@@ -5,6 +5,9 @@ import (
 	"io"
 	"net/http"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestAddressesList(t *testing.T) {
@@ -13,13 +16,9 @@ func TestAddressesList(t *testing.T) {
 	})
 
 	addresses, err := client.Addresses().List(context.Background(), nil)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	require.NoError(t, err)
 
-	if len(addresses) == 0 {
-		t.Fatal("expected non-empty addresses list")
-	}
+	require.NotEmpty(t, addresses)
 }
 
 func TestAddressesCreate(t *testing.T) {
@@ -38,24 +37,14 @@ func TestAddressesCreate(t *testing.T) {
 		CountryID:   "1f6fc2bd-f081-4202-9b1a-d9cb88d942b9",
 		IdentityID:  "5e9df058-50d2-4e34-b0d4-d1746b86f41a",
 	})
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	require.NoError(t, err)
 
-	if address.ID != "bf69bc70-e1c2-442c-9f30-335ee299b663" {
-		t.Errorf("expected ID 'bf69bc70-e1c2-442c-9f30-335ee299b663', got %q", address.ID)
-	}
-	if address.CityName != "New York" {
-		t.Errorf("expected CityName 'New York', got %q", address.CityName)
-	}
+	assert.Equal(t, "bf69bc70-e1c2-442c-9f30-335ee299b663", address.ID)
+	assert.Equal(t, "New York", address.CityName)
 
 	// Verify included country
-	if address.Country == nil {
-		t.Fatal("expected non-nil Country")
-	}
-	if address.Country.Name != "United States" {
-		t.Errorf("expected country name 'United States', got %q", address.Country.Name)
-	}
+	require.NotNil(t, address.Country)
+	assert.Equal(t, "United States", address.Country.Name)
 
 	assertRequestJSON(t, capturedBody, "addresses/create_request.json")
 }
@@ -69,19 +58,11 @@ func TestAddressesUpdate(t *testing.T) {
 		ID:       "bf69bc70-e1c2-442c-9f30-335ee299b663",
 		CityName: "Chicago",
 	})
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	require.NoError(t, err)
 
-	if address.ID != "bf69bc70-e1c2-442c-9f30-335ee299b663" {
-		t.Errorf("expected ID 'bf69bc70-e1c2-442c-9f30-335ee299b663', got %q", address.ID)
-	}
-	if address.CityName != "Chicago" {
-		t.Errorf("expected CityName 'Chicago', got %q", address.CityName)
-	}
-	if address.PostalCode != "1234" {
-		t.Errorf("expected PostalCode '1234', got %q", address.PostalCode)
-	}
+	assert.Equal(t, "bf69bc70-e1c2-442c-9f30-335ee299b663", address.ID)
+	assert.Equal(t, "Chicago", address.CityName)
+	assert.Equal(t, "1234", address.PostalCode)
 }
 
 func TestAddressesDelete(t *testing.T) {
@@ -90,7 +71,5 @@ func TestAddressesDelete(t *testing.T) {
 	})
 
 	err := client.Addresses().Delete(context.Background(), "bf69bc70-e1c2-442c-9f30-335ee299b663")
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	require.NoError(t, err)
 }

@@ -5,6 +5,9 @@ import (
 	"io"
 	"net/http"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestCapacityPoolsList(t *testing.T) {
@@ -13,13 +16,9 @@ func TestCapacityPoolsList(t *testing.T) {
 	})
 
 	pools, err := client.CapacityPools().List(context.Background(), nil)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	require.NoError(t, err)
 
-	if len(pools) != 2 {
-		t.Fatalf("expected 2 capacity pools, got %d", len(pools))
-	}
+	require.Len(t, pools, 2)
 }
 
 func TestCapacityPoolsFindWithIncludes(t *testing.T) {
@@ -29,30 +28,16 @@ func TestCapacityPoolsFindWithIncludes(t *testing.T) {
 
 	params := NewQueryParams().Include("countries,shared_capacity_groups,qty_based_pricings")
 	pool, err := client.CapacityPools().Find(context.Background(), "f288d07c-e2fc-4ae6-9837-b18fb469c324", params)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	require.NoError(t, err)
 
-	if pool.ID != "f288d07c-e2fc-4ae6-9837-b18fb469c324" {
-		t.Errorf("expected ID 'f288d07c-e2fc-4ae6-9837-b18fb469c324', got %q", pool.ID)
-	}
-	if pool.Name != "Standard" {
-		t.Errorf("expected Name 'Standard', got %q", pool.Name)
-	}
-	if pool.TotalChannelsCount != 34 {
-		t.Errorf("expected TotalChannelsCount 34, got %d", pool.TotalChannelsCount)
-	}
-	if pool.SetupPrice != "0.0" {
-		t.Errorf("expected SetupPrice '0.0', got %q", pool.SetupPrice)
-	}
-	if pool.MonthlyPrice != "15.0" {
-		t.Errorf("expected MonthlyPrice '15.0', got %q", pool.MonthlyPrice)
-	}
+	assert.Equal(t, "f288d07c-e2fc-4ae6-9837-b18fb469c324", pool.ID)
+	assert.Equal(t, "Standard", pool.Name)
+	assert.Equal(t, 34, pool.TotalChannelsCount)
+	assert.Equal(t, "0.0", pool.SetupPrice)
+	assert.Equal(t, "15.0", pool.MonthlyPrice)
 
 	// Verify countries are resolved (fixture has many)
-	if len(pool.Countries) == 0 {
-		t.Error("expected non-empty Countries")
-	}
+	assert.NotEmpty(t, pool.Countries)
 }
 
 func TestCapacityPoolsUpdate(t *testing.T) {
@@ -67,13 +52,9 @@ func TestCapacityPoolsUpdate(t *testing.T) {
 		ID:                 "f288d07c-e2fc-4ae6-9837-b18fb469c324",
 		TotalChannelsCount: 25,
 	})
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	require.NoError(t, err)
 
-	if pool.ID != "f288d07c-e2fc-4ae6-9837-b18fb469c324" {
-		t.Errorf("expected ID 'f288d07c-e2fc-4ae6-9837-b18fb469c324', got %q", pool.ID)
-	}
+	assert.Equal(t, "f288d07c-e2fc-4ae6-9837-b18fb469c324", pool.ID)
 
 	assertRequestJSON(t, capturedBody, "capacity_pools/update_request.json")
 }

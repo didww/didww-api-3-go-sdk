@@ -6,6 +6,9 @@ import (
 	"io"
 	"net/http"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 const testDIDID = "9df99644-f1a5-4a3c-99a4-559d758eb96b"
@@ -25,22 +28,16 @@ func TestDirtyPatch_NewResourceOnlyDirtyFields(t *testing.T) {
 		ID:          testDIDID,
 		Description: &desc,
 	})
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	require.NoError(t, err)
 
 	doc := parsePatchBody(t, capturedBody)
 
 	// Only description should be in attributes
-	if len(doc.Attrs) != 1 {
-		t.Errorf("expected 1 attribute, got %d: %v", len(doc.Attrs), attrKeys(doc.Attrs))
-	}
+	require.Len(t, doc.Attrs, 1)
 	assertAttr(t, doc.Attrs, "description", `"updated"`)
 
 	// No relationships should be present (no trunk IDs set)
-	if len(doc.Rels) != 0 {
-		t.Errorf("expected no relationships, got %v", doc.Rels)
-	}
+	assert.Empty(t, doc.Rels)
 }
 
 // TestDirtyPatch_NullAttributeClear verifies that setting a non-nil field
@@ -58,20 +55,15 @@ func TestDirtyPatch_NullAttributeClear(t *testing.T) {
 
 	// Load from API - description is "something", capacity_limit is 2
 	did, err := server.client.DIDs().Find(context.Background(), testDIDID)
-	if err != nil {
-		t.Fatalf("Find error: %v", err)
-	}
-	if did.Description == nil || *did.Description != "something" {
-		t.Fatalf("expected Description 'something', got %v", did.Description)
-	}
+	require.NoError(t, err)
+	require.NotNil(t, did.Description)
+	require.Equal(t, "something", *did.Description)
 
 	// Clear description to nil
 	did.Description = nil
 
 	_, err = server.client.DIDs().Update(context.Background(), did)
-	if err != nil {
-		t.Fatalf("Update error: %v", err)
-	}
+	require.NoError(t, err)
 
 	doc := parsePatchBody(t, capturedBody)
 
@@ -97,24 +89,18 @@ func TestDirtyPatch_LoadedResourceOnlyChangedField(t *testing.T) {
 
 	// Load from API
 	did, err := server.client.DIDs().Find(context.Background(), testDIDID)
-	if err != nil {
-		t.Fatalf("Find error: %v", err)
-	}
+	require.NoError(t, err)
 
 	// Change only dedicated_channels_count
 	did.DedicatedChannelsCount = 5
 
 	_, err = server.client.DIDs().Update(context.Background(), did)
-	if err != nil {
-		t.Fatalf("Update error: %v", err)
-	}
+	require.NoError(t, err)
 
 	doc := parsePatchBody(t, capturedBody)
 
 	// Only the changed field
-	if len(doc.Attrs) != 1 {
-		t.Errorf("expected 1 attribute, got %d: %v", len(doc.Attrs), attrKeys(doc.Attrs))
-	}
+	require.Len(t, doc.Attrs, 1)
 	assertAttr(t, doc.Attrs, "dedicated_channels_count", "5")
 }
 
@@ -132,16 +118,12 @@ func TestDirtyPatch_SetVoiceInTrunkNullifiesTrunkGroup(t *testing.T) {
 		ID:             testDIDID,
 		VoiceInTrunkID: "trunk-1",
 	})
-	if err != nil {
-		t.Fatalf("Update error: %v", err)
-	}
+	require.NoError(t, err)
 
 	doc := parsePatchBody(t, capturedBody)
 
 	// Attributes should be empty (no attr changes)
-	if len(doc.Attrs) != 0 {
-		t.Errorf("expected empty attributes, got %v", attrKeys(doc.Attrs))
-	}
+	assert.Empty(t, doc.Attrs)
 
 	// voice_in_trunk should be set
 	assertRelSet(t, doc.Rels, "voice_in_trunk", "voice_in_trunks", "trunk-1")
@@ -163,16 +145,12 @@ func TestDirtyPatch_SetVoiceInTrunkGroupNullifiesTrunk(t *testing.T) {
 		ID:                  testDIDID,
 		VoiceInTrunkGroupID: "group-1",
 	})
-	if err != nil {
-		t.Fatalf("Update error: %v", err)
-	}
+	require.NoError(t, err)
 
 	doc := parsePatchBody(t, capturedBody)
 
 	// Attributes should be empty (no attr changes)
-	if len(doc.Attrs) != 0 {
-		t.Errorf("expected empty attributes, got %v", attrKeys(doc.Attrs))
-	}
+	assert.Empty(t, doc.Attrs)
 
 	// voice_in_trunk_group should be set
 	assertRelSet(t, doc.Rels, "voice_in_trunk_group", "voice_in_trunk_groups", "group-1")
@@ -196,9 +174,7 @@ func TestDirtyPatch_CreateUnchanged(t *testing.T) {
 		Description:            &desc,
 		DedicatedChannelsCount: 3,
 	})
-	if err != nil {
-		t.Fatalf("Create error: %v", err)
-	}
+	require.NoError(t, err)
 
 	// Create should use Marshal (full), not MarshalPatch
 	var doc struct {
@@ -206,20 +182,12 @@ func TestDirtyPatch_CreateUnchanged(t *testing.T) {
 			Attrs map[string]json.RawMessage `json:"attributes"`
 		} `json:"data"`
 	}
-	if err := json.Unmarshal(capturedBody, &doc); err != nil {
-		t.Fatalf("unmarshal error: %v", err)
-	}
+	require.NoError(t, json.Unmarshal(capturedBody, &doc))
 
 	// All writable attributes should be present
-	if _, ok := doc.Data.Attrs["capacity_limit"]; !ok {
-		t.Error("Create should include capacity_limit")
-	}
-	if _, ok := doc.Data.Attrs["description"]; !ok {
-		t.Error("Create should include description")
-	}
-	if _, ok := doc.Data.Attrs["dedicated_channels_count"]; !ok {
-		t.Error("Create should include dedicated_channels_count")
-	}
+	assert.Contains(t, doc.Data.Attrs, "capacity_limit")
+	assert.Contains(t, doc.Data.Attrs, "description")
+	assert.Contains(t, doc.Data.Attrs, "dedicated_channels_count")
 }
 
 // TestDirtyPatch_ResponseClearsState verifies that after an update,
@@ -241,22 +209,16 @@ func TestDirtyPatch_ResponseClearsState(t *testing.T) {
 		ID:          testDIDID,
 		Description: &desc,
 	})
-	if err != nil {
-		t.Fatalf("first update error: %v", err)
-	}
+	require.NoError(t, err)
 
 	// The returned DID should have a clean baseline.
 	// Updating it without changes should produce empty attributes.
 	did2, err := server.client.DIDs().Update(context.Background(), did)
-	if err != nil {
-		t.Fatalf("second update error: %v", err)
-	}
+	require.NoError(t, err)
 	_ = did2
 
 	doc := parsePatchBody(t, capturedBody)
-	if len(doc.Attrs) != 0 {
-		t.Errorf("expected empty attributes on second update, got %v", attrKeys(doc.Attrs))
-	}
+	assert.Empty(t, doc.Attrs)
 }
 
 // TestDirtyPatch_UpdateBuiltSingleAttr verifies that building a DID with ID
@@ -274,9 +236,7 @@ func TestDirtyPatch_UpdateBuiltSingleAttr(t *testing.T) {
 		ID:            testDIDID,
 		CapacityLimit: &cl,
 	})
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	require.NoError(t, err)
 
 	assertRequestJSON(t, capturedBody, "dids/update_built_single_attr_request.json")
 }
@@ -295,16 +255,12 @@ func TestDirtyPatch_UpdateClearDescription(t *testing.T) {
 	})
 
 	did, err := server.client.DIDs().Find(context.Background(), testDIDID)
-	if err != nil {
-		t.Fatalf("Find error: %v", err)
-	}
+	require.NoError(t, err)
 
 	did.Description = nil
 
 	_, err = server.client.DIDs().Update(context.Background(), did)
-	if err != nil {
-		t.Fatalf("Update error: %v", err)
-	}
+	require.NoError(t, err)
 
 	assertRequestJSON(t, capturedBody, "dids/update_clear_description_request.json")
 }
@@ -323,9 +279,7 @@ func TestDirtyPatch_UpdateTerminated(t *testing.T) {
 		ID:         testDIDID,
 		Terminated: true,
 	})
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	require.NoError(t, err)
 
 	assertRequestJSON(t, capturedBody, "dids/update_terminated_request.json")
 }
@@ -344,16 +298,12 @@ func TestDirtyPatch_UpdateFromLoadedSetVoiceInTrunk(t *testing.T) {
 	})
 
 	did, err := server.client.DIDs().Find(context.Background(), testDIDID)
-	if err != nil {
-		t.Fatalf("Find error: %v", err)
-	}
+	require.NoError(t, err)
 
 	did.VoiceInTrunkID = "41b94706-325e-4704-a433-d65105758836"
 
 	_, err = server.client.DIDs().Update(context.Background(), did)
-	if err != nil {
-		t.Fatalf("Update error: %v", err)
-	}
+	require.NoError(t, err)
 
 	assertRequestJSON(t, capturedBody, "dids/update_from_loaded_set_voice_in_trunk_request.json")
 }
@@ -373,25 +323,15 @@ func TestDirtyPatch_FindWithIncludedHasNoDirtyFlags(t *testing.T) {
 
 	params := NewQueryParams().Include("voice_in_trunk")
 	did, err := server.client.DIDs().Find(context.Background(), testDIDID, params)
-	if err != nil {
-		t.Fatalf("Find error: %v", err)
-	}
-	if did.VoiceInTrunk == nil {
-		t.Fatal("expected non-nil VoiceInTrunk after include")
-	}
+	require.NoError(t, err)
+	require.NotNil(t, did.VoiceInTrunk)
 
 	_, err = server.client.DIDs().Update(context.Background(), did)
-	if err != nil {
-		t.Fatalf("Update error: %v", err)
-	}
+	require.NoError(t, err)
 
 	doc := parsePatchBody(t, capturedBody)
-	if len(doc.Attrs) != 0 {
-		t.Errorf("expected empty attributes, got %v", attrKeys(doc.Attrs))
-	}
-	if len(doc.Rels) != 0 {
-		t.Errorf("expected no relationships, got %v", doc.Rels)
-	}
+	assert.Empty(t, doc.Attrs)
+	assert.Empty(t, doc.Rels)
 }
 
 // TestDirtyPatch_UpdateFailRetainsCleanState verifies that a failed update
@@ -414,31 +354,21 @@ func TestDirtyPatch_UpdateFailRetainsCleanState(t *testing.T) {
 	})
 
 	did, err := ts.client.DIDs().Find(context.Background(), testDIDID)
-	if err != nil {
-		t.Fatalf("Find error: %v", err)
-	}
+	require.NoError(t, err)
 
 	did.DedicatedChannelsCount = 5
 
 	// First update fails (422)
 	_, err = ts.client.DIDs().Update(context.Background(), did)
-	if err == nil {
-		t.Fatal("expected error for first update")
-	}
+	require.Error(t, err)
 
 	// Retry — should still send only the changed field, not become over-inclusive
 	_, err = ts.client.DIDs().Update(context.Background(), did)
-	if err != nil {
-		t.Fatalf("retry update error: %v", err)
-	}
+	require.NoError(t, err)
 
-	if patchCount != 2 {
-		t.Fatalf("expected 2 PATCH calls, got %d", patchCount)
-	}
+	require.Equal(t, 2, patchCount)
 	doc := parsePatchBody(t, capturedBody)
-	if len(doc.Attrs) != 1 {
-		t.Errorf("expected 1 attribute on retry, got %d: %v", len(doc.Attrs), attrKeys(doc.Attrs))
-	}
+	require.Len(t, doc.Attrs, 1)
 	assertAttr(t, doc.Attrs, "dedicated_channels_count", "5")
 }
 
@@ -456,17 +386,13 @@ func TestDirtyPatch_UpdateFromLoadedChangedDescription(t *testing.T) {
 	})
 
 	did, err := server.client.DIDs().Find(context.Background(), testDIDID)
-	if err != nil {
-		t.Fatalf("Find error: %v", err)
-	}
+	require.NoError(t, err)
 
 	desc := "patched from loaded resource"
 	did.Description = &desc
 
 	_, err = server.client.DIDs().Update(context.Background(), did)
-	if err != nil {
-		t.Fatalf("Update error: %v", err)
-	}
+	require.NoError(t, err)
 
 	assertRequestJSON(t, capturedBody, "dids/update_from_loaded_request.json")
 }
@@ -490,9 +416,7 @@ func parsePatchBody(t *testing.T, body []byte) patchBodyDoc {
 			Relationships map[string]json.RawMessage `json:"relationships"`
 		} `json:"data"`
 	}
-	if err := json.Unmarshal(body, &doc); err != nil {
-		t.Fatalf("failed to parse patch body: %v\nbody: %s", err, body)
-	}
+	require.NoError(t, json.Unmarshal(body, &doc), "failed to parse patch body: %s", body)
 	return patchBodyDoc{
 		ID:    doc.Data.ID,
 		Type:  doc.Data.Type,
@@ -504,60 +428,42 @@ func parsePatchBody(t *testing.T, body []byte) patchBodyDoc {
 func assertAttr(t *testing.T, attrs map[string]json.RawMessage, key, want string) {
 	t.Helper()
 	raw, ok := attrs[key]
-	if !ok {
-		t.Errorf("expected attribute %q to be present", key)
+	if !assert.True(t, ok, "expected attribute %q to be present", key) {
 		return
 	}
-	if string(raw) != want {
-		t.Errorf("attribute %q = %s, want %s", key, raw, want)
-	}
+	assert.Equal(t, want, string(raw), "attribute %q", key)
 }
 
 func assertAttrAbsent(t *testing.T, attrs map[string]json.RawMessage, key string) {
 	t.Helper()
-	if raw, ok := attrs[key]; ok {
-		t.Errorf("expected attribute %q to be absent, got %s", key, raw)
-	}
+	assert.NotContains(t, attrs, key, "expected attribute %q to be absent", key)
 }
 
 func assertRelSet(t *testing.T, rels map[string]json.RawMessage, name, wantType, wantID string) {
 	t.Helper()
 	raw, ok := rels[name]
-	if !ok {
-		t.Fatalf("expected relationship %q to be present", name)
-	}
+	require.True(t, ok, "expected relationship %q to be present", name)
 	var wrapper struct {
 		Data *struct {
 			Type string `json:"type"`
 			ID   string `json:"id"`
 		} `json:"data"`
 	}
-	if err := json.Unmarshal(raw, &wrapper); err != nil {
-		t.Fatalf("failed to parse relationship %q: %v", name, err)
-	}
-	if wrapper.Data == nil {
-		t.Fatalf("expected relationship %q data to be non-null", name)
-	}
-	if wrapper.Data.Type != wantType || wrapper.Data.ID != wantID {
-		t.Errorf("relationship %q = {%s, %s}, want {%s, %s}", name, wrapper.Data.Type, wrapper.Data.ID, wantType, wantID)
-	}
+	require.NoError(t, json.Unmarshal(raw, &wrapper), "failed to parse relationship %q", name)
+	require.NotNil(t, wrapper.Data, "expected relationship %q data to be non-null", name)
+	assert.Equal(t, wantType, wrapper.Data.Type, "relationship %q type", name)
+	assert.Equal(t, wantID, wrapper.Data.ID, "relationship %q id", name)
 }
 
 func assertRelNull(t *testing.T, rels map[string]json.RawMessage, name string) {
 	t.Helper()
 	raw, ok := rels[name]
-	if !ok {
-		t.Fatalf("expected relationship %q to be present (as null)", name)
-	}
+	require.True(t, ok, "expected relationship %q to be present (as null)", name)
 	var wrapper struct {
 		Data json.RawMessage `json:"data"`
 	}
-	if err := json.Unmarshal(raw, &wrapper); err != nil {
-		t.Fatalf("failed to parse relationship %q: %v", name, err)
-	}
-	if string(wrapper.Data) != "null" {
-		t.Errorf("expected relationship %q data to be null, got %s", name, wrapper.Data)
-	}
+	require.NoError(t, json.Unmarshal(raw, &wrapper), "failed to parse relationship %q", name)
+	assert.Equal(t, "null", string(wrapper.Data), "expected relationship %q data to be null", name)
 }
 
 func attrKeys(attrs map[string]json.RawMessage) []string {

@@ -5,6 +5,9 @@ import (
 	"io"
 	"net/http"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestDIDReservationsList(t *testing.T) {
@@ -13,13 +16,9 @@ func TestDIDReservationsList(t *testing.T) {
 	})
 
 	reservations, err := client.DIDReservations().List(context.Background(), nil)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	require.NoError(t, err)
 
-	if len(reservations) == 0 {
-		t.Fatal("expected non-empty reservations list")
-	}
+	require.NotEmpty(t, reservations)
 }
 
 func TestDIDReservationsCreate(t *testing.T) {
@@ -34,13 +33,9 @@ func TestDIDReservationsCreate(t *testing.T) {
 		Description:    "DIDWW",
 		AvailableDIDID: "857d1462-5f43-4238-b007-ff05f282e41b",
 	})
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	require.NoError(t, err)
 
-	if reservation.ID != "fd38d3ff-80cf-4e67-a605-609a2884a5c4" {
-		t.Errorf("expected ID 'fd38d3ff-80cf-4e67-a605-609a2884a5c4', got %q", reservation.ID)
-	}
+	assert.Equal(t, "fd38d3ff-80cf-4e67-a605-609a2884a5c4", reservation.ID)
 
 	assertRequestJSON(t, capturedBody, "did_reservations/create_request.json")
 }
@@ -52,26 +47,14 @@ func TestDIDReservationsFindWithIncludedAvailableDID(t *testing.T) {
 
 	params := NewQueryParams().Include("available_did")
 	reservation, err := client.DIDReservations().Find(context.Background(), "fd38d3ff-80cf-4e67-a605-609a2884a5c4", params)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	require.NoError(t, err)
 
-	if reservation.ID != "fd38d3ff-80cf-4e67-a605-609a2884a5c4" {
-		t.Errorf("expected ID 'fd38d3ff-80cf-4e67-a605-609a2884a5c4', got %q", reservation.ID)
-	}
-	if reservation.Description != "DIDWW" {
-		t.Errorf("expected Description 'DIDWW', got %q", reservation.Description)
-	}
+	assert.Equal(t, "fd38d3ff-80cf-4e67-a605-609a2884a5c4", reservation.ID)
+	assert.Equal(t, "DIDWW", reservation.Description)
 
-	if reservation.AvailableDID == nil {
-		t.Fatal("expected non-nil AvailableDID")
-	}
-	if reservation.AvailableDID.ID != "857d1462-5f43-4238-b007-ff05f282e41b" {
-		t.Errorf("expected AvailableDID ID '857d1462-5f43-4238-b007-ff05f282e41b', got %q", reservation.AvailableDID.ID)
-	}
-	if reservation.AvailableDID.Number != "19492033398" {
-		t.Errorf("expected AvailableDID Number '19492033398', got %q", reservation.AvailableDID.Number)
-	}
+	require.NotNil(t, reservation.AvailableDID)
+	assert.Equal(t, "857d1462-5f43-4238-b007-ff05f282e41b", reservation.AvailableDID.ID)
+	assert.Equal(t, "19492033398", reservation.AvailableDID.Number)
 }
 
 func TestDIDReservationsDelete(t *testing.T) {
@@ -80,7 +63,5 @@ func TestDIDReservationsDelete(t *testing.T) {
 	})
 
 	err := client.DIDReservations().Delete(context.Background(), "fd38d3ff-80cf-4e67-a605-609a2884a5c4")
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	require.NoError(t, err)
 }

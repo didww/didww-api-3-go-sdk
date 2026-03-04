@@ -4,6 +4,9 @@ import (
 	"context"
 	"net/http"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestSupportingDocumentTemplatesList(t *testing.T) {
@@ -12,22 +15,12 @@ func TestSupportingDocumentTemplatesList(t *testing.T) {
 	})
 
 	templates, err := client.SupportingDocumentTemplates().List(context.Background(), nil)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	require.NoError(t, err)
 
-	if len(templates) != 5 {
-		t.Fatalf("expected 5 templates, got %d", len(templates))
-	}
+	require.Len(t, templates, 5)
 
 	first := templates[0]
-	if first.ID != "206ccec2-1166-461f-9f58-3a56823db548" {
-		t.Errorf("expected ID '206ccec2-1166-461f-9f58-3a56823db548', got %q", first.ID)
-	}
-	if first.Name != "Generic LOI" {
-		t.Errorf("expected Name 'Generic LOI', got %q", first.Name)
-	}
-	if first.Permanent {
-		t.Error("expected Permanent to be false")
-	}
+	assert.Equal(t, "206ccec2-1166-461f-9f58-3a56823db548", first.ID)
+	assert.Equal(t, "Generic LOI", first.Name)
+	assert.False(t, first.Permanent)
 }

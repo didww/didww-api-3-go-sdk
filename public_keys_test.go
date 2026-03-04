@@ -3,8 +3,10 @@ package didww
 import (
 	"context"
 	"net/http"
-	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestPublicKeysList(t *testing.T) {
@@ -13,22 +15,12 @@ func TestPublicKeysList(t *testing.T) {
 	})
 
 	keys, err := client.PublicKeys().List(context.Background(), nil)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	require.NoError(t, err)
 
-	if len(keys) != 2 {
-		t.Fatalf("expected 2 public keys, got %d", len(keys))
-	}
-	if keys[0].ID != "dcf2bfcb-a1d0-3b58-bbf0-3ec22a510ba8" {
-		t.Errorf("expected ID 'dcf2bfcb-a1d0-3b58-bbf0-3ec22a510ba8', got %q", keys[0].ID)
-	}
-	if !strings.HasPrefix(keys[0].Key, "-----BEGIN PUBLIC KEY-----") {
-		t.Errorf("expected key to start with '-----BEGIN PUBLIC KEY-----', got %q", keys[0].Key[:30])
-	}
-	if keys[1].ID != "f40e1176-a4ff-36e6-b2ed-c2c2d18097a3" {
-		t.Errorf("expected ID 'f40e1176-a4ff-36e6-b2ed-c2c2d18097a3', got %q", keys[1].ID)
-	}
+	require.Len(t, keys, 2)
+	assert.Equal(t, "dcf2bfcb-a1d0-3b58-bbf0-3ec22a510ba8", keys[0].ID)
+	assert.Contains(t, keys[0].Key, "-----BEGIN PUBLIC KEY-----")
+	assert.Equal(t, "f40e1176-a4ff-36e6-b2ed-c2c2d18097a3", keys[1].ID)
 }
 
 func TestPublicKeysNoAuthHeader(t *testing.T) {
@@ -42,16 +34,10 @@ func TestPublicKeysNoAuthHeader(t *testing.T) {
 	})
 
 	_, err := server.client.PublicKeys().List(context.Background(), nil)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	require.NoError(t, err)
 
-	if capturedAuth != "" {
-		t.Errorf("expected no Api-Key header for public_keys endpoint, got %q", capturedAuth)
-	}
-	if capturedAPIVersion != apiVersion {
-		t.Errorf("expected X-DIDWW-API-Version %q, got %q", apiVersion, capturedAPIVersion)
-	}
+	assert.Equal(t, "", capturedAuth)
+	assert.Equal(t, apiVersion, capturedAPIVersion)
 }
 
 func TestNonPublicEndpointHasAuthHeader(t *testing.T) {
@@ -65,14 +51,8 @@ func TestNonPublicEndpointHasAuthHeader(t *testing.T) {
 	})
 
 	_, err := server.client.Countries().List(context.Background(), nil)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	require.NoError(t, err)
 
-	if capturedAuth != "test-api-key" {
-		t.Errorf("expected Api-Key 'test-api-key', got %q", capturedAuth)
-	}
-	if capturedAPIVersion != apiVersion {
-		t.Errorf("expected X-DIDWW-API-Version %q, got %q", apiVersion, capturedAPIVersion)
-	}
+	assert.Equal(t, "test-api-key", capturedAuth)
+	assert.Equal(t, apiVersion, capturedAPIVersion)
 }

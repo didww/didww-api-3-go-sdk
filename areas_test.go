@@ -4,6 +4,9 @@ import (
 	"context"
 	"net/http"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestAreasList(t *testing.T) {
@@ -12,13 +15,9 @@ func TestAreasList(t *testing.T) {
 	})
 
 	areas, err := client.Areas().List(context.Background(), nil)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	require.NoError(t, err)
 
-	if len(areas) == 0 {
-		t.Fatal("expected non-empty areas list")
-	}
+	require.NotEmpty(t, areas)
 }
 
 func TestAreasFindWithIncludedCountry(t *testing.T) {
@@ -28,26 +27,12 @@ func TestAreasFindWithIncludedCountry(t *testing.T) {
 
 	params := NewQueryParams().Include("country")
 	area, err := client.Areas().Find(context.Background(), "ab2adc18-7c94-42d9-bdde-b28dfc373a22", params)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	require.NoError(t, err)
 
-	if area.ID != "ab2adc18-7c94-42d9-bdde-b28dfc373a22" {
-		t.Errorf("expected ID 'ab2adc18-7c94-42d9-bdde-b28dfc373a22', got %q", area.ID)
-	}
-	if area.Name != "Tuscany" {
-		t.Errorf("expected Name 'Tuscany', got %q", area.Name)
-	}
-	if area.Country == nil {
-		t.Fatal("expected non-nil Country")
-	}
-	if area.Country.Name != "Italy" {
-		t.Errorf("expected country name 'Italy', got %q", area.Country.Name)
-	}
-	if area.Country.Prefix != "39" {
-		t.Errorf("expected country prefix '39', got %q", area.Country.Prefix)
-	}
-	if area.Country.ISO != "IT" {
-		t.Errorf("expected country ISO 'IT', got %q", area.Country.ISO)
-	}
+	assert.Equal(t, "ab2adc18-7c94-42d9-bdde-b28dfc373a22", area.ID)
+	assert.Equal(t, "Tuscany", area.Name)
+	require.NotNil(t, area.Country)
+	assert.Equal(t, "Italy", area.Country.Name)
+	assert.Equal(t, "39", area.Country.Prefix)
+	assert.Equal(t, "IT", area.Country.ISO)
 }

@@ -7,6 +7,9 @@ import (
 	"testing"
 
 	"github.com/didww/didww-api-3-go-sdk/resource/enums"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestAddressVerificationsList(t *testing.T) {
@@ -15,13 +18,9 @@ func TestAddressVerificationsList(t *testing.T) {
 	})
 
 	avs, err := client.AddressVerifications().List(context.Background(), nil)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	require.NoError(t, err)
 
-	if len(avs) == 0 {
-		t.Fatal("expected non-empty address verifications list")
-	}
+	require.NotEmpty(t, avs)
 }
 
 func TestAddressVerificationsCreate(t *testing.T) {
@@ -40,27 +39,15 @@ func TestAddressVerificationsCreate(t *testing.T) {
 		AddressID:      "d3414687-40f4-4346-a267-c2c65117d28c",
 		DIDIDs:         []string{"a9d64c02-4486-4acb-a9a1-be4c81ff0659"},
 	})
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	require.NoError(t, err)
 
-	if av.ID != "78182ef2-8377-41cd-89e1-26e8266c9c94" {
-		t.Errorf("expected ID '78182ef2-8377-41cd-89e1-26e8266c9c94', got %q", av.ID)
-	}
-	if av.Status != enums.AddressVerificationStatusPending {
-		t.Errorf("expected Status 'Pending', got %q", av.Status)
-	}
+	assert.Equal(t, "78182ef2-8377-41cd-89e1-26e8266c9c94", av.ID)
+	assert.Equal(t, enums.AddressVerificationStatusPending, av.Status)
 
 	// Verify included address
-	if av.AddressRel == nil {
-		t.Fatal("expected non-nil AddressRel")
-	}
-	if av.AddressRel.ID != "d3414687-40f4-4346-a267-c2c65117d28c" {
-		t.Errorf("expected address ID 'd3414687-40f4-4346-a267-c2c65117d28c', got %q", av.AddressRel.ID)
-	}
-	if av.AddressRel.CityName != "Chicago" {
-		t.Errorf("expected address city 'Chicago', got %q", av.AddressRel.CityName)
-	}
+	require.NotNil(t, av.AddressRel)
+	assert.Equal(t, "d3414687-40f4-4346-a267-c2c65117d28c", av.AddressRel.ID)
+	assert.Equal(t, "Chicago", av.AddressRel.CityName)
 
 	assertRequestJSON(t, capturedBody, "address_verifications/create_request.json")
 }
@@ -71,17 +58,9 @@ func TestAddressVerificationsFind(t *testing.T) {
 	})
 
 	av, err := client.AddressVerifications().Find(context.Background(), "c8e004b0-87ec-4987-b4fb-ee89db099f0e")
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	require.NoError(t, err)
 
-	if av.ID != "c8e004b0-87ec-4987-b4fb-ee89db099f0e" {
-		t.Errorf("expected ID 'c8e004b0-87ec-4987-b4fb-ee89db099f0e', got %q", av.ID)
-	}
-	if av.Status != enums.AddressVerificationStatusApproved {
-		t.Errorf("expected Status 'Approved', got %q", av.Status)
-	}
-	if av.Reference != "SHB-485120" {
-		t.Errorf("expected Reference 'SHB-485120', got %q", av.Reference)
-	}
+	assert.Equal(t, "c8e004b0-87ec-4987-b4fb-ee89db099f0e", av.ID)
+	assert.Equal(t, enums.AddressVerificationStatusApproved, av.Status)
+	assert.Equal(t, "SHB-485120", av.Reference)
 }

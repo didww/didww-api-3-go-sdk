@@ -4,6 +4,9 @@ import (
 	"context"
 	"net/http"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestCountriesFind(t *testing.T) {
@@ -12,22 +15,12 @@ func TestCountriesFind(t *testing.T) {
 	})
 
 	country, err := client.Countries().Find(context.Background(), "7eda11bb-0e66-4146-98e7-57a5281f56c8")
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	require.NoError(t, err)
 
-	if country.ID != "7eda11bb-0e66-4146-98e7-57a5281f56c8" {
-		t.Errorf("expected ID '7eda11bb-0e66-4146-98e7-57a5281f56c8', got %q", country.ID)
-	}
-	if country.Name != "United Kingdom" {
-		t.Errorf("expected Name 'United Kingdom', got %q", country.Name)
-	}
-	if country.Prefix != "44" {
-		t.Errorf("expected Prefix '44', got %q", country.Prefix)
-	}
-	if country.ISO != "GB" {
-		t.Errorf("expected ISO 'GB', got %q", country.ISO)
-	}
+	assert.Equal(t, "7eda11bb-0e66-4146-98e7-57a5281f56c8", country.ID)
+	assert.Equal(t, "United Kingdom", country.Name)
+	assert.Equal(t, "44", country.Prefix)
+	assert.Equal(t, "GB", country.ISO)
 }
 
 func TestCountriesList(t *testing.T) {
@@ -36,27 +29,15 @@ func TestCountriesList(t *testing.T) {
 	})
 
 	countries, err := client.Countries().List(context.Background(), nil)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	require.NoError(t, err)
 
-	if len(countries) == 0 {
-		t.Fatal("expected non-empty countries list")
-	}
+	require.NotEmpty(t, countries)
 
 	first := countries[0]
-	if first.ID == "" {
-		t.Error("expected non-empty ID")
-	}
-	if first.Name == "" {
-		t.Error("expected non-empty Name")
-	}
-	if first.Prefix == "" {
-		t.Error("expected non-empty Prefix")
-	}
-	if first.ISO == "" {
-		t.Error("expected non-empty ISO")
-	}
+	assert.NotEmpty(t, first.ID)
+	assert.NotEmpty(t, first.Name)
+	assert.NotEmpty(t, first.Prefix)
+	assert.NotEmpty(t, first.ISO)
 }
 
 func TestCountriesFindWithIncludedRegions(t *testing.T) {
@@ -66,26 +47,12 @@ func TestCountriesFindWithIncludedRegions(t *testing.T) {
 
 	params := NewQueryParams().Include("regions")
 	country, err := client.Countries().Find(context.Background(), "661d8448-8897-4765-acda-00cc1740148d", params)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	require.NoError(t, err)
 
-	if country.ID != "661d8448-8897-4765-acda-00cc1740148d" {
-		t.Errorf("expected ID '661d8448-8897-4765-acda-00cc1740148d', got %q", country.ID)
-	}
-	if country.Name != "Lithuania" {
-		t.Errorf("expected Name 'Lithuania', got %q", country.Name)
-	}
-	if country.Prefix != "370" {
-		t.Errorf("expected Prefix '370', got %q", country.Prefix)
-	}
-	if country.ISO != "LT" {
-		t.Errorf("expected ISO 'LT', got %q", country.ISO)
-	}
-	if len(country.Regions) != 10 {
-		t.Fatalf("expected 10 regions, got %d", len(country.Regions))
-	}
-	if country.Regions[0].Name != "Alytaus Apskritis" {
-		t.Errorf("expected first region name 'Alytaus Apskritis', got %q", country.Regions[0].Name)
-	}
+	assert.Equal(t, "661d8448-8897-4765-acda-00cc1740148d", country.ID)
+	assert.Equal(t, "Lithuania", country.Name)
+	assert.Equal(t, "370", country.Prefix)
+	assert.Equal(t, "LT", country.ISO)
+	require.Len(t, country.Regions, 10)
+	assert.Equal(t, "Alytaus Apskritis", country.Regions[0].Name)
 }

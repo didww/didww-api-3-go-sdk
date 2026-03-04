@@ -5,6 +5,9 @@ import (
 	"io"
 	"net/http"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func intPtr(v int) *int {
@@ -17,13 +20,9 @@ func TestVoiceInTrunkGroupsList(t *testing.T) {
 	})
 
 	groups, err := client.VoiceInTrunkGroups().List(context.Background(), nil)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	require.NoError(t, err)
 
-	if len(groups) == 0 {
-		t.Fatal("expected non-empty trunk groups list")
-	}
+	require.NotEmpty(t, groups)
 }
 
 func TestVoiceInTrunkGroupsCreate(t *testing.T) {
@@ -39,24 +38,14 @@ func TestVoiceInTrunkGroupsCreate(t *testing.T) {
 		CapacityLimit:   intPtr(1000),
 		VoiceInTrunkIDs: []string{"7c15bca2-7f17-46fb-9486-7e2a17158c7e", "b07a4cab-48c6-4b3a-9670-11b90b81bdef"},
 	})
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	require.NoError(t, err)
 
-	if group.ID != "b2319703-ce6c-480d-bb53-614e7abcfc96" {
-		t.Errorf("expected ID 'b2319703-ce6c-480d-bb53-614e7abcfc96', got %q", group.ID)
-	}
-	if group.Name != "trunk group sample with 2 trunks" {
-		t.Errorf("expected Name 'trunk group sample with 2 trunks', got %q", group.Name)
-	}
+	assert.Equal(t, "b2319703-ce6c-480d-bb53-614e7abcfc96", group.ID)
+	assert.Equal(t, "trunk group sample with 2 trunks", group.Name)
 
 	// Verify included voice_in_trunks
-	if len(group.VoiceInTrunks) != 2 {
-		t.Fatalf("expected 2 voice in trunks, got %d", len(group.VoiceInTrunks))
-	}
-	if group.VoiceInTrunks[0].Name != "test custom11" {
-		t.Errorf("expected first trunk name 'test custom11', got %q", group.VoiceInTrunks[0].Name)
-	}
+	require.Len(t, group.VoiceInTrunks, 2)
+	assert.Equal(t, "test custom11", group.VoiceInTrunks[0].Name)
 
 	assertRequestJSON(t, capturedBody, "voice_in_trunk_groups/create_request.json")
 }
@@ -71,19 +60,12 @@ func TestVoiceInTrunkGroupsUpdate(t *testing.T) {
 		Name:          "trunk group sample updated with 2 trunks",
 		CapacityLimit: intPtr(500),
 	})
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	require.NoError(t, err)
 
-	if group.ID != "b2319703-ce6c-480d-bb53-614e7abcfc96" {
-		t.Errorf("expected ID 'b2319703-ce6c-480d-bb53-614e7abcfc96', got %q", group.ID)
-	}
-	if group.Name != "trunk group sample updated with 2 trunks" {
-		t.Errorf("expected Name 'trunk group sample updated with 2 trunks', got %q", group.Name)
-	}
-	if group.CapacityLimit == nil || *group.CapacityLimit != 500 {
-		t.Errorf("expected CapacityLimit 500, got %v", group.CapacityLimit)
-	}
+	assert.Equal(t, "b2319703-ce6c-480d-bb53-614e7abcfc96", group.ID)
+	assert.Equal(t, "trunk group sample updated with 2 trunks", group.Name)
+	require.NotNil(t, group.CapacityLimit)
+	assert.Equal(t, 500, *group.CapacityLimit)
 }
 
 func TestVoiceInTrunkGroupsDelete(t *testing.T) {
@@ -92,7 +74,5 @@ func TestVoiceInTrunkGroupsDelete(t *testing.T) {
 	})
 
 	err := client.VoiceInTrunkGroups().Delete(context.Background(), "b2319703-ce6c-480d-bb53-614e7abcfc96")
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	require.NoError(t, err)
 }
