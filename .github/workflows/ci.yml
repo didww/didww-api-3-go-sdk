@@ -6,6 +6,11 @@ on:
   pull_request:
     branches: [ main, master, develop ]
 
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
 jobs:
   test:
     name: Test Go ${{ matrix.go-version }} on ${{ matrix.os }}
@@ -52,12 +57,47 @@ jobs:
     - name: Run tests for enums package
       run: go test -race -v ./resource/enums
 
-    - name: Upload coverage reports to Codecov (Ubuntu with Go 1.23 only)
+    - name: Generate badge.json
       if: matrix.os == 'ubuntu-latest'
-      uses: codecov/codecov-action@v4
-      env:
-        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      run: |
+        PERCENT=$(go tool cover -func=coverage.out | grep total | awk '{print $3}' | sed 's/%//')
+        if [ "$(echo "$PERCENT >= 90" | bc)" -eq 1 ]; then COLOR="brightgreen"
+        elif [ "$(echo "$PERCENT >= 75" | bc)" -eq 1 ]; then COLOR="green"
+        elif [ "$(echo "$PERCENT >= 60" | bc)" -eq 1 ]; then COLOR="yellow"
+        else COLOR="red"; fi
+        mkdir -p coverage
+        echo "{\"schemaVersion\":1,\"label\":\"coverage\",\"message\":\"${PERCENT}%\",\"color\":\"${COLOR}\"}" > coverage/badge.json
+
+    - name: Upload coverage artifact
+      if: matrix.os == 'ubuntu-latest'
+      uses: actions/upload-artifact@v4
       with:
-        file: ./coverage.out
-        flags: unittests
-        name: codecov-umbrella
+        name: coverage-badge
+        path: coverage
+
+  deploy-coverage:
+    needs: test
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Download coverage badge
+        uses: actions/download-artifact@v4
+        with:
+          name: coverage-badge
+          path: coverage
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: coverage
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
