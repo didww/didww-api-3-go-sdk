@@ -249,7 +249,7 @@ type DID struct {
 	Blocked                bool    `json:"blocked" api:"readonly"`
 	CapacityLimit          *int    `json:"capacity_limit"`
 	Description            *string `json:"description"`
-	Terminated             bool    `json:"terminated" api:"readonly"`
+	Terminated             bool    `json:"terminated"`
 	AwaitingRegistration   bool    `json:"awaiting_registration" api:"readonly"`
 	CreatedAt              string  `json:"created_at" api:"readonly"`
 	BillingCyclesCount     *int    `json:"billing_cycles_count" api:"readonly"`

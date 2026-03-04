@@ -1,1 +1,1 @@
-{"data":{"id":"9df99644-f1a5-4a3c-99a4-559d758eb96b","type":"dids","attributes":{"capacity_limit":null,"dedicated_channels_count":0,"description":null},"relationships":{"voice_in_trunk":{"data":null},"voice_in_trunk_group":{"data":{"type":"voice_in_trunk_groups","id":"b2319703-ce6c-480d-bb53-614e7abcfc96"}}}}}
+{"data":{"id":"9df99644-f1a5-4a3c-99a4-559d758eb96b","type":"dids","attributes":{},"relationships":{"voice_in_trunk":{"data":null},"voice_in_trunk_group":{"data":{"type":"voice_in_trunk_groups","id":"b2319703-ce6c-480d-bb53-614e7abcfc96"}}}}}

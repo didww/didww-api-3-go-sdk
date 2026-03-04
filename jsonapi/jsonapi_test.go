@@ -1167,3 +1167,350 @@ func TestMarshalResourceAutoDetectsType(t *testing.T) {
 		t.Errorf("type = %q, want %q", doc.Data.Type, "test_resources")
 	}
 }
+
+// --- dirty test helper types ---
+
+type testDirtyResource struct {
+	ID          string  `json:"-" jsonapi:"dirty_resources"`
+	Name        string  `json:"name"`
+	Age         int     `json:"age"`
+	Description *string `json:"description"`
+}
+
+type testDirtyWithReadonly struct {
+	ID        string `json:"-" jsonapi:"dirty_ro_resources"`
+	Name      string `json:"name"`
+	CreatedAt string `json:"created_at" api:"readonly"`
+}
+
+type testDirtyWithRel struct {
+	ID       string `json:"-" jsonapi:"dirty_rel_resources"`
+	Name     string `json:"name"`
+	ParentID string `json:"-" rel:"parent,parents"`
+}
+
+type testMutualExclusive struct {
+	ID      string `json:"-" jsonapi:"mutex_resources"`
+	Name    string `json:"name"`
+	TrunkID string `json:"-" rel:"trunk,trunks"`
+	GroupID string `json:"-" rel:"group,groups"`
+}
+
+func (m *testMutualExclusive) MarshalRelationships() (map[string]any, error) {
+	rels := make(map[string]any)
+	if m.TrunkID != "" {
+		rels["group"] = NullRelationship()
+	}
+	if m.GroupID != "" {
+		rels["trunk"] = NullRelationship()
+	}
+	return rels, nil
+}
+
+// --- MarshalPatch tests ---
+
+func TestMarshalPatch(t *testing.T) {
+	t.Run("new resource sends only set attribute", func(t *testing.T) {
+		r := &testDirtyResource{ID: "1", Name: "Alice"}
+		data, err := MarshalPatch(r)
+		if err != nil {
+			t.Fatalf("MarshalPatch() error = %v", err)
+		}
+
+		doc := parsePatchDoc(t, data)
+		if doc.ID != "1" {
+			t.Errorf("id = %q, want %q", doc.ID, "1")
+		}
+		if doc.Type != "dirty_resources" {
+			t.Errorf("type = %q, want %q", doc.Type, "dirty_resources")
+		}
+		// Name changed from "" to "Alice" → dirty
+		assertAttrEquals(t, doc.Attrs, "name", `"Alice"`)
+		// Age stayed 0 → not dirty
+		assertAttrMissing(t, doc.Attrs, "age")
+	})
+
+	t.Run("loaded resource only sends changed field", func(t *testing.T) {
+		// Simulate loading from API
+		body := `{"data":{"id":"1","type":"dirty_resources","attributes":{"name":"Alice","age":30,"description":"hello"}}}`
+		r, err := UnmarshalOne[testDirtyResource]([]byte(body))
+		if err != nil {
+			t.Fatalf("UnmarshalOne() error = %v", err)
+		}
+
+		// Change only age
+		r.Age = 31
+
+		data, err := MarshalPatch(r)
+		if err != nil {
+			t.Fatalf("MarshalPatch() error = %v", err)
+		}
+
+		doc := parsePatchDoc(t, data)
+		// Only age changed
+		assertAttrEquals(t, doc.Attrs, "age", `31`)
+		// Name and description unchanged
+		assertAttrMissing(t, doc.Attrs, "name")
+		assertAttrMissing(t, doc.Attrs, "description")
+	})
+
+	t.Run("set attribute to null sends explicit null", func(t *testing.T) {
+		// Simulate loading from API with non-nil description
+		desc := "hello"
+		body := `{"data":{"id":"1","type":"dirty_resources","attributes":{"name":"Alice","age":30,"description":"hello"}}}`
+		r, err := UnmarshalOne[testDirtyResource]([]byte(body))
+		if err != nil {
+			t.Fatalf("UnmarshalOne() error = %v", err)
+		}
+		if r.Description == nil || *r.Description != desc {
+			t.Fatalf("expected Description %q, got %v", desc, r.Description)
+		}
+
+		// Clear description
+		r.Description = nil
+
+		data, err := MarshalPatch(r)
+		if err != nil {
+			t.Fatalf("MarshalPatch() error = %v", err)
+		}
+
+		doc := parsePatchDoc(t, data)
+		assertAttrEquals(t, doc.Attrs, "description", `null`)
+		assertAttrMissing(t, doc.Attrs, "name")
+		assertAttrMissing(t, doc.Attrs, "age")
+	})
+
+	t.Run("no changes produces empty attributes", func(t *testing.T) {
+		body := `{"data":{"id":"1","type":"dirty_resources","attributes":{"name":"Alice","age":30}}}`
+		r, err := UnmarshalOne[testDirtyResource]([]byte(body))
+		if err != nil {
+			t.Fatalf("UnmarshalOne() error = %v", err)
+		}
+
+		data, err := MarshalPatch(r)
+		if err != nil {
+			t.Fatalf("MarshalPatch() error = %v", err)
+		}
+
+		doc := parsePatchDoc(t, data)
+		if len(doc.Attrs) != 0 {
+			t.Errorf("expected empty attributes, got %v", doc.Attrs)
+		}
+	})
+
+	t.Run("readonly fields excluded from dirty tracking", func(t *testing.T) {
+		body := `{"data":{"id":"1","type":"dirty_ro_resources","attributes":{"name":"Alice","created_at":"2024-01-01"}}}`
+		r, err := UnmarshalOne[testDirtyWithReadonly]([]byte(body))
+		if err != nil {
+			t.Fatalf("UnmarshalOne() error = %v", err)
+		}
+
+		r.Name = "Bob"
+		r.CreatedAt = "2025-01-01" // readonly, should be ignored
+
+		data, err := MarshalPatch(r)
+		if err != nil {
+			t.Fatalf("MarshalPatch() error = %v", err)
+		}
+
+		doc := parsePatchDoc(t, data)
+		assertAttrEquals(t, doc.Attrs, "name", `"Bob"`)
+		assertAttrMissing(t, doc.Attrs, "created_at")
+	})
+
+	t.Run("relationship dirty on new resource", func(t *testing.T) {
+		r := &testDirtyWithRel{ID: "1", Name: "Child", ParentID: "99"}
+		data, err := MarshalPatch(r)
+		if err != nil {
+			t.Fatalf("MarshalPatch() error = %v", err)
+		}
+
+		doc := parsePatchDoc(t, data)
+		assertAttrEquals(t, doc.Attrs, "name", `"Child"`)
+		if doc.Rels == nil {
+			t.Fatal("expected relationships in patch")
+		}
+		parentRaw, ok := doc.Rels["parent"]
+		if !ok {
+			t.Fatal("expected 'parent' relationship")
+		}
+		ref, err := ParseToOneRelationship(parentRaw)
+		if err != nil {
+			t.Fatalf("ParseToOneRelationship error = %v", err)
+		}
+		if ref.Type != "parents" || ref.ID != "99" {
+			t.Errorf("parent ref = %+v, want {Type:parents ID:99}", ref)
+		}
+	})
+
+	t.Run("mutual exclusion trunk set nullifies group", func(t *testing.T) {
+		r := &testMutualExclusive{ID: "1", TrunkID: "t1"}
+		data, err := MarshalPatch(r)
+		if err != nil {
+			t.Fatalf("MarshalPatch() error = %v", err)
+		}
+
+		doc := parsePatchDoc(t, data)
+		if doc.Rels == nil {
+			t.Fatal("expected relationships")
+		}
+		// trunk should be set
+		trunkRaw, ok := doc.Rels["trunk"]
+		if !ok {
+			t.Fatal("expected 'trunk' relationship")
+		}
+		ref, _ := ParseToOneRelationship(trunkRaw)
+		if ref == nil || ref.ID != "t1" {
+			t.Errorf("trunk ref = %+v, want {ID:t1}", ref)
+		}
+		// group should be explicit null
+		groupRaw, ok := doc.Rels["group"]
+		if !ok {
+			t.Fatal("expected 'group' relationship (null clear)")
+		}
+		groupRef, _ := ParseToOneRelationship(groupRaw)
+		if groupRef != nil {
+			t.Errorf("expected null group, got %+v", groupRef)
+		}
+	})
+
+	t.Run("mutual exclusion group set nullifies trunk", func(t *testing.T) {
+		r := &testMutualExclusive{ID: "1", GroupID: "g1"}
+		data, err := MarshalPatch(r)
+		if err != nil {
+			t.Fatalf("MarshalPatch() error = %v", err)
+		}
+
+		doc := parsePatchDoc(t, data)
+		if doc.Rels == nil {
+			t.Fatal("expected relationships")
+		}
+		// group should be set
+		groupRaw, ok := doc.Rels["group"]
+		if !ok {
+			t.Fatal("expected 'group' relationship")
+		}
+		ref, _ := ParseToOneRelationship(groupRaw)
+		if ref == nil || ref.ID != "g1" {
+			t.Errorf("group ref = %+v, want {ID:g1}", ref)
+		}
+		// trunk should be explicit null
+		trunkRaw, ok := doc.Rels["trunk"]
+		if !ok {
+			t.Fatal("expected 'trunk' relationship (null clear)")
+		}
+		trunkRef, _ := ParseToOneRelationship(trunkRaw)
+		if trunkRef != nil {
+			t.Errorf("expected null trunk, got %+v", trunkRef)
+		}
+	})
+
+	t.Run("multiple dirty attributes all included", func(t *testing.T) {
+		body := `{"data":{"id":"1","type":"dirty_resources","attributes":{"name":"Alice","age":30,"description":"hello"}}}`
+		r, err := UnmarshalOne[testDirtyResource]([]byte(body))
+		if err != nil {
+			t.Fatalf("UnmarshalOne() error = %v", err)
+		}
+
+		r.Name = "Bob"
+		r.Age = 31
+
+		data, err := MarshalPatch(r)
+		if err != nil {
+			t.Fatalf("MarshalPatch() error = %v", err)
+		}
+
+		doc := parsePatchDoc(t, data)
+		assertAttrEquals(t, doc.Attrs, "name", `"Bob"`)
+		assertAttrEquals(t, doc.Attrs, "age", `31`)
+		assertAttrMissing(t, doc.Attrs, "description")
+	})
+
+	t.Run("build with fields marks those attrs dirty", func(t *testing.T) {
+		desc := "new"
+		r := &testDirtyResource{ID: "1", Name: "Alice", Age: 25, Description: &desc}
+		data, err := MarshalPatch(r)
+		if err != nil {
+			t.Fatalf("MarshalPatch() error = %v", err)
+		}
+
+		doc := parsePatchDoc(t, data)
+		assertAttrEquals(t, doc.Attrs, "name", `"Alice"`)
+		assertAttrEquals(t, doc.Attrs, "age", `25`)
+		assertAttrEquals(t, doc.Attrs, "description", `"new"`)
+	})
+
+	t.Run("ForgetCleanState makes resource fully dirty", func(t *testing.T) {
+		body := `{"data":{"id":"1","type":"dirty_resources","attributes":{"name":"Alice","age":30}}}`
+		r, err := UnmarshalOne[testDirtyResource]([]byte(body))
+		if err != nil {
+			t.Fatalf("UnmarshalOne() error = %v", err)
+		}
+
+		// Without changes, patch is empty
+		data, _ := MarshalPatch(r)
+		doc := parsePatchDoc(t, data)
+		if len(doc.Attrs) != 0 {
+			t.Errorf("expected empty attrs before forget, got %v", doc.Attrs)
+		}
+
+		// After forgetting clean state, all non-zero attrs become dirty
+		ForgetCleanState(r)
+		data, err = MarshalPatch(r)
+		if err != nil {
+			t.Fatalf("MarshalPatch() error = %v", err)
+		}
+		doc = parsePatchDoc(t, data)
+		assertAttrEquals(t, doc.Attrs, "name", `"Alice"`)
+		assertAttrEquals(t, doc.Attrs, "age", `30`)
+	})
+}
+
+// --- MarshalPatch test helpers ---
+
+type patchDoc struct {
+	ID    string
+	Type  string
+	Attrs map[string]json.RawMessage
+	Rels  map[string]json.RawMessage
+}
+
+func parsePatchDoc(t *testing.T, data []byte) patchDoc {
+	t.Helper()
+	var doc struct {
+		Data struct {
+			ID            string                     `json:"id"`
+			Type          string                     `json:"type"`
+			Attributes    map[string]json.RawMessage `json:"attributes"`
+			Relationships map[string]json.RawMessage `json:"relationships"`
+		} `json:"data"`
+	}
+	if err := json.Unmarshal(data, &doc); err != nil {
+		t.Fatalf("failed to parse patch doc: %v", err)
+	}
+	return patchDoc{
+		ID:    doc.Data.ID,
+		Type:  doc.Data.Type,
+		Attrs: doc.Data.Attributes,
+		Rels:  doc.Data.Relationships,
+	}
+}
+
+func assertAttrEquals(t *testing.T, attrs map[string]json.RawMessage, key, want string) {
+	t.Helper()
+	raw, ok := attrs[key]
+	if !ok {
+		t.Errorf("expected attribute %q to be present", key)
+		return
+	}
+	if string(raw) != want {
+		t.Errorf("attribute %q = %s, want %s", key, raw, want)
+	}
+}
+
+func assertAttrMissing(t *testing.T, attrs map[string]json.RawMessage, key string) {
+	t.Helper()
+	if raw, ok := attrs[key]; ok {
+		t.Errorf("expected attribute %q to be absent, got %s", key, raw)
+	}
+}

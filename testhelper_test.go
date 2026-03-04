@@ -119,6 +119,56 @@ func newTestServerWithInspector(t *testing.T, routes map[string]testRoute, inspe
 	return &testServerWithClient{client: client}
 }
 
+// newTestServerWithDynamicPatch creates a test server where PATCH requests are handled
+// dynamically based on call count. Other methods use static routes.
+func newTestServerWithDynamicPatch(t *testing.T, routes map[string]testRoute, inspector func(r *http.Request), patchRouter func(call int) testRoute) *testServerWithClient {
+	t.Helper()
+	var patchCount int
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if inspector != nil {
+			inspector(r)
+		}
+
+		var route testRoute
+		var ok bool
+		if r.Method == http.MethodPatch {
+			patchCount++
+			route = patchRouter(patchCount)
+			ok = true
+		} else {
+			route, ok = routes[r.Method+" "+r.URL.Path]
+			if !ok {
+				route, ok = routes[r.URL.Path]
+			}
+		}
+		if !ok {
+			w.WriteHeader(http.StatusNotFound)
+			w.Write([]byte(`{"errors":[{"title":"not found","status":"404"}]}`))
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/vnd.api+json")
+		w.WriteHeader(route.status)
+		if route.fixture != "" {
+			data := loadFixture(t, route.fixture)
+			w.Write(data)
+		} else if route.body != "" {
+			w.Write([]byte(route.body))
+		}
+	}))
+
+	client, err := NewClient("test-api-key", WithBaseURL(server.URL))
+	if err != nil {
+		t.Fatalf("failed to create test client: %v", err)
+	}
+
+	t.Cleanup(func() {
+		server.Close()
+	})
+
+	return &testServerWithClient{client: client}
+}
+
 // assertRequestJSON compares the actual request body against a fixture file using semantic JSON comparison.
 // Key order is ignored; both are normalized to map[string]any before comparison.
 func assertRequestJSON(t *testing.T, actual []byte, fixturePath string) {

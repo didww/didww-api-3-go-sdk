@@ -175,10 +175,10 @@ balance, _ := client.Balance().Find(ctx)
 // List DIDs
 dids, _ := client.DIDs().List(ctx, nil)
 
-// Update DID - assign capacity
+// Update DID - only changed fields are sent (dirty-only PATCH)
 did, _ := client.DIDs().Find(ctx, "uuid")
-did.Description = "Updated"
-did.CapacityLimit = 20
+desc := "Updated"
+did.Description = &desc
 updated, _ := client.DIDs().Update(ctx, did)
 ```
 
@@ -345,6 +345,70 @@ params := didww.NewQueryParams().
     Page(1, 25)
 
 regions, _ := client.Regions().List(ctx, params)
+```
+
+## Dirty PATCH Serialization
+
+The SDK tracks which fields have been modified and sends only those fields in PATCH requests. This avoids overwriting server-side values that your code hasn't touched.
+
+### Updating a fetched resource
+
+When you fetch a resource and modify it, only the changed fields are sent:
+
+```go
+did, _ := client.DIDs().Find(ctx, "uuid")
+did.DedicatedChannelsCount = 5
+// PATCH payload includes only "dedicated_channels_count", not all attributes
+updated, _ := client.DIDs().Update(ctx, did)
+```
+
+### Building a resource for update
+
+Create a struct with just the ID to send a PATCH without fetching first:
+
+```go
+desc := "New description"
+updated, _ := client.DIDs().Update(ctx, &didww.DID{
+    ID:          "uuid",
+    Description: &desc,
+})
+// PATCH payload includes only "description"
+```
+
+### Clearing a field with explicit null
+
+Setting a pointer field to `nil` after it had a value sends an explicit `null` in the payload:
+
+```go
+did, _ := client.DIDs().Find(ctx, "uuid")
+did.Description = nil
+// PATCH payload: { "description": null }
+updated, _ := client.DIDs().Update(ctx, did)
+```
+
+### Clearing a relationship
+
+Setting a relationship ID to empty on a built resource sends `"data": null` for to-one relationships:
+
+```go
+did, _ := client.DIDs().Find(ctx, "uuid")
+did.VoiceInTrunkID = "trunk-uuid"
+// PATCH payload includes: "relationships": { "voice_in_trunk": { "data": { ... } }, "voice_in_trunk_group": { "data": null } }
+// Mutual exclusion is handled automatically.
+updated, _ := client.DIDs().Update(ctx, did)
+```
+
+### Included resources
+
+Dirty tracking is automatically enabled on included (sideloaded) resources, so you can fetch with includes and update a related resource directly:
+
+```go
+params := didww.NewQueryParams().Include("voice_in_trunk")
+did, _ := client.DIDs().Find(ctx, "uuid", params)
+trunk := did.VoiceInTrunk
+desc := "Updated via include"
+trunk.Description = &desc
+updated, _ := client.VoiceInTrunks().Update(ctx, trunk)
 ```
 
 ## Trunk Configuration Types
