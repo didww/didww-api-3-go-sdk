@@ -134,3 +134,22 @@ func TestClientWithQueryParamsAppendedToURL(t *testing.T) {
 	assertContains(t, requestURL, "page[number]=1")
 	assertContains(t, requestURL, "page[size]=25")
 }
+
+func TestClientWithHTTPClient(t *testing.T) {
+	custom := &http.Client{}
+	client, err := NewClient("test-api-key", WithHTTPClient(custom))
+	require.NoError(t, err)
+	require.NotNil(t, client)
+	// Verify the custom HTTP client is used by making a request
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/vnd.api+json")
+		w.WriteHeader(http.StatusOK)
+		w.Write(loadFixture(t, "balance/index.json"))
+	}))
+	defer server.Close()
+
+	client, err = NewClient("test-api-key", WithBaseURL(server.URL), WithHTTPClient(custom))
+	require.NoError(t, err)
+	_, err = client.Balance().Find(context.Background())
+	require.NoError(t, err)
+}

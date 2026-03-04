@@ -1114,3 +1114,73 @@ func assertAttrMissing(t *testing.T, attrs map[string]json.RawMessage, key strin
 	t.Helper()
 	assert.NotContains(t, attrs, key)
 }
+
+// --- Coverage gap tests ---
+
+func TestUnmarshalOneWithEmptyAttributes(t *testing.T) {
+	body := `{"data":{"id":"1","type":"test","attributes":{}}}`
+	r, err := UnmarshalOne[testResource]([]byte(body))
+	require.NoError(t, err)
+	assert.Equal(t, "1", r.ID)
+	assert.Equal(t, "", r.Name)
+	assert.Equal(t, 0, r.Age)
+}
+
+func TestUnmarshalOneWithNullAttributes(t *testing.T) {
+	body := `{"data":{"id":"1","type":"test","attributes":null}}`
+	r, err := UnmarshalOne[testResource]([]byte(body))
+	require.NoError(t, err)
+	assert.Equal(t, "1", r.ID)
+	assert.Equal(t, "", r.Name)
+}
+
+func TestZeroResourceNil(t *testing.T) {
+	result := zeroResource(nil)
+	assert.Nil(t, result)
+}
+
+func TestZeroResourceNonStructPointer(t *testing.T) {
+	s := "hello"
+	result := zeroResource(&s)
+	assert.Nil(t, result)
+}
+
+func TestZeroResourceNonStruct(t *testing.T) {
+	result := zeroResource(42)
+	assert.Nil(t, result)
+}
+
+func TestRelationshipClearPayloadToOne(t *testing.T) {
+	// to-one: previous has object data → should return {"data":null}
+	previous := json.RawMessage(`{"data":{"type":"users","id":"1"}}`)
+	result := relationshipClearPayload(previous)
+	assert.JSONEq(t, `{"data":null}`, string(result))
+}
+
+func TestRelationshipClearPayloadToMany(t *testing.T) {
+	// to-many: previous has array data → should return {"data":[]}
+	previous := json.RawMessage(`{"data":[{"type":"tags","id":"1"}]}`)
+	result := relationshipClearPayload(previous)
+	assert.JSONEq(t, `{"data":[]}`, string(result))
+}
+
+func TestRelationshipClearPayloadInvalidJSON(t *testing.T) {
+	// invalid JSON → falls through to null
+	previous := json.RawMessage(`{bad`)
+	result := relationshipClearPayload(previous)
+	assert.JSONEq(t, `{"data":null}`, string(result))
+}
+
+func TestCloneRawNil(t *testing.T) {
+	result := cloneRaw(nil)
+	assert.Nil(t, result)
+}
+
+func TestCloneRawNonNil(t *testing.T) {
+	original := json.RawMessage(`{"key":"value"}`)
+	clone := cloneRaw(original)
+	assert.Equal(t, string(original), string(clone))
+	// Verify it's a copy, not the same slice
+	clone[0] = 'x'
+	assert.NotEqual(t, string(original), string(clone))
+}

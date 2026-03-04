@@ -169,3 +169,21 @@ func TestNewEncrypt(t *testing.T) {
 	fp := enc.Fingerprint()
 	assert.Contains(t, fp, ":::")
 }
+
+func TestEncryptEncryptMethod(t *testing.T) {
+	_, client := newTestServer(t, map[string]testRoute{
+		"GET /v3/public_keys": {status: http.StatusOK, fixture: "public_keys/index.json"},
+	})
+
+	enc, err := NewEncrypt(context.Background(), client)
+	require.NoError(t, err)
+
+	plaintext := []byte("test data for encryption")
+	encrypted, err := enc.Encrypt(plaintext)
+	require.NoError(t, err)
+	assert.NotEmpty(t, encrypted)
+
+	// RSA-OAEP with 2048-bit key produces 256-byte output per key
+	// Encrypted data should be larger than 2 * 256 bytes (two RSA blocks + AES data)
+	assert.Greater(t, len(encrypted), 512)
+}
