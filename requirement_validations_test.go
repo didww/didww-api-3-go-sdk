@@ -5,6 +5,9 @@ import (
 	"io"
 	"net/http"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestRequirementValidationsCreate(t *testing.T) {
@@ -19,13 +22,9 @@ func TestRequirementValidationsCreate(t *testing.T) {
 		AddressID:     "d3414687-40f4-4346-a267-c2c65117d28c",
 		RequirementID: "aea92b24-a044-4864-9740-89d3e15b65c7",
 	})
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	require.NoError(t, err)
 
-	if rv.ID == "" {
-		t.Error("expected non-empty ID")
-	}
+	assert.NotEmpty(t, rv.ID)
 
 	assertRequestJSON(t, capturedBody, "requirement_validations/create_request.json")
 }
@@ -43,17 +42,11 @@ func TestRequirementValidationsCreateError(t *testing.T) {
 		AddressID:     "d3414687-40f4-4346-a267-c2c65117d28c",
 		RequirementID: "2efc3427-8ba6-4d50-875d-f2de4a068de8",
 	})
-	if err == nil {
-		t.Fatal("expected error")
-	}
+	require.Error(t, err)
 
 	apiErr, ok := err.(*APIError)
-	if !ok {
-		t.Fatalf("expected *APIError, got %T", err)
-	}
-	if len(apiErr.Errors) != 3 {
-		t.Fatalf("expected 3 errors, got %d", len(apiErr.Errors))
-	}
+	require.True(t, ok, "expected *APIError")
+	require.Len(t, apiErr.Errors, 3)
 
 	assertRequestJSON(t, capturedBody, "requirement_validations/create_request_failed.json")
 }

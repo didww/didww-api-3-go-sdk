@@ -4,6 +4,9 @@ import (
 	"context"
 	"net/http"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestVoiceOutTrunkRegenerateCredentialsCreate(t *testing.T) {
@@ -12,11 +15,7 @@ func TestVoiceOutTrunkRegenerateCredentialsCreate(t *testing.T) {
 	})
 
 	cred, err := client.VoiceOutTrunkRegenerateCredentials().Create(context.Background(), &VoiceOutTrunkRegenerateCredential{})
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	require.NoError(t, err)
 
-	if cred.ID != "5fc59e7e-79eb-498a-8779-800416b5c68a" {
-		t.Errorf("expected ID '5fc59e7e-79eb-498a-8779-800416b5c68a', got %q", cred.ID)
-	}
+	assert.Equal(t, "5fc59e7e-79eb-498a-8779-800416b5c68a", cred.ID)
 }

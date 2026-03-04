@@ -4,6 +4,9 @@ import (
 	"context"
 	"net/http"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestBalanceFind(t *testing.T) {
@@ -12,20 +15,10 @@ func TestBalanceFind(t *testing.T) {
 	})
 
 	balance, err := client.Balance().Find(context.Background())
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	require.NoError(t, err)
 
-	if balance.ID != "4c39e0bf-683b-4697-9322-5abaf4011883" {
-		t.Errorf("expected ID '4c39e0bf-683b-4697-9322-5abaf4011883', got %q", balance.ID)
-	}
-	if balance.TotalBalance != "60.00" {
-		t.Errorf("expected TotalBalance '60.00', got %q", balance.TotalBalance)
-	}
-	if balance.Credit != "10.00" {
-		t.Errorf("expected Credit '10.00', got %q", balance.Credit)
-	}
-	if balance.Balance != "50.00" {
-		t.Errorf("expected Balance '50.00', got %q", balance.Balance)
-	}
+	assert.Equal(t, "4c39e0bf-683b-4697-9322-5abaf4011883", balance.ID)
+	assert.Equal(t, "60.00", balance.TotalBalance)
+	assert.Equal(t, "10.00", balance.Credit)
+	assert.Equal(t, "50.00", balance.Balance)
 }

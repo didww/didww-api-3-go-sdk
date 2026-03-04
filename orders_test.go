@@ -7,6 +7,9 @@ import (
 	"testing"
 
 	"github.com/didww/didww-api-3-go-sdk/resource/enums"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestOrdersCreate(t *testing.T) {
@@ -36,42 +39,20 @@ func TestOrdersCreate(t *testing.T) {
 			},
 		},
 	})
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	require.NoError(t, err)
 
-	if order.ID != "5da18706-be9f-49b0-aeec-0480aacd49ad" {
-		t.Errorf("expected ID '5da18706-be9f-49b0-aeec-0480aacd49ad', got %q", order.ID)
-	}
-	if order.Amount != "5.98" {
-		t.Errorf("expected Amount '5.98', got %q", order.Amount)
-	}
-	if order.Status != enums.OrderStatusPending {
-		t.Errorf("expected Status 'Pending', got %q", order.Status)
-	}
-	if order.Description != "DID" {
-		t.Errorf("expected Description 'DID', got %q", order.Description)
-	}
-	if order.Reference != "JXK-923618" {
-		t.Errorf("expected Reference 'JXK-923618', got %q", order.Reference)
-	}
-	if len(order.Items) != 2 {
-		t.Fatalf("expected 2 items, got %d", len(order.Items))
-	}
+	assert.Equal(t, "5da18706-be9f-49b0-aeec-0480aacd49ad", order.ID)
+	assert.Equal(t, "5.98", order.Amount)
+	assert.Equal(t, enums.OrderStatusPending, order.Status)
+	assert.Equal(t, "DID", order.Description)
+	assert.Equal(t, "JXK-923618", order.Reference)
+	require.Len(t, order.Items, 2)
 
 	item1 := order.Items[0]
-	if item1.Type != "did_order_items" {
-		t.Errorf("expected item type 'did_order_items', got %q", item1.Type)
-	}
-	if item1.Attributes.Qty != 1 {
-		t.Errorf("expected Qty 1, got %d", item1.Attributes.Qty)
-	}
-	if item1.Attributes.Nrc != "0.0" {
-		t.Errorf("expected Nrc '0.0', got %q", item1.Attributes.Nrc)
-	}
-	if item1.Attributes.Mrc != "5.6" {
-		t.Errorf("expected Mrc '5.6', got %q", item1.Attributes.Mrc)
-	}
+	assert.Equal(t, "did_order_items", item1.Type)
+	assert.Equal(t, 1, item1.Attributes.Qty)
+	assert.Equal(t, "0.0", item1.Attributes.Nrc)
+	assert.Equal(t, "5.6", item1.Attributes.Mrc)
 
 	assertRequestJSON(t, capturedBody, "orders/create_request.json")
 }
@@ -95,9 +76,7 @@ func TestOrdersCreateAvailableDid(t *testing.T) {
 			},
 		},
 	})
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	require.NoError(t, err)
 
 	assertRequestJSON(t, capturedBody, "orders/create_request_available_did.json")
 }
@@ -121,9 +100,7 @@ func TestOrdersCreateReservation(t *testing.T) {
 			},
 		},
 	})
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	require.NoError(t, err)
 
 	assertRequestJSON(t, capturedBody, "orders/create_request_reservation.json")
 }
@@ -147,9 +124,7 @@ func TestOrdersCreateCapacity(t *testing.T) {
 			},
 		},
 	})
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	require.NoError(t, err)
 
 	assertRequestJSON(t, capturedBody, "orders/create_request_capacity.json")
 }
@@ -176,9 +151,7 @@ func TestOrdersCreateBillingCycles(t *testing.T) {
 			},
 		},
 	})
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	require.NoError(t, err)
 
 	assertRequestJSON(t, capturedBody, "orders/create_request_billing_cycles.json")
 }
@@ -204,9 +177,7 @@ func TestOrdersCreateNanpa(t *testing.T) {
 			},
 		},
 	})
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	require.NoError(t, err)
 
 	assertRequestJSON(t, capturedBody, "orders/create_request_nanpa.json")
 }
@@ -235,9 +206,7 @@ func TestOrdersCreateWithCallback(t *testing.T) {
 			},
 		},
 	})
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	require.NoError(t, err)
 
 	assertRequestJSON(t, capturedBody, "orders_with_callback/create_request.json")
 }
@@ -248,29 +217,13 @@ func TestOrdersFind(t *testing.T) {
 	})
 
 	order, err := client.Orders().Find(context.Background(), "9df11dac-9d83-448c-8866-19c998be33db")
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	require.NoError(t, err)
 
-	if order.ID != "9df11dac-9d83-448c-8866-19c998be33db" {
-		t.Errorf("expected ID '9df11dac-9d83-448c-8866-19c998be33db', got %q", order.ID)
-	}
-	if order.Amount != "25.07" {
-		t.Errorf("expected Amount '25.07', got %q", order.Amount)
-	}
-	if order.Status != enums.OrderStatusCompleted {
-		t.Errorf("expected Status 'Completed', got %q", order.Status)
-	}
-	if order.Description != "Payment processing fee" {
-		t.Errorf("expected Description 'Payment processing fee', got %q", order.Description)
-	}
-	if order.Reference != "SPT-474057" {
-		t.Errorf("expected Reference 'SPT-474057', got %q", order.Reference)
-	}
-	if len(order.Items) != 1 {
-		t.Fatalf("expected 1 item, got %d", len(order.Items))
-	}
-	if order.Items[0].Type != "generic_order_items" {
-		t.Errorf("expected item type 'generic_order_items', got %q", order.Items[0].Type)
-	}
+	assert.Equal(t, "9df11dac-9d83-448c-8866-19c998be33db", order.ID)
+	assert.Equal(t, "25.07", order.Amount)
+	assert.Equal(t, enums.OrderStatusCompleted, order.Status)
+	assert.Equal(t, "Payment processing fee", order.Description)
+	assert.Equal(t, "SPT-474057", order.Reference)
+	require.Len(t, order.Items, 1)
+	assert.Equal(t, "generic_order_items", order.Items[0].Type)
 }

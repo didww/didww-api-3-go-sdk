@@ -6,9 +6,11 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
-	"reflect"
 	"runtime"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 // fixturesDir returns the absolute path to the testdata/fixtures directory.
@@ -22,9 +24,7 @@ func loadFixture(t *testing.T, path string) []byte {
 	t.Helper()
 	fullPath := filepath.Join(fixturesDir(), path)
 	data, err := os.ReadFile(fullPath)
-	if err != nil {
-		t.Fatalf("failed to load fixture %s: %v", path, err)
-	}
+	require.NoError(t, err, "failed to load fixture %s", path)
 	return data
 }
 
@@ -55,9 +55,7 @@ func newTestServer(t *testing.T, routes map[string]testRoute) (*httptest.Server,
 	}))
 
 	client, err := NewClient("test-api-key", WithBaseURL(server.URL))
-	if err != nil {
-		t.Fatalf("failed to create test client: %v", err)
-	}
+	require.NoError(t, err)
 
 	t.Cleanup(func() {
 		server.Close()
@@ -108,9 +106,7 @@ func newTestServerWithInspector(t *testing.T, routes map[string]testRoute, inspe
 	}))
 
 	client, err := NewClient("test-api-key", WithBaseURL(server.URL))
-	if err != nil {
-		t.Fatalf("failed to create test client: %v", err)
-	}
+	require.NoError(t, err)
 
 	t.Cleanup(func() {
 		server.Close()
@@ -158,9 +154,7 @@ func newTestServerWithDynamicPatch(t *testing.T, routes map[string]testRoute, in
 	}))
 
 	client, err := NewClient("test-api-key", WithBaseURL(server.URL))
-	if err != nil {
-		t.Fatalf("failed to create test client: %v", err)
-	}
+	require.NoError(t, err)
 
 	t.Cleanup(func() {
 		server.Close()
@@ -176,18 +170,10 @@ func assertRequestJSON(t *testing.T, actual []byte, fixturePath string) {
 	expected := loadFixture(t, fixturePath)
 
 	var actualObj any
-	if err := json.Unmarshal(actual, &actualObj); err != nil {
-		t.Fatalf("failed to parse actual request body: %v", err)
-	}
+	require.NoError(t, json.Unmarshal(actual, &actualObj), "failed to parse actual request body")
 
 	var expectedObj any
-	if err := json.Unmarshal(expected, &expectedObj); err != nil {
-		t.Fatalf("failed to parse expected fixture %s: %v", fixturePath, err)
-	}
+	require.NoError(t, json.Unmarshal(expected, &expectedObj), "failed to parse expected fixture %s", fixturePath)
 
-	if !reflect.DeepEqual(actualObj, expectedObj) {
-		actualPretty, _ := json.MarshalIndent(actualObj, "", "  ")
-		expectedPretty, _ := json.MarshalIndent(expectedObj, "", "  ")
-		t.Errorf("request body mismatch for fixture %s\nGot:\n%s\nWant:\n%s", fixturePath, actualPretty, expectedPretty)
-	}
+	assert.Equal(t, expectedObj, actualObj, "request body mismatch for fixture %s", fixturePath)
 }

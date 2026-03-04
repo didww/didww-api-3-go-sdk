@@ -7,6 +7,9 @@ import (
 	"testing"
 
 	"github.com/didww/didww-api-3-go-sdk/resource/enums"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestIdentitiesList(t *testing.T) {
@@ -15,24 +18,14 @@ func TestIdentitiesList(t *testing.T) {
 	})
 
 	identities, err := client.Identities().List(context.Background(), nil)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	require.NoError(t, err)
 
-	if len(identities) == 0 {
-		t.Fatal("expected non-empty identities list")
-	}
+	require.NotEmpty(t, identities)
 
 	first := identities[0]
-	if first.FirstName != "John" {
-		t.Errorf("expected FirstName 'John', got %q", first.FirstName)
-	}
-	if first.LastName != "Doe" {
-		t.Errorf("expected LastName 'Doe', got %q", first.LastName)
-	}
-	if first.IdentityType != enums.IdentityTypePersonal {
-		t.Errorf("expected IdentityType 'Personal', got %q", first.IdentityType)
-	}
+	assert.Equal(t, "John", first.FirstName)
+	assert.Equal(t, "Doe", first.LastName)
+	assert.Equal(t, enums.IdentityTypePersonal, first.IdentityType)
 }
 
 func TestIdentitiesCreate(t *testing.T) {
@@ -65,27 +58,15 @@ func TestIdentitiesCreate(t *testing.T) {
 		ExternalReferenceID: &externalRefID,
 		CountryID:           "1f6fc2bd-f081-4202-9b1a-d9cb88d942b9",
 	})
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	require.NoError(t, err)
 
-	if identity.ID != "e96ae7d1-11d5-42bc-a5c5-211f3c3788ae" {
-		t.Errorf("expected ID 'e96ae7d1-11d5-42bc-a5c5-211f3c3788ae', got %q", identity.ID)
-	}
-	if identity.FirstName != "John" {
-		t.Errorf("expected FirstName 'John', got %q", identity.FirstName)
-	}
-	if identity.IdentityType != enums.IdentityTypeBusiness {
-		t.Errorf("expected IdentityType 'Business', got %q", identity.IdentityType)
-	}
+	assert.Equal(t, "e96ae7d1-11d5-42bc-a5c5-211f3c3788ae", identity.ID)
+	assert.Equal(t, "John", identity.FirstName)
+	assert.Equal(t, enums.IdentityTypeBusiness, identity.IdentityType)
 
 	// Verify included country
-	if identity.Country == nil {
-		t.Fatal("expected non-nil Country")
-	}
-	if identity.Country.Name != "United States" {
-		t.Errorf("expected country name 'United States', got %q", identity.Country.Name)
-	}
+	require.NotNil(t, identity.Country)
+	assert.Equal(t, "United States", identity.Country.Name)
 
 	assertRequestJSON(t, capturedBody, "identities/create_request.json")
 }
@@ -103,22 +84,13 @@ func TestIdentitiesCreatePersonal(t *testing.T) {
 		BirthDate:    "1970-01-01",
 		CountryID:    "1f6fc2bd-f081-4202-9b1a-d9cb88d942b9",
 	})
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	require.NoError(t, err)
 
-	if identity.ID != "9728ea13-cb5d-41fb-8a7f-796a005b0a13" {
-		t.Errorf("expected ID '9728ea13-cb5d-41fb-8a7f-796a005b0a13', got %q", identity.ID)
-	}
-	if identity.IdentityType != enums.IdentityTypePersonal {
-		t.Errorf("expected IdentityType 'Personal', got %q", identity.IdentityType)
-	}
-	if identity.FirstName != "John" {
-		t.Errorf("expected FirstName 'John', got %q", identity.FirstName)
-	}
-	if identity.PersonalTaxID == nil || *identity.PersonalTaxID != "987654321" {
-		t.Errorf("expected PersonalTaxID '987654321', got %v", identity.PersonalTaxID)
-	}
+	assert.Equal(t, "9728ea13-cb5d-41fb-8a7f-796a005b0a13", identity.ID)
+	assert.Equal(t, enums.IdentityTypePersonal, identity.IdentityType)
+	assert.Equal(t, "John", identity.FirstName)
+	require.NotNil(t, identity.PersonalTaxID)
+	assert.Equal(t, "987654321", *identity.PersonalTaxID)
 }
 
 func TestIdentitiesUpdate(t *testing.T) {
@@ -131,22 +103,13 @@ func TestIdentitiesUpdate(t *testing.T) {
 		FirstName: "Jake",
 		LastName:  "Johnson",
 	})
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	require.NoError(t, err)
 
-	if identity.ID != "e96ae7d1-11d5-42bc-a5c5-211f3c3788ae" {
-		t.Errorf("expected ID 'e96ae7d1-11d5-42bc-a5c5-211f3c3788ae', got %q", identity.ID)
-	}
-	if identity.FirstName != "Jake" {
-		t.Errorf("expected FirstName 'Jake', got %q", identity.FirstName)
-	}
-	if identity.LastName != "Johnson" {
-		t.Errorf("expected LastName 'Johnson', got %q", identity.LastName)
-	}
-	if identity.CompanyName == nil || *identity.CompanyName != "Some Company Limited" {
-		t.Errorf("expected CompanyName 'Some Company Limited', got %v", identity.CompanyName)
-	}
+	assert.Equal(t, "e96ae7d1-11d5-42bc-a5c5-211f3c3788ae", identity.ID)
+	assert.Equal(t, "Jake", identity.FirstName)
+	assert.Equal(t, "Johnson", identity.LastName)
+	require.NotNil(t, identity.CompanyName)
+	assert.Equal(t, "Some Company Limited", *identity.CompanyName)
 }
 
 func TestIdentitiesDelete(t *testing.T) {
@@ -155,7 +118,5 @@ func TestIdentitiesDelete(t *testing.T) {
 	})
 
 	err := client.Identities().Delete(context.Background(), "e96ae7d1-11d5-42bc-a5c5-211f3c3788ae")
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	require.NoError(t, err)
 }

@@ -5,6 +5,9 @@ import (
 	"io"
 	"net/http"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestProofsCreateWithProofTypeAndFiles(t *testing.T) {
@@ -19,13 +22,9 @@ func TestProofsCreateWithProofTypeAndFiles(t *testing.T) {
 		ProofTypeID: "19cd7b22-559b-41d4-99c9-7ad7ad63d5d1",
 		FileIDs:     []string{"254b3c2d-c40c-4ff7-93b1-a677aee7fa10"},
 	})
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	require.NoError(t, err)
 
-	if proof.ID == "" {
-		t.Error("expected non-empty ID after creation")
-	}
+	assert.NotEmpty(t, proof.ID)
 
 	assertRequestJSON(t, capturedBody, "proofs/create_request.json")
 }
@@ -44,9 +43,7 @@ func TestProofsCreateWithIdentityEntity(t *testing.T) {
 		EntityType:  "identities",
 		FileIDs:     []string{"cc52b6b3-0627-47d3-a1c9-b54d3de42813"},
 	})
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	require.NoError(t, err)
 
 	assertRequestJSON(t, capturedBody, "proofs/create_with_identity_request.json")
 }
@@ -65,9 +62,7 @@ func TestProofsCreateWithAddressEntity(t *testing.T) {
 		EntityType:  "addresses",
 		FileIDs:     []string{"cc52b6b3-0627-47d3-a1c9-b54d3de42813"},
 	})
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	require.NoError(t, err)
 
 	assertRequestJSON(t, capturedBody, "proofs/create_with_address_request.json")
 }
@@ -78,25 +73,15 @@ func TestProofsList(t *testing.T) {
 	})
 
 	proofs, err := client.Proofs().List(context.Background(), nil)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	require.NoError(t, err)
 
-	if len(proofs) == 0 {
-		t.Fatal("expected non-empty proofs list")
-	}
+	require.NotEmpty(t, proofs)
 
 	// Verify entity relationship is parsed from response
 	proof := proofs[0]
-	if proof.EntityType != "identities" {
-		t.Errorf("expected entity type 'identities', got %q", proof.EntityType)
-	}
-	if proof.EntityID != "54c92d8e-f135-4b55-ac48-748d44437509" {
-		t.Errorf("expected entity ID '54c92d8e-f135-4b55-ac48-748d44437509', got %q", proof.EntityID)
-	}
-	if proof.ProofTypeID != "19cd7b22-559b-41d4-99c9-7ad7ad63d5d1" {
-		t.Errorf("expected proof_type ID '19cd7b22-559b-41d4-99c9-7ad7ad63d5d1', got %q", proof.ProofTypeID)
-	}
+	assert.Equal(t, "identities", proof.EntityType)
+	assert.Equal(t, "54c92d8e-f135-4b55-ac48-748d44437509", proof.EntityID)
+	assert.Equal(t, "19cd7b22-559b-41d4-99c9-7ad7ad63d5d1", proof.ProofTypeID)
 }
 
 func TestProofsCreateResponseParsesProofTypeFromRelationships(t *testing.T) {
@@ -109,16 +94,10 @@ func TestProofsCreateResponseParsesProofTypeFromRelationships(t *testing.T) {
 		EntityID:    "some-entity-id",
 		EntityType:  "identities",
 	})
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	require.NoError(t, err)
 
 	// create.json has proof_type with data but entity without data
-	if proof.ProofTypeID != "19cd7b22-559b-41d4-99c9-7ad7ad63d5d1" {
-		t.Errorf("expected proof_type ID '19cd7b22-559b-41d4-99c9-7ad7ad63d5d1', got %q", proof.ProofTypeID)
-	}
+	assert.Equal(t, "19cd7b22-559b-41d4-99c9-7ad7ad63d5d1", proof.ProofTypeID)
 	// Entity has only links (no data) in create.json, so should be empty
-	if proof.EntityID != "" {
-		t.Errorf("expected empty entity ID (no data in response), got %q", proof.EntityID)
-	}
+	assert.Equal(t, "", proof.EntityID)
 }

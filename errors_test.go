@@ -4,6 +4,9 @@ import (
 	"encoding/json"
 	"net/http"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestApiErrorParsing(t *testing.T) {
@@ -22,34 +25,18 @@ func TestApiErrorParsing(t *testing.T) {
 	}`
 
 	apiErr, err := ParseAPIErrors([]byte(body), http.StatusUnprocessableEntity)
-	if err != nil {
-		t.Fatalf("unexpected error parsing API errors: %v", err)
-	}
+	require.NoError(t, err)
 
-	if apiErr.HTTPStatus != http.StatusUnprocessableEntity {
-		t.Errorf("expected HTTP status 422, got %d", apiErr.HTTPStatus)
-	}
+	assert.Equal(t, http.StatusUnprocessableEntity, apiErr.HTTPStatus)
 
-	if len(apiErr.Errors) != 1 {
-		t.Fatalf("expected 1 error, got %d", len(apiErr.Errors))
-	}
+	require.Len(t, apiErr.Errors, 1)
 
 	e := apiErr.Errors[0]
-	if e.Title != "is invalid" {
-		t.Errorf("expected title 'is invalid', got %q", e.Title)
-	}
-	if e.Detail != "voice_in_trunk_group - is invalid" {
-		t.Errorf("expected detail 'voice_in_trunk_group - is invalid', got %q", e.Detail)
-	}
-	if e.Code != "100" {
-		t.Errorf("expected code '100', got %q", e.Code)
-	}
-	if e.Source.Pointer != "/data/attributes/voice_in_trunk_group_id" {
-		t.Errorf("expected source pointer '/data/attributes/voice_in_trunk_group_id', got %q", e.Source.Pointer)
-	}
-	if e.Status != "422" {
-		t.Errorf("expected status '422', got %q", e.Status)
-	}
+	assert.Equal(t, "is invalid", e.Title)
+	assert.Equal(t, "voice_in_trunk_group - is invalid", e.Detail)
+	assert.Equal(t, "100", e.Code)
+	assert.Equal(t, "/data/attributes/voice_in_trunk_group_id", e.Source.Pointer)
+	assert.Equal(t, "422", e.Status)
 }
 
 func TestApiErrorMultipleErrors(t *testing.T) {
@@ -71,20 +58,12 @@ func TestApiErrorMultipleErrors(t *testing.T) {
 	}`
 
 	apiErr, err := ParseAPIErrors([]byte(body), http.StatusUnprocessableEntity)
-	if err != nil {
-		t.Fatalf("unexpected error parsing API errors: %v", err)
-	}
+	require.NoError(t, err)
 
-	if len(apiErr.Errors) != 2 {
-		t.Fatalf("expected 2 errors, got %d", len(apiErr.Errors))
-	}
+	require.Len(t, apiErr.Errors, 2)
 
-	if apiErr.Errors[0].Detail != "name - can't be blank" {
-		t.Errorf("expected first error detail 'name - can't be blank', got %q", apiErr.Errors[0].Detail)
-	}
-	if apiErr.Errors[1].Detail != "configuration - is invalid" {
-		t.Errorf("expected second error detail 'configuration - is invalid', got %q", apiErr.Errors[1].Detail)
-	}
+	assert.Equal(t, "name - can't be blank", apiErr.Errors[0].Detail)
+	assert.Equal(t, "configuration - is invalid", apiErr.Errors[1].Detail)
 }
 
 func TestApiErrorWithoutCode(t *testing.T) {
@@ -99,17 +78,11 @@ func TestApiErrorWithoutCode(t *testing.T) {
 	}`
 
 	apiErr, err := ParseAPIErrors([]byte(body), http.StatusNotFound)
-	if err != nil {
-		t.Fatalf("unexpected error parsing API errors: %v", err)
-	}
+	require.NoError(t, err)
 
-	if apiErr.HTTPStatus != http.StatusNotFound {
-		t.Errorf("expected HTTP status 404, got %d", apiErr.HTTPStatus)
-	}
+	assert.Equal(t, http.StatusNotFound, apiErr.HTTPStatus)
 
-	if apiErr.Errors[0].Code != "" {
-		t.Errorf("expected empty code, got %q", apiErr.Errors[0].Code)
-	}
+	assert.Equal(t, "", apiErr.Errors[0].Code)
 }
 
 func TestApiErrorWithoutSourcePointer(t *testing.T) {
@@ -124,27 +97,19 @@ func TestApiErrorWithoutSourcePointer(t *testing.T) {
 	}`
 
 	apiErr, err := ParseAPIErrors([]byte(body), http.StatusInternalServerError)
-	if err != nil {
-		t.Fatalf("unexpected error parsing API errors: %v", err)
-	}
+	require.NoError(t, err)
 
-	if apiErr.Errors[0].Source.Pointer != "" {
-		t.Errorf("expected empty source pointer, got %q", apiErr.Errors[0].Source.Pointer)
-	}
+	assert.Equal(t, "", apiErr.Errors[0].Source.Pointer)
 }
 
 func TestApiErrorEmptyBody(t *testing.T) {
 	_, err := ParseAPIErrors([]byte(""), http.StatusInternalServerError)
-	if err == nil {
-		t.Fatal("expected error when parsing empty body")
-	}
+	require.Error(t, err)
 }
 
 func TestApiErrorInvalidJSON(t *testing.T) {
 	_, err := ParseAPIErrors([]byte("not json"), http.StatusInternalServerError)
-	if err == nil {
-		t.Fatal("expected error when parsing invalid JSON")
-	}
+	require.Error(t, err)
 }
 
 func TestApiErrorImplementsError(t *testing.T) {
@@ -156,16 +121,12 @@ func TestApiErrorImplementsError(t *testing.T) {
 	}
 
 	errMsg := apiErr.Error()
-	if errMsg == "" {
-		t.Fatal("expected non-empty error message")
-	}
+	require.NotEmpty(t, errMsg)
 }
 
 func TestClientError(t *testing.T) {
 	err := &ClientError{Message: "connection timeout"}
-	if err.Error() != "connection timeout" {
-		t.Errorf("expected 'connection timeout', got %q", err.Error())
-	}
+	assert.Equal(t, "connection timeout", err.Error())
 }
 
 func TestErrorDetailJSONRoundTrip(t *testing.T) {
@@ -178,29 +139,15 @@ func TestErrorDetailJSONRoundTrip(t *testing.T) {
 	}
 
 	data, err := json.Marshal(original)
-	if err != nil {
-		t.Fatalf("unexpected error marshaling: %v", err)
-	}
+	require.NoError(t, err)
 
 	var decoded ErrorDetail
 	err = json.Unmarshal(data, &decoded)
-	if err != nil {
-		t.Fatalf("unexpected error unmarshaling: %v", err)
-	}
+	require.NoError(t, err)
 
-	if decoded.Title != original.Title {
-		t.Errorf("expected title %q, got %q", original.Title, decoded.Title)
-	}
-	if decoded.Detail != original.Detail {
-		t.Errorf("expected detail %q, got %q", original.Detail, decoded.Detail)
-	}
-	if decoded.Code != original.Code {
-		t.Errorf("expected code %q, got %q", original.Code, decoded.Code)
-	}
-	if decoded.Status != original.Status {
-		t.Errorf("expected status %q, got %q", original.Status, decoded.Status)
-	}
-	if decoded.Source.Pointer != original.Source.Pointer {
-		t.Errorf("expected source pointer %q, got %q", original.Source.Pointer, decoded.Source.Pointer)
-	}
+	assert.Equal(t, original.Title, decoded.Title)
+	assert.Equal(t, original.Detail, decoded.Detail)
+	assert.Equal(t, original.Code, decoded.Code)
+	assert.Equal(t, original.Status, decoded.Status)
+	assert.Equal(t, original.Source.Pointer, decoded.Source.Pointer)
 }

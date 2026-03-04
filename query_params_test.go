@@ -2,16 +2,16 @@ package didww
 
 import (
 	"net/url"
-	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestQueryParamsEmpty(t *testing.T) {
 	params := NewQueryParams()
 	encoded := params.Encode()
-	if encoded != "" {
-		t.Errorf("expected empty string, got %q", encoded)
-	}
+	assert.Equal(t, "", encoded)
 }
 
 func TestQueryParamsSingleFilter(t *testing.T) {
@@ -115,9 +115,7 @@ func TestQueryParamsEncodesToValidURLQuery(t *testing.T) {
 
 	// Should be parseable as URL query
 	_, err := url.ParseQuery(encoded)
-	if err != nil {
-		t.Fatalf("expected valid URL query, got error: %v", err)
-	}
+	require.NoError(t, err)
 }
 
 func TestQueryParamsFilterWithSpecialCharacters(t *testing.T) {
@@ -126,27 +124,19 @@ func TestQueryParamsFilterWithSpecialCharacters(t *testing.T) {
 
 	// Should properly encode special characters
 	values, err := url.ParseQuery(encoded)
-	if err != nil {
-		t.Fatalf("expected valid URL query, got error: %v", err)
-	}
-	if values.Get("filter[name]") != "hello&world=yes" {
-		t.Errorf("expected filter value to be preserved after encoding, got %q", values.Get("filter[name]"))
-	}
+	require.NoError(t, err)
+	assert.Equal(t, "hello&world=yes", values.Get("filter[name]"))
 }
 
 func TestQueryParamsChaining(t *testing.T) {
 	// Ensure method chaining returns the same QueryParams
 	params := NewQueryParams()
 	result := params.Filter("a", "b").Sort("c").Include("d").Page(1, 10).Fields("e", "f")
-	if result == nil {
-		t.Fatal("expected chained result to be non-nil")
-	}
+	require.NotNil(t, result)
 }
 
 // assertContains is a helper that checks if s contains substr
 func assertContains(t *testing.T, s, substr string) {
 	t.Helper()
-	if !strings.Contains(s, substr) {
-		t.Errorf("expected %q to contain %q", s, substr)
-	}
+	assert.Contains(t, s, substr)
 }

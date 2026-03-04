@@ -7,6 +7,9 @@ import (
 	"testing"
 
 	"github.com/didww/didww-api-3-go-sdk/resource/enums"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestVoiceOutTrunksList(t *testing.T) {
@@ -15,24 +18,14 @@ func TestVoiceOutTrunksList(t *testing.T) {
 	})
 
 	trunks, err := client.VoiceOutTrunks().List(context.Background(), nil)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	require.NoError(t, err)
 
-	if len(trunks) != 2 {
-		t.Fatalf("expected 2 voice out trunks, got %d", len(trunks))
-	}
+	require.Len(t, trunks, 2)
 
 	trunk := trunks[0]
-	if trunk.ID != "425ce763-a3a9-49b4-af5b-ada1a65c8864" {
-		t.Errorf("expected ID '425ce763-a3a9-49b4-af5b-ada1a65c8864', got %q", trunk.ID)
-	}
-	if trunk.Name != "test" {
-		t.Errorf("expected Name 'test', got %q", trunk.Name)
-	}
-	if trunk.Status != enums.VoiceOutTrunkStatusBlocked {
-		t.Errorf("expected Status 'blocked', got %q", trunk.Status)
-	}
+	assert.Equal(t, "425ce763-a3a9-49b4-af5b-ada1a65c8864", trunk.ID)
+	assert.Equal(t, "test", trunk.Name)
+	assert.Equal(t, enums.VoiceOutTrunkStatusBlocked, trunk.Status)
 }
 
 func TestVoiceOutTrunksFindWithIncludedDids(t *testing.T) {
@@ -42,47 +35,23 @@ func TestVoiceOutTrunksFindWithIncludedDids(t *testing.T) {
 
 	params := NewQueryParams().Include("dids,default_did")
 	trunk, err := client.VoiceOutTrunks().Find(context.Background(), "425ce763-a3a9-49b4-af5b-ada1a65c8864", params)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	require.NoError(t, err)
 
-	if trunk.ID != "425ce763-a3a9-49b4-af5b-ada1a65c8864" {
-		t.Errorf("expected ID '425ce763-a3a9-49b4-af5b-ada1a65c8864', got %q", trunk.ID)
-	}
-	if trunk.Name != "test" {
-		t.Errorf("expected Name 'test', got %q", trunk.Name)
-	}
-	if trunk.Username != "dpjgwbbac9" {
-		t.Errorf("expected Username 'dpjgwbbac9', got %q", trunk.Username)
-	}
-	if trunk.Password != "z0hshvbcy7" {
-		t.Errorf("expected Password 'z0hshvbcy7', got %q", trunk.Password)
-	}
-	if trunk.MediaEncryptionMode != enums.MediaEncryptionModeSrtpSdes {
-		t.Errorf("expected MediaEncryptionMode 'srtp_sdes', got %q", trunk.MediaEncryptionMode)
-	}
-	if !trunk.ForceSymmetricRtp {
-		t.Error("expected ForceSymmetricRtp to be true")
-	}
-	if !trunk.RtpPing {
-		t.Error("expected RtpPing to be true")
-	}
+	assert.Equal(t, "425ce763-a3a9-49b4-af5b-ada1a65c8864", trunk.ID)
+	assert.Equal(t, "test", trunk.Name)
+	assert.Equal(t, "dpjgwbbac9", trunk.Username)
+	assert.Equal(t, "z0hshvbcy7", trunk.Password)
+	assert.Equal(t, enums.MediaEncryptionModeSrtpSdes, trunk.MediaEncryptionMode)
+	assert.True(t, trunk.ForceSymmetricRtp)
+	assert.True(t, trunk.RtpPing)
 
 	// Verify included default_did
-	if trunk.DefaultDID == nil {
-		t.Fatal("expected non-nil DefaultDID")
-	}
-	if trunk.DefaultDID.ID != "7de7f718-4042-4d74-9fe9-863fa1777520" {
-		t.Errorf("expected DefaultDID ID '7de7f718-4042-4d74-9fe9-863fa1777520', got %q", trunk.DefaultDID.ID)
-	}
-	if trunk.DefaultDID.Number != "37061498222" {
-		t.Errorf("expected DefaultDID Number '37061498222', got %q", trunk.DefaultDID.Number)
-	}
+	require.NotNil(t, trunk.DefaultDID)
+	assert.Equal(t, "7de7f718-4042-4d74-9fe9-863fa1777520", trunk.DefaultDID.ID)
+	assert.Equal(t, "37061498222", trunk.DefaultDID.Number)
 
 	// Verify included dids
-	if len(trunk.DIDs) != 2 {
-		t.Fatalf("expected 2 DIDs, got %d", len(trunk.DIDs))
-	}
+	require.Len(t, trunk.DIDs, 2)
 }
 
 func TestVoiceOutTrunksCreate(t *testing.T) {
@@ -100,13 +69,9 @@ func TestVoiceOutTrunksCreate(t *testing.T) {
 		DefaultDIDID:        "7a028c32-e6b6-4c86-bf01-90f901b37012",
 		DIDIDs:              []string{"7a028c32-e6b6-4c86-bf01-90f901b37012"},
 	})
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	require.NoError(t, err)
 
-	if trunk.ID != "b60201c1-21f0-4d9a-aafa-0e6d1e12f22e" {
-		t.Errorf("expected ID 'b60201c1-21f0-4d9a-aafa-0e6d1e12f22e', got %q", trunk.ID)
-	}
+	assert.Equal(t, "b60201c1-21f0-4d9a-aafa-0e6d1e12f22e", trunk.ID)
 
 	assertRequestJSON(t, capturedBody, "voice_out_trunks/create_request.json")
 }
@@ -121,28 +86,15 @@ func TestVoiceOutTrunksUpdate(t *testing.T) {
 		AllowedSipIPs: []string{"10.11.12.13/32"},
 		CapacityLimit: intPtr(123),
 	})
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	require.NoError(t, err)
 
-	if trunk.ID != "425ce763-a3a9-49b4-af5b-ada1a65c8864" {
-		t.Errorf("expected ID '425ce763-a3a9-49b4-af5b-ada1a65c8864', got %q", trunk.ID)
-	}
-	if trunk.Name != "test" {
-		t.Errorf("expected Name 'test', got %q", trunk.Name)
-	}
-	if trunk.CapacityLimit == nil || *trunk.CapacityLimit != 123 {
-		t.Errorf("expected CapacityLimit 123, got %v", trunk.CapacityLimit)
-	}
-	if len(trunk.AllowedSipIPs) != 1 || trunk.AllowedSipIPs[0] != "10.11.12.13/32" {
-		t.Errorf("expected AllowedSipIPs ['10.11.12.13/32'], got %v", trunk.AllowedSipIPs)
-	}
-	if !trunk.ForceSymmetricRtp {
-		t.Error("expected ForceSymmetricRtp to be true")
-	}
-	if !trunk.RtpPing {
-		t.Error("expected RtpPing to be true")
-	}
+	assert.Equal(t, "425ce763-a3a9-49b4-af5b-ada1a65c8864", trunk.ID)
+	assert.Equal(t, "test", trunk.Name)
+	require.NotNil(t, trunk.CapacityLimit)
+	assert.Equal(t, 123, *trunk.CapacityLimit)
+	assert.Equal(t, []string{"10.11.12.13/32"}, trunk.AllowedSipIPs)
+	assert.True(t, trunk.ForceSymmetricRtp)
+	assert.True(t, trunk.RtpPing)
 }
 
 func TestVoiceOutTrunksDelete(t *testing.T) {
@@ -151,7 +103,5 @@ func TestVoiceOutTrunksDelete(t *testing.T) {
 	})
 
 	err := client.VoiceOutTrunks().Delete(context.Background(), "425ce763-a3a9-49b4-af5b-ada1a65c8864")
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	require.NoError(t, err)
 }

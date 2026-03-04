@@ -7,6 +7,9 @@ import (
 	"testing"
 
 	"github.com/didww/didww-api-3-go-sdk/resource/enums"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestExportsList(t *testing.T) {
@@ -15,27 +18,16 @@ func TestExportsList(t *testing.T) {
 	})
 
 	exports, err := client.Exports().List(context.Background(), nil)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	require.NoError(t, err)
 
-	if len(exports) != 1 {
-		t.Fatalf("expected 1 export, got %d", len(exports))
-	}
+	require.Len(t, exports, 1)
 
 	export := exports[0]
-	if export.ID != "da15f006-5da4-45ca-b0df-735baeadf423" {
-		t.Errorf("expected ID 'da15f006-5da4-45ca-b0df-735baeadf423', got %q", export.ID)
-	}
-	if export.Status != enums.ExportStatusCompleted {
-		t.Errorf("expected Status 'Completed', got %q", export.Status)
-	}
-	if export.ExportType != enums.ExportTypeCdrIn {
-		t.Errorf("expected ExportType 'cdr_in', got %q", export.ExportType)
-	}
-	if export.URL == nil || *export.URL == "" {
-		t.Error("expected non-nil non-empty URL")
-	}
+	assert.Equal(t, "da15f006-5da4-45ca-b0df-735baeadf423", export.ID)
+	assert.Equal(t, enums.ExportStatusCompleted, export.Status)
+	assert.Equal(t, enums.ExportTypeCdrIn, export.ExportType)
+	require.NotNil(t, export.URL)
+	assert.NotEmpty(t, *export.URL)
 }
 
 func TestExportsCreate(t *testing.T) {
@@ -54,19 +46,11 @@ func TestExportsCreate(t *testing.T) {
 			"month":      "01",
 		},
 	})
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	require.NoError(t, err)
 
-	if export.ID != "da15f006-5da4-45ca-b0df-735baeadf423" {
-		t.Errorf("expected ID 'da15f006-5da4-45ca-b0df-735baeadf423', got %q", export.ID)
-	}
-	if export.Status != enums.ExportStatusPending {
-		t.Errorf("expected Status 'Pending', got %q", export.Status)
-	}
-	if export.ExportType != enums.ExportTypeCdrIn {
-		t.Errorf("expected ExportType 'cdr_in', got %q", export.ExportType)
-	}
+	assert.Equal(t, "da15f006-5da4-45ca-b0df-735baeadf423", export.ID)
+	assert.Equal(t, enums.ExportStatusPending, export.Status)
+	assert.Equal(t, enums.ExportTypeCdrIn, export.ExportType)
 
 	assertRequestJSON(t, capturedBody, "exports/create_request.json")
 }
@@ -83,19 +67,11 @@ func TestExportsCreateCdrOut(t *testing.T) {
 			"month": "01",
 		},
 	})
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	require.NoError(t, err)
 
-	if export.ID != "da15f006-5da4-45ca-b0df-735baeadf423" {
-		t.Errorf("expected ID 'da15f006-5da4-45ca-b0df-735baeadf423', got %q", export.ID)
-	}
-	if export.ExportType != enums.ExportTypeCdrOut {
-		t.Errorf("expected ExportType 'cdr_out', got %q", export.ExportType)
-	}
-	if export.Status != enums.ExportStatusPending {
-		t.Errorf("expected Status 'Pending', got %q", export.Status)
-	}
+	assert.Equal(t, "da15f006-5da4-45ca-b0df-735baeadf423", export.ID)
+	assert.Equal(t, enums.ExportTypeCdrOut, export.ExportType)
+	assert.Equal(t, enums.ExportStatusPending, export.Status)
 }
 
 func TestExportsCreateUnauthorized(t *testing.T) {
@@ -106,23 +82,13 @@ func TestExportsCreateUnauthorized(t *testing.T) {
 	_, err := client.Exports().Create(context.Background(), &Export{
 		ExportType: enums.ExportTypeCdrIn,
 	})
-	if err == nil {
-		t.Fatal("expected error for unauthorized request")
-	}
+	require.Error(t, err)
 
 	apiErr, ok := err.(*APIError)
-	if !ok {
-		t.Fatalf("expected *APIError, got %T", err)
-	}
-	if apiErr.HTTPStatus != http.StatusUnauthorized {
-		t.Errorf("expected HTTP status 401, got %d", apiErr.HTTPStatus)
-	}
-	if len(apiErr.Errors) != 1 {
-		t.Fatalf("expected 1 error, got %d", len(apiErr.Errors))
-	}
-	if apiErr.Errors[0].Title != "Unauthorized" {
-		t.Errorf("expected title 'Unauthorized', got %q", apiErr.Errors[0].Title)
-	}
+	require.True(t, ok, "expected *APIError")
+	assert.Equal(t, http.StatusUnauthorized, apiErr.HTTPStatus)
+	require.Len(t, apiErr.Errors, 1)
+	assert.Equal(t, "Unauthorized", apiErr.Errors[0].Title)
 }
 
 func TestExportsFind(t *testing.T) {
@@ -131,20 +97,11 @@ func TestExportsFind(t *testing.T) {
 	})
 
 	export, err := client.Exports().Find(context.Background(), "da15f006-5da4-45ca-b0df-735baeadf423")
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	require.NoError(t, err)
 
-	if export.ID != "da15f006-5da4-45ca-b0df-735baeadf423" {
-		t.Errorf("expected ID 'da15f006-5da4-45ca-b0df-735baeadf423', got %q", export.ID)
-	}
-	if export.Status != enums.ExportStatusCompleted {
-		t.Errorf("expected Status 'Completed', got %q", export.Status)
-	}
-	if export.ExportType != enums.ExportTypeCdrIn {
-		t.Errorf("expected ExportType 'cdr_in', got %q", export.ExportType)
-	}
-	if export.URL == nil || *export.URL == "" {
-		t.Error("expected non-nil non-empty URL")
-	}
+	assert.Equal(t, "da15f006-5da4-45ca-b0df-735baeadf423", export.ID)
+	assert.Equal(t, enums.ExportStatusCompleted, export.Status)
+	assert.Equal(t, enums.ExportTypeCdrIn, export.ExportType)
+	require.NotNil(t, export.URL)
+	assert.NotEmpty(t, *export.URL)
 }

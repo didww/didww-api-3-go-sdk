@@ -7,6 +7,9 @@ import (
 	"testing"
 
 	"github.com/didww/didww-api-3-go-sdk/resource/enums"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestVoiceInTrunksList(t *testing.T) {
@@ -15,45 +18,25 @@ func TestVoiceInTrunksList(t *testing.T) {
 	})
 
 	trunks, err := client.VoiceInTrunks().List(context.Background(), nil)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	require.NoError(t, err)
 
-	if len(trunks) != 2 {
-		t.Fatalf("expected 2 voice in trunks, got %d", len(trunks))
-	}
+	require.Len(t, trunks, 2)
 
 	// First trunk is PSTN
 	pstn := trunks[0]
-	if pstn.ID != "2b4b1fcf-fe6a-4de9-8a58-7df46820ba13" {
-		t.Errorf("expected ID '2b4b1fcf-fe6a-4de9-8a58-7df46820ba13', got %q", pstn.ID)
-	}
-	if pstn.Name != "sample trunk pstn" {
-		t.Errorf("expected Name 'sample trunk pstn', got %q", pstn.Name)
-	}
-	if pstn.CliFormat != enums.CliFormatE164 {
-		t.Errorf("expected CliFormat 'e164', got %q", pstn.CliFormat)
-	}
+	assert.Equal(t, "2b4b1fcf-fe6a-4de9-8a58-7df46820ba13", pstn.ID)
+	assert.Equal(t, "sample trunk pstn", pstn.Name)
+	assert.Equal(t, enums.CliFormatE164, pstn.CliFormat)
 	pstnCfg, ok := pstn.Configuration.(*PSTNConfiguration)
-	if !ok {
-		t.Fatal("expected PSTN configuration")
-	}
-	if pstnCfg.Dst != "442080995011" {
-		t.Errorf("expected Dst '442080995011', got %q", pstnCfg.Dst)
-	}
+	require.True(t, ok, "expected PSTN configuration")
+	assert.Equal(t, "442080995011", pstnCfg.Dst)
 
 	// Second trunk is SIP
 	sip := trunks[1]
-	if sip.Name != "Sip trunk sample" {
-		t.Errorf("expected Name 'Sip trunk sample', got %q", sip.Name)
-	}
+	assert.Equal(t, "Sip trunk sample", sip.Name)
 	sipCfg, ok := sip.Configuration.(*SIPConfiguration)
-	if !ok {
-		t.Fatal("expected SIP configuration")
-	}
-	if sipCfg.Host != "216.58.215.78" {
-		t.Errorf("expected Host '216.58.215.78', got %q", sipCfg.Host)
-	}
+	require.True(t, ok, "expected SIP configuration")
+	assert.Equal(t, "216.58.215.78", sipCfg.Host)
 }
 
 func TestVoiceInTrunksCreate(t *testing.T) {
@@ -70,13 +53,9 @@ func TestVoiceInTrunksCreate(t *testing.T) {
 			Dst: "558540420024",
 		},
 	})
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	require.NoError(t, err)
 
-	if trunk.ID != "41b94706-325e-4704-a433-d65105758836" {
-		t.Errorf("expected ID '41b94706-325e-4704-a433-d65105758836', got %q", trunk.ID)
-	}
+	assert.Equal(t, "41b94706-325e-4704-a433-d65105758836", trunk.ID)
 
 	assertRequestJSON(t, capturedBody, "voice_in_trunks/create_request.json")
 }
@@ -122,9 +101,7 @@ func TestVoiceInTrunksCreateSipWithReroutingCodes(t *testing.T) {
 			AllowedRtpIPs:       []string{"127.0.0.1"},
 		},
 	})
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	require.NoError(t, err)
 
 	assertRequestJSON(t, capturedBody, "voice_in_trunks/create_sip_request.json")
 }
@@ -142,26 +119,14 @@ func TestVoiceInTrunksCreateSip(t *testing.T) {
 			Port:     5060,
 		},
 	})
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	require.NoError(t, err)
 
-	if trunk.ID != "a80006b6-4183-4865-8b99-7ebbd359a762" {
-		t.Errorf("expected ID 'a80006b6-4183-4865-8b99-7ebbd359a762', got %q", trunk.ID)
-	}
-	if trunk.Name != "hello, test sip trunk" {
-		t.Errorf("expected Name 'hello, test sip trunk', got %q", trunk.Name)
-	}
+	assert.Equal(t, "a80006b6-4183-4865-8b99-7ebbd359a762", trunk.ID)
+	assert.Equal(t, "hello, test sip trunk", trunk.Name)
 	sipCfg, ok := trunk.Configuration.(*SIPConfiguration)
-	if !ok {
-		t.Fatal("expected SIP configuration")
-	}
-	if sipCfg.Username != "username" {
-		t.Errorf("expected Username 'username', got %q", sipCfg.Username)
-	}
-	if sipCfg.Host != "216.58.215.110" {
-		t.Errorf("expected Host '216.58.215.110', got %q", sipCfg.Host)
-	}
+	require.True(t, ok, "expected SIP configuration")
+	assert.Equal(t, "username", sipCfg.Username)
+	assert.Equal(t, "216.58.215.110", sipCfg.Host)
 }
 
 func TestVoiceInTrunksUpdatePstn(t *testing.T) {
@@ -176,23 +141,13 @@ func TestVoiceInTrunksUpdatePstn(t *testing.T) {
 			Dst: "558540420025",
 		},
 	})
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	require.NoError(t, err)
 
-	if trunk.ID != "41b94706-325e-4704-a433-d65105758836" {
-		t.Errorf("expected ID '41b94706-325e-4704-a433-d65105758836', got %q", trunk.ID)
-	}
-	if trunk.Name != "hello, updated test pstn trunk" {
-		t.Errorf("expected Name 'hello, updated test pstn trunk', got %q", trunk.Name)
-	}
+	assert.Equal(t, "41b94706-325e-4704-a433-d65105758836", trunk.ID)
+	assert.Equal(t, "hello, updated test pstn trunk", trunk.Name)
 	pstnCfg, ok := trunk.Configuration.(*PSTNConfiguration)
-	if !ok {
-		t.Fatal("expected PSTN configuration")
-	}
-	if pstnCfg.Dst != "558540420025" {
-		t.Errorf("expected Dst '558540420025', got %q", pstnCfg.Dst)
-	}
+	require.True(t, ok, "expected PSTN configuration")
+	assert.Equal(t, "558540420025", pstnCfg.Dst)
 }
 
 func TestVoiceInTrunksUpdateSip(t *testing.T) {
@@ -211,26 +166,14 @@ func TestVoiceInTrunksUpdateSip(t *testing.T) {
 			MaxTransfers: 5,
 		},
 	})
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	require.NoError(t, err)
 
-	if trunk.ID != "a80006b6-4183-4865-8b99-7ebbd359a762" {
-		t.Errorf("expected ID 'a80006b6-4183-4865-8b99-7ebbd359a762', got %q", trunk.ID)
-	}
-	if trunk.Name != "hello, updated test sip trunk" {
-		t.Errorf("expected Name 'hello, updated test sip trunk', got %q", trunk.Name)
-	}
+	assert.Equal(t, "a80006b6-4183-4865-8b99-7ebbd359a762", trunk.ID)
+	assert.Equal(t, "hello, updated test sip trunk", trunk.Name)
 	sipCfg, ok := trunk.Configuration.(*SIPConfiguration)
-	if !ok {
-		t.Fatal("expected SIP configuration")
-	}
-	if sipCfg.Username != "new-username" {
-		t.Errorf("expected Username 'new-username', got %q", sipCfg.Username)
-	}
-	if sipCfg.MaxTransfers != 5 {
-		t.Errorf("expected MaxTransfers 5, got %d", sipCfg.MaxTransfers)
-	}
+	require.True(t, ok, "expected SIP configuration")
+	assert.Equal(t, "new-username", sipCfg.Username)
+	assert.Equal(t, 5, sipCfg.MaxTransfers)
 }
 
 func TestVoiceInTrunksDelete(t *testing.T) {
@@ -239,7 +182,5 @@ func TestVoiceInTrunksDelete(t *testing.T) {
 	})
 
 	err := client.VoiceInTrunks().Delete(context.Background(), "2b4b1fcf-fe6a-4de9-8a58-7df46820ba13")
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	require.NoError(t, err)
 }

@@ -4,6 +4,9 @@ import (
 	"context"
 	"net/http"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestProofTypesList(t *testing.T) {
@@ -12,22 +15,12 @@ func TestProofTypesList(t *testing.T) {
 	})
 
 	proofTypes, err := client.ProofTypes().List(context.Background(), nil)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	require.NoError(t, err)
 
-	if len(proofTypes) != 5 {
-		t.Fatalf("expected 5 proof types, got %d", len(proofTypes))
-	}
+	require.Len(t, proofTypes, 5)
 
 	first := proofTypes[0]
-	if first.ID == "" {
-		t.Error("expected non-empty ID")
-	}
-	if first.Name == "" {
-		t.Error("expected non-empty Name")
-	}
-	if first.EntityType == "" {
-		t.Error("expected non-empty EntityType")
-	}
+	assert.NotEmpty(t, first.ID)
+	assert.NotEmpty(t, first.Name)
+	assert.NotEmpty(t, first.EntityType)
 }

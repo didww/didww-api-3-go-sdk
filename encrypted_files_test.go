@@ -4,6 +4,9 @@ import (
 	"context"
 	"net/http"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestEncryptedFilesList(t *testing.T) {
@@ -12,19 +15,11 @@ func TestEncryptedFilesList(t *testing.T) {
 	})
 
 	files, err := client.EncryptedFiles().List(context.Background(), nil)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	require.NoError(t, err)
 
-	if len(files) != 1 {
-		t.Fatalf("expected 1 encrypted file, got %d", len(files))
-	}
-	if files[0].ID != "7f2fbdca-8008-44ce-bcb6-3537ea5efaac" {
-		t.Errorf("expected ID '7f2fbdca-8008-44ce-bcb6-3537ea5efaac', got %q", files[0].ID)
-	}
-	if files[0].Description != "file.enc" {
-		t.Errorf("expected Description 'file.enc', got %q", files[0].Description)
-	}
+	require.Len(t, files, 1)
+	assert.Equal(t, "7f2fbdca-8008-44ce-bcb6-3537ea5efaac", files[0].ID)
+	assert.Equal(t, "file.enc", files[0].Description)
 }
 
 func TestEncryptedFilesFind(t *testing.T) {
@@ -33,16 +28,10 @@ func TestEncryptedFilesFind(t *testing.T) {
 	})
 
 	file, err := client.EncryptedFiles().Find(context.Background(), "6eed102c-66a9-4a9b-a95f-4312d70ec12a")
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	require.NoError(t, err)
 
-	if file.ID != "6eed102c-66a9-4a9b-a95f-4312d70ec12a" {
-		t.Errorf("expected ID '6eed102c-66a9-4a9b-a95f-4312d70ec12a', got %q", file.ID)
-	}
-	if file.Description != "some description" {
-		t.Errorf("expected Description 'some description', got %q", file.Description)
-	}
+	assert.Equal(t, "6eed102c-66a9-4a9b-a95f-4312d70ec12a", file.ID)
+	assert.Equal(t, "some description", file.Description)
 }
 
 func TestEncryptedFilesFindWithExpiration(t *testing.T) {
@@ -51,16 +40,11 @@ func TestEncryptedFilesFindWithExpiration(t *testing.T) {
 	})
 
 	file, err := client.EncryptedFiles().Find(context.Background(), "371eafbd-ac6a-485c-aadf-9e3c5da37eb4")
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	require.NoError(t, err)
 
-	if file.ID != "371eafbd-ac6a-485c-aadf-9e3c5da37eb4" {
-		t.Errorf("expected ID '371eafbd-ac6a-485c-aadf-9e3c5da37eb4', got %q", file.ID)
-	}
-	if file.ExpireAt == nil || *file.ExpireAt != "2021-04-06T16:38:34.437Z" {
-		t.Errorf("expected ExpireAt '2021-04-06T16:38:34.437Z', got %v", file.ExpireAt)
-	}
+	assert.Equal(t, "371eafbd-ac6a-485c-aadf-9e3c5da37eb4", file.ID)
+	require.NotNil(t, file.ExpireAt)
+	assert.Equal(t, "2021-04-06T16:38:34.437Z", *file.ExpireAt)
 }
 
 func TestEncryptedFilesDelete(t *testing.T) {
@@ -69,7 +53,5 @@ func TestEncryptedFilesDelete(t *testing.T) {
 	})
 
 	err := client.EncryptedFiles().Delete(context.Background(), "7f2fbdca-8008-44ce-bcb6-3537ea5efaac")
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	require.NoError(t, err)
 }

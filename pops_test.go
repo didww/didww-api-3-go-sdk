@@ -4,6 +4,9 @@ import (
 	"context"
 	"net/http"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestPopsList(t *testing.T) {
@@ -12,18 +15,10 @@ func TestPopsList(t *testing.T) {
 	})
 
 	pops, err := client.Pops().List(context.Background(), nil)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	require.NoError(t, err)
 
-	if len(pops) != 2 {
-		t.Fatalf("expected 2 pops, got %d", len(pops))
-	}
+	require.Len(t, pops, 2)
 
-	if pops[0].ID == "" {
-		t.Error("expected non-empty ID")
-	}
-	if pops[0].Name == "" {
-		t.Error("expected non-empty Name")
-	}
+	assert.NotEmpty(t, pops[0].ID)
+	assert.NotEmpty(t, pops[0].Name)
 }

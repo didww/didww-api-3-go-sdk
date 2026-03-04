@@ -4,6 +4,9 @@ import (
 	"context"
 	"net/http"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestNanpaPrefixesList(t *testing.T) {
@@ -12,13 +15,9 @@ func TestNanpaPrefixesList(t *testing.T) {
 	})
 
 	prefixes, err := client.NanpaPrefixes().List(context.Background(), nil)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	require.NoError(t, err)
 
-	if len(prefixes) == 0 {
-		t.Fatal("expected non-empty nanpa prefixes list")
-	}
+	require.NotEmpty(t, prefixes)
 }
 
 func TestNanpaPrefixesFindWithIncludedCountry(t *testing.T) {
@@ -28,23 +27,11 @@ func TestNanpaPrefixesFindWithIncludedCountry(t *testing.T) {
 
 	params := NewQueryParams().Include("country")
 	prefix, err := client.NanpaPrefixes().Find(context.Background(), "6c16d51d-d376-4395-91c4-012321317e48", params)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	require.NoError(t, err)
 
-	if prefix.ID != "6c16d51d-d376-4395-91c4-012321317e48" {
-		t.Errorf("expected ID '6c16d51d-d376-4395-91c4-012321317e48', got %q", prefix.ID)
-	}
-	if prefix.NPA != "864" {
-		t.Errorf("expected NPA '864', got %q", prefix.NPA)
-	}
-	if prefix.NXX != "920" {
-		t.Errorf("expected NXX '920', got %q", prefix.NXX)
-	}
-	if prefix.Country == nil {
-		t.Fatal("expected non-nil Country")
-	}
-	if prefix.Country.Name != "United States" {
-		t.Errorf("expected country name 'United States', got %q", prefix.Country.Name)
-	}
+	assert.Equal(t, "6c16d51d-d376-4395-91c4-012321317e48", prefix.ID)
+	assert.Equal(t, "864", prefix.NPA)
+	assert.Equal(t, "920", prefix.NXX)
+	require.NotNil(t, prefix.Country)
+	assert.Equal(t, "United States", prefix.Country.Name)
 }

@@ -4,6 +4,9 @@ import (
 	"context"
 	"net/http"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestDIDGroupTypesList(t *testing.T) {
@@ -12,13 +15,9 @@ func TestDIDGroupTypesList(t *testing.T) {
 	})
 
 	types, err := client.DIDGroupTypes().List(context.Background(), nil)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	require.NoError(t, err)
 
-	if len(types) != 6 {
-		t.Fatalf("expected 6 did group types, got %d", len(types))
-	}
+	require.Len(t, types, 6)
 }
 
 func TestDIDGroupTypesFind(t *testing.T) {
@@ -27,14 +26,8 @@ func TestDIDGroupTypesFind(t *testing.T) {
 	})
 
 	dgt, err := client.DIDGroupTypes().Find(context.Background(), "d6530a8c-924c-469a-98c0-9525602e6192")
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	require.NoError(t, err)
 
-	if dgt.ID != "d6530a8c-924c-469a-98c0-9525602e6192" {
-		t.Errorf("expected ID 'd6530a8c-924c-469a-98c0-9525602e6192', got %q", dgt.ID)
-	}
-	if dgt.Name != "Global" {
-		t.Errorf("expected Name 'Global', got %q", dgt.Name)
-	}
+	assert.Equal(t, "d6530a8c-924c-469a-98c0-9525602e6192", dgt.ID)
+	assert.Equal(t, "Global", dgt.Name)
 }

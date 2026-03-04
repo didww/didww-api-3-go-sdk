@@ -2,76 +2,53 @@ package didww
 
 import (
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestEnvironmentSandboxURL(t *testing.T) {
-	if Sandbox != "https://sandbox-api.didww.com/v3" {
-		t.Errorf("expected Sandbox URL to be https://sandbox-api.didww.com/v3, got %s", Sandbox)
-	}
+	assert.Equal(t, Environment("https://sandbox-api.didww.com/v3"), Sandbox)
 }
 
 func TestEnvironmentProductionURL(t *testing.T) {
-	if Production != "https://api.didww.com/v3" {
-		t.Errorf("expected Production URL to be https://api.didww.com/v3, got %s", Production)
-	}
+	assert.Equal(t, Environment("https://api.didww.com/v3"), Production)
 }
 
 func TestNewClientRequiresAPIKey(t *testing.T) {
 	_, err := NewClient("")
-	if err == nil {
-		t.Fatal("expected error when creating client with empty API key")
-	}
+	require.Error(t, err)
 }
 
 func TestNewClientWithValidAPIKey(t *testing.T) {
 	client, err := NewClient("test-api-key")
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if client == nil {
-		t.Fatal("expected client to be non-nil")
-	}
+	require.NoError(t, err)
+	require.NotNil(t, client)
 }
 
 func TestNewClientDefaultsToSandbox(t *testing.T) {
 	client, err := NewClient("test-api-key")
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if client.BaseURL() != string(Sandbox) {
-		t.Errorf("expected default base URL to be %s, got %s", Sandbox, client.BaseURL())
-	}
+	require.NoError(t, err)
+	assert.Equal(t, string(Sandbox), client.BaseURL())
 }
 
 func TestNewClientWithProductionEnvironment(t *testing.T) {
 	client, err := NewClient("test-api-key", WithEnvironment(Production))
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if client.BaseURL() != string(Production) {
-		t.Errorf("expected base URL to be %s, got %s", Production, client.BaseURL())
-	}
+	require.NoError(t, err)
+	assert.Equal(t, string(Production), client.BaseURL())
 }
 
 func TestNewClientWithCustomBaseURL(t *testing.T) {
 	customURL := "http://localhost:3000/v3"
 	client, err := NewClient("test-api-key", WithBaseURL(customURL))
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if client.BaseURL() != customURL {
-		t.Errorf("expected base URL to be %s, got %s", customURL, client.BaseURL())
-	}
+	require.NoError(t, err)
+	assert.Equal(t, customURL, client.BaseURL())
 }
 
 func TestNewClientWithTimeout(t *testing.T) {
 	client, err := NewClient("test-api-key", WithTimeout(5000))
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if client == nil {
-		t.Fatal("expected client to be non-nil")
-	}
+	require.NoError(t, err)
+	require.NotNil(t, client)
 }
 
 func TestNewClientWithMultipleOptions(t *testing.T) {
@@ -79,20 +56,12 @@ func TestNewClientWithMultipleOptions(t *testing.T) {
 		WithEnvironment(Production),
 		WithTimeout(10000),
 	)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if client.BaseURL() != string(Production) {
-		t.Errorf("expected base URL to be %s, got %s", Production, client.BaseURL())
-	}
+	require.NoError(t, err)
+	assert.Equal(t, string(Production), client.BaseURL())
 }
 
 func TestClientAPIKey(t *testing.T) {
 	client, err := NewClient("my-secret-key")
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if client.APIKey() != "my-secret-key" {
-		t.Errorf("expected API key to be my-secret-key, got %s", client.APIKey())
-	}
+	require.NoError(t, err)
+	assert.Equal(t, "my-secret-key", client.APIKey())
 }
