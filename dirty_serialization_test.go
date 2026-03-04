@@ -465,11 +465,3 @@ func assertRelNull(t *testing.T, rels map[string]json.RawMessage, name string) {
 	require.NoError(t, json.Unmarshal(raw, &wrapper), "failed to parse relationship %q", name)
 	assert.Equal(t, "null", string(wrapper.Data), "expected relationship %q data to be null", name)
 }
-
-func attrKeys(attrs map[string]json.RawMessage) []string {
-	keys := make([]string, 0, len(attrs))
-	for k := range attrs {
-		keys = append(keys, k)
-	}
-	return keys
-}
