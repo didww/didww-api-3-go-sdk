@@ -121,6 +121,7 @@ func (r *SingletonRepository[T]) Find(ctx context.Context) (*T, error) {
 const (
 	jsonapiMediaType = "application/vnd.api+json"
 	apiVersion       = "2022-05-10"
+	sdkVersion       = "1.0.0"
 )
 
 // doRequest executes an HTTP request and returns the response body.
@@ -147,7 +148,7 @@ func (c *Client) doRequest(ctx context.Context, method, path string, params *Que
 	// Set headers
 	req.Header.Set("Content-Type", jsonapiMediaType)
 	req.Header.Set("Accept", jsonapiMediaType)
-	req.Header.Set("User-Agent", "didww-go-sdk/0.1.0")
+	req.Header.Set("User-Agent", "didww-go-sdk/"+sdkVersion)
 	req.Header.Set("X-DIDWW-API-Version", apiVersion)
 
 	// Set API key header for non-public endpoints
