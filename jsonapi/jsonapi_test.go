@@ -3,6 +3,9 @@ package jsonapi
 import (
 	"encoding/json"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 // --- test helper types ---
@@ -55,31 +58,23 @@ func (r *testResourceWithResolver) ResolveRelationships(included IncludedResourc
 func TestGetID(t *testing.T) {
 	t.Run("struct with ID field", func(t *testing.T) {
 		r := testResource{ID: "abc"}
-		if got := GetID(r); got != "abc" {
-			t.Errorf("GetID() = %q, want %q", got, "abc")
-		}
+		assert.Equal(t, "abc", GetID(r))
 	})
 
 	t.Run("pointer to struct", func(t *testing.T) {
 		r := &testResource{ID: "xyz"}
-		if got := GetID(r); got != "xyz" {
-			t.Errorf("GetID() = %q, want %q", got, "xyz")
-		}
+		assert.Equal(t, "xyz", GetID(r))
 	})
 
 	t.Run("no ID field", func(t *testing.T) {
 		type noID struct {
 			Name string
 		}
-		if got := GetID(noID{Name: "test"}); got != "" {
-			t.Errorf("GetID() = %q, want empty", got)
-		}
+		assert.Equal(t, "", GetID(noID{Name: "test"}))
 	})
 
 	t.Run("non-struct", func(t *testing.T) {
-		if got := GetID("hello"); got != "" {
-			t.Errorf("GetID() = %q, want empty", got)
-		}
+		assert.Equal(t, "", GetID("hello"))
 	})
 }
 
@@ -87,9 +82,7 @@ func TestSetID(t *testing.T) {
 	t.Run("sets ID on pointer", func(t *testing.T) {
 		r := &testResource{}
 		setID(r, "123")
-		if r.ID != "123" {
-			t.Errorf("setID() ID = %q, want %q", r.ID, "123")
-		}
+		assert.Equal(t, "123", r.ID)
 	})
 
 	t.Run("no-op without ID field", func(t *testing.T) {
@@ -98,9 +91,7 @@ func TestSetID(t *testing.T) {
 		}
 		r := &noID{Name: "test"}
 		setID(r, "123") // should not panic
-		if r.Name != "test" {
-			t.Errorf("setID() modified Name unexpectedly")
-		}
+		assert.Equal(t, "test", r.Name)
 	})
 }
 
@@ -108,40 +99,22 @@ func TestMarshalWritableAttrs(t *testing.T) {
 	t.Run("no readonly fields", func(t *testing.T) {
 		r := testResource{Name: "Alice", Age: 30}
 		data, err := MarshalWritableAttrs(r)
-		if err != nil {
-			t.Fatalf("MarshalWritableAttrs() error = %v", err)
-		}
+		require.NoError(t, err)
 		var m map[string]json.RawMessage
-		if err := json.Unmarshal(data, &m); err != nil {
-			t.Fatalf("unmarshal error = %v", err)
-		}
-		if _, ok := m["name"]; !ok {
-			t.Error("expected 'name' key")
-		}
-		if _, ok := m["age"]; !ok {
-			t.Error("expected 'age' key")
-		}
+		require.NoError(t, json.Unmarshal(data, &m))
+		assert.Contains(t, m, "name")
+		assert.Contains(t, m, "age")
 	})
 
 	t.Run("with readonly fields", func(t *testing.T) {
 		r := testResourceWithReadonly{Name: "Bob", CreatedAt: "2024-01-01", Status: "active"}
 		data, err := MarshalWritableAttrs(r)
-		if err != nil {
-			t.Fatalf("MarshalWritableAttrs() error = %v", err)
-		}
+		require.NoError(t, err)
 		var m map[string]json.RawMessage
-		if err := json.Unmarshal(data, &m); err != nil {
-			t.Fatalf("unmarshal error = %v", err)
-		}
-		if _, ok := m["name"]; !ok {
-			t.Error("expected 'name' key")
-		}
-		if _, ok := m["created_at"]; ok {
-			t.Error("expected 'created_at' to be excluded (readonly)")
-		}
-		if _, ok := m["status"]; ok {
-			t.Error("expected 'status' to be excluded (readonly with omitempty)")
-		}
+		require.NoError(t, json.Unmarshal(data, &m))
+		assert.Contains(t, m, "name")
+		assert.NotContains(t, m, "created_at")
+		assert.NotContains(t, m, "status")
 	})
 }
 
@@ -149,84 +122,56 @@ func TestMarshalResource(t *testing.T) {
 	t.Run("simple struct", func(t *testing.T) {
 		r := testResource{Name: "Alice", Age: 30}
 		data, err := MarshalResource(r, "test_resources")
-		if err != nil {
-			t.Fatalf("MarshalResource() error = %v", err)
-		}
+		require.NoError(t, err)
 		var doc map[string]json.RawMessage
-		if err := json.Unmarshal(data, &doc); err != nil {
-			t.Fatalf("unmarshal error = %v", err)
-		}
+		require.NoError(t, json.Unmarshal(data, &doc))
 		var d map[string]json.RawMessage
-		if err := json.Unmarshal(doc["data"], &d); err != nil {
-			t.Fatalf("unmarshal data error = %v", err)
-		}
+		require.NoError(t, json.Unmarshal(doc["data"], &d))
 		var typ string
 		json.Unmarshal(d["type"], &typ)
-		if typ != "test_resources" {
-			t.Errorf("type = %q, want %q", typ, "test_resources")
-		}
-		if _, ok := d["id"]; ok {
-			t.Error("expected no 'id' when ID is empty")
-		}
+		assert.Equal(t, "test_resources", typ)
+		assert.NotContains(t, d, "id")
 	})
 
 	t.Run("with ID", func(t *testing.T) {
 		r := testResource{ID: "42", Name: "Bob"}
 		data, err := MarshalResource(r, "test_resources")
-		if err != nil {
-			t.Fatalf("MarshalResource() error = %v", err)
-		}
+		require.NoError(t, err)
 		var doc struct {
 			Data struct {
 				ID string `json:"id"`
 			} `json:"data"`
 		}
-		if err := json.Unmarshal(data, &doc); err != nil {
-			t.Fatalf("unmarshal error = %v", err)
-		}
-		if doc.Data.ID != "42" {
-			t.Errorf("id = %q, want %q", doc.Data.ID, "42")
-		}
+		require.NoError(t, json.Unmarshal(data, &doc))
+		assert.Equal(t, "42", doc.Data.ID)
 	})
 
 	t.Run("with RelationshipMarshaler", func(t *testing.T) {
 		r := &testResourceWithRels{Name: "Child", ParentID: "99"}
 		data, err := MarshalResource(r, "children")
-		if err != nil {
-			t.Fatalf("MarshalResource() error = %v", err)
-		}
+		require.NoError(t, err)
 		var doc struct {
 			Data struct {
 				Relationships map[string]json.RawMessage `json:"relationships"`
 			} `json:"data"`
 		}
-		if err := json.Unmarshal(data, &doc); err != nil {
-			t.Fatalf("unmarshal error = %v", err)
-		}
-		if _, ok := doc.Data.Relationships["parent"]; !ok {
-			t.Error("expected 'parent' relationship")
-		}
+		require.NoError(t, json.Unmarshal(data, &doc))
+		assert.Contains(t, doc.Data.Relationships, "parent")
 	})
 
 	t.Run("readonly exclusion", func(t *testing.T) {
 		r := testResourceWithReadonly{Name: "Test", CreatedAt: "2024-01-01"}
 		data, err := MarshalResource(r, "test_resources")
-		if err != nil {
-			t.Fatalf("MarshalResource() error = %v", err)
-		}
+		require.NoError(t, err)
 		var doc struct {
 			Data struct {
 				Attributes json.RawMessage `json:"attributes"`
 			} `json:"data"`
 		}
-		if err := json.Unmarshal(data, &doc); err != nil {
-			t.Fatalf("unmarshal error = %v", err)
-		}
+		require.NoError(t, json.Unmarshal(data, &doc))
 		var attrs map[string]json.RawMessage
 		json.Unmarshal(doc.Data.Attributes, &attrs)
-		if _, ok := attrs["created_at"]; ok {
-			t.Error("expected 'created_at' to be excluded from attributes")
-		}
+		assert.NotContains(t, attrs, "created_at")
 	})
 }
 
@@ -234,40 +179,24 @@ func TestUnmarshalOne(t *testing.T) {
 	t.Run("single object", func(t *testing.T) {
 		body := `{"data":{"id":"1","type":"test","attributes":{"name":"Alice","age":30}}}`
 		r, err := UnmarshalOne[testResource]([]byte(body))
-		if err != nil {
-			t.Fatalf("UnmarshalOne() error = %v", err)
-		}
-		if r.ID != "1" {
-			t.Errorf("ID = %q, want %q", r.ID, "1")
-		}
-		if r.Name != "Alice" {
-			t.Errorf("Name = %q, want %q", r.Name, "Alice")
-		}
-		if r.Age != 30 {
-			t.Errorf("Age = %d, want %d", r.Age, 30)
-		}
+		require.NoError(t, err)
+		assert.Equal(t, "1", r.ID)
+		assert.Equal(t, "Alice", r.Name)
+		assert.Equal(t, 30, r.Age)
 	})
 
 	t.Run("array-wrapped singleton", func(t *testing.T) {
 		body := `{"data":[{"id":"2","type":"test","attributes":{"name":"Bob","age":25}}]}`
 		r, err := UnmarshalOne[testResource]([]byte(body))
-		if err != nil {
-			t.Fatalf("UnmarshalOne() error = %v", err)
-		}
-		if r.ID != "2" {
-			t.Errorf("ID = %q, want %q", r.ID, "2")
-		}
-		if r.Name != "Bob" {
-			t.Errorf("Name = %q, want %q", r.Name, "Bob")
-		}
+		require.NoError(t, err)
+		assert.Equal(t, "2", r.ID)
+		assert.Equal(t, "Bob", r.Name)
 	})
 
 	t.Run("null data error", func(t *testing.T) {
 		body := `{"data":null}`
 		_, err := UnmarshalOne[testResource]([]byte(body))
-		if err == nil {
-			t.Fatal("expected error for null data")
-		}
+		require.Error(t, err)
 	})
 
 	t.Run("with included and resolver", func(t *testing.T) {
@@ -277,15 +206,9 @@ func TestUnmarshalOne(t *testing.T) {
 			"included":[{"id":"99","type":"tests","attributes":{"name":"Parent","age":50}}]
 		}`
 		r, err := UnmarshalOne[testResourceWithResolver]([]byte(body))
-		if err != nil {
-			t.Fatalf("UnmarshalOne() error = %v", err)
-		}
-		if r.Parent == nil {
-			t.Fatal("expected Parent to be resolved")
-		}
-		if r.Parent.Name != "Parent" {
-			t.Errorf("Parent.Name = %q, want %q", r.Parent.Name, "Parent")
-		}
+		require.NoError(t, err)
+		require.NotNil(t, r.Parent)
+		assert.Equal(t, "Parent", r.Parent.Name)
 	})
 }
 
@@ -296,43 +219,25 @@ func TestUnmarshalMany(t *testing.T) {
 			{"id":"2","type":"test","attributes":{"name":"Bob","age":25}}
 		]}`
 		results, err := UnmarshalMany[testResource]([]byte(body))
-		if err != nil {
-			t.Fatalf("UnmarshalMany() error = %v", err)
-		}
-		if len(results) != 2 {
-			t.Fatalf("len = %d, want 2", len(results))
-		}
-		if results[0].Name != "Alice" {
-			t.Errorf("results[0].Name = %q, want %q", results[0].Name, "Alice")
-		}
-		if results[1].Name != "Bob" {
-			t.Errorf("results[1].Name = %q, want %q", results[1].Name, "Bob")
-		}
+		require.NoError(t, err)
+		require.Len(t, results, 2)
+		assert.Equal(t, "Alice", results[0].Name)
+		assert.Equal(t, "Bob", results[1].Name)
 	})
 
 	t.Run("single object as data", func(t *testing.T) {
 		body := `{"data":{"id":"1","type":"test","attributes":{"name":"Solo","age":1}}}`
 		results, err := UnmarshalMany[testResource]([]byte(body))
-		if err != nil {
-			t.Fatalf("UnmarshalMany() error = %v", err)
-		}
-		if len(results) != 1 {
-			t.Fatalf("len = %d, want 1", len(results))
-		}
-		if results[0].Name != "Solo" {
-			t.Errorf("Name = %q, want %q", results[0].Name, "Solo")
-		}
+		require.NoError(t, err)
+		require.Len(t, results, 1)
+		assert.Equal(t, "Solo", results[0].Name)
 	})
 
 	t.Run("null data returns empty slice", func(t *testing.T) {
 		body := `{"data":null}`
 		results, err := UnmarshalMany[testResource]([]byte(body))
-		if err != nil {
-			t.Fatalf("UnmarshalMany() error = %v", err)
-		}
-		if len(results) != 0 {
-			t.Errorf("len = %d, want 0", len(results))
-		}
+		require.NoError(t, err)
+		assert.Len(t, results, 0)
 	})
 
 	t.Run("with included", func(t *testing.T) {
@@ -342,32 +247,20 @@ func TestUnmarshalMany(t *testing.T) {
 			"included":[{"id":"99","type":"tests","attributes":{"name":"Parent","age":50}}]
 		}`
 		results, err := UnmarshalMany[testResourceWithResolver]([]byte(body))
-		if err != nil {
-			t.Fatalf("UnmarshalMany() error = %v", err)
-		}
-		if len(results) != 1 {
-			t.Fatalf("len = %d, want 1", len(results))
-		}
-		if results[0].Parent == nil {
-			t.Fatal("expected Parent to be resolved")
-		}
-		if results[0].Parent.Name != "Parent" {
-			t.Errorf("Parent.Name = %q, want %q", results[0].Parent.Name, "Parent")
-		}
+		require.NoError(t, err)
+		require.Len(t, results, 1)
+		require.NotNil(t, results[0].Parent)
+		assert.Equal(t, "Parent", results[0].Parent.Name)
 	})
 }
 
 func TestToOneRelationship(t *testing.T) {
 	ref := RelationshipRef{Type: "users", ID: "1"}
 	result := ToOneRelationship(ref)
-	data, ok := result["data"]
-	if !ok {
-		t.Fatal("expected 'data' key")
-	}
-	got := data.(RelationshipRef)
-	if got.Type != "users" || got.ID != "1" {
-		t.Errorf("got %+v, want {Type:users ID:1}", got)
-	}
+	require.Contains(t, result, "data")
+	got := result["data"].(RelationshipRef)
+	assert.Equal(t, "users", got.Type)
+	assert.Equal(t, "1", got.ID)
 }
 
 func TestToManyRelationship(t *testing.T) {
@@ -376,45 +269,32 @@ func TestToManyRelationship(t *testing.T) {
 		{Type: "tags", ID: "2"},
 	}
 	result := ToManyRelationship(refs)
-	data, ok := result["data"]
-	if !ok {
-		t.Fatal("expected 'data' key")
-	}
-	got := data.([]RelationshipRef)
-	if len(got) != 2 {
-		t.Fatalf("len = %d, want 2", len(got))
-	}
+	require.Contains(t, result, "data")
+	got := result["data"].([]RelationshipRef)
+	require.Len(t, got, 2)
 }
 
 func TestParseToOneRelationship(t *testing.T) {
 	t.Run("valid JSON", func(t *testing.T) {
 		raw := json.RawMessage(`{"data":{"type":"users","id":"5"}}`)
 		ref, err := ParseToOneRelationship(raw)
-		if err != nil {
-			t.Fatalf("error = %v", err)
-		}
-		if ref == nil || ref.Type != "users" || ref.ID != "5" {
-			t.Errorf("got %+v, want {Type:users ID:5}", ref)
-		}
+		require.NoError(t, err)
+		require.NotNil(t, ref)
+		assert.Equal(t, "users", ref.Type)
+		assert.Equal(t, "5", ref.ID)
 	})
 
 	t.Run("null data", func(t *testing.T) {
 		raw := json.RawMessage(`{"data":null}`)
 		ref, err := ParseToOneRelationship(raw)
-		if err != nil {
-			t.Fatalf("error = %v", err)
-		}
-		if ref != nil {
-			t.Errorf("expected nil, got %+v", ref)
-		}
+		require.NoError(t, err)
+		assert.Nil(t, ref)
 	})
 
 	t.Run("invalid JSON", func(t *testing.T) {
 		raw := json.RawMessage(`{invalid`)
 		_, err := ParseToOneRelationship(raw)
-		if err == nil {
-			t.Fatal("expected error for invalid JSON")
-		}
+		require.Error(t, err)
 	})
 }
 
@@ -422,34 +302,23 @@ func TestParseToManyRelationship(t *testing.T) {
 	t.Run("valid JSON", func(t *testing.T) {
 		raw := json.RawMessage(`{"data":[{"type":"tags","id":"1"},{"type":"tags","id":"2"}]}`)
 		refs, err := ParseToManyRelationship(raw)
-		if err != nil {
-			t.Fatalf("error = %v", err)
-		}
-		if len(refs) != 2 {
-			t.Fatalf("len = %d, want 2", len(refs))
-		}
-		if refs[0].ID != "1" || refs[1].ID != "2" {
-			t.Errorf("got %+v", refs)
-		}
+		require.NoError(t, err)
+		require.Len(t, refs, 2)
+		assert.Equal(t, "1", refs[0].ID)
+		assert.Equal(t, "2", refs[1].ID)
 	})
 
 	t.Run("null data", func(t *testing.T) {
 		raw := json.RawMessage(`{"data":null}`)
 		refs, err := ParseToManyRelationship(raw)
-		if err != nil {
-			t.Fatalf("error = %v", err)
-		}
-		if refs != nil {
-			t.Errorf("expected nil, got %+v", refs)
-		}
+		require.NoError(t, err)
+		assert.Nil(t, refs)
 	})
 
 	t.Run("invalid JSON", func(t *testing.T) {
 		raw := json.RawMessage(`{bad`)
 		_, err := ParseToManyRelationship(raw)
-		if err == nil {
-			t.Fatal("expected error for invalid JSON")
-		}
+		require.Error(t, err)
 	})
 }
 
@@ -463,15 +332,9 @@ func TestResolveToOne(t *testing.T) {
 
 	t.Run("present and included", func(t *testing.T) {
 		r, err := ResolveToOne[testResource](included, rels, "parent")
-		if err != nil {
-			t.Fatalf("error = %v", err)
-		}
-		if r == nil {
-			t.Fatal("expected non-nil result")
-		}
-		if r.Name != "Found" {
-			t.Errorf("Name = %q, want %q", r.Name, "Found")
-		}
+		require.NoError(t, err)
+		require.NotNil(t, r)
+		assert.Equal(t, "Found", r.Name)
 	})
 
 	t.Run("present but missing from included", func(t *testing.T) {
@@ -479,22 +342,14 @@ func TestResolveToOne(t *testing.T) {
 			"parent": json.RawMessage(`{"data":{"type":"tests","id":"999"}}`),
 		}
 		r, err := ResolveToOne[testResource](included, missingRels, "parent")
-		if err != nil {
-			t.Fatalf("error = %v", err)
-		}
-		if r != nil {
-			t.Errorf("expected nil, got %+v", r)
-		}
+		require.NoError(t, err)
+		assert.Nil(t, r)
 	})
 
 	t.Run("missing relationship", func(t *testing.T) {
 		r, err := ResolveToOne[testResource](included, rels, "nonexistent")
-		if err != nil {
-			t.Fatalf("error = %v", err)
-		}
-		if r != nil {
-			t.Errorf("expected nil, got %+v", r)
-		}
+		require.NoError(t, err)
+		assert.Nil(t, r)
 	})
 
 	t.Run("error on bad JSON", func(t *testing.T) {
@@ -502,9 +357,7 @@ func TestResolveToOne(t *testing.T) {
 			"parent": json.RawMessage(`{bad`),
 		}
 		_, err := ResolveToOne[testResource](included, badRels, "parent")
-		if err == nil {
-			t.Fatal("expected error")
-		}
+		require.Error(t, err)
 	})
 }
 
@@ -519,15 +372,10 @@ func TestResolveToMany(t *testing.T) {
 
 	t.Run("present and included", func(t *testing.T) {
 		results, err := ResolveToMany[testResource](included, rels, "tags")
-		if err != nil {
-			t.Fatalf("error = %v", err)
-		}
-		if len(results) != 2 {
-			t.Fatalf("len = %d, want 2", len(results))
-		}
-		if results[0].Name != "A" || results[1].Name != "B" {
-			t.Errorf("got %+v, %+v", results[0], results[1])
-		}
+		require.NoError(t, err)
+		require.Len(t, results, 2)
+		assert.Equal(t, "A", results[0].Name)
+		assert.Equal(t, "B", results[1].Name)
 	})
 
 	t.Run("present but missing from included", func(t *testing.T) {
@@ -535,22 +383,14 @@ func TestResolveToMany(t *testing.T) {
 			"tags": json.RawMessage(`{"data":[{"type":"tags","id":"999"}]}`),
 		}
 		results, err := ResolveToMany[testResource](included, missingRels, "tags")
-		if err != nil {
-			t.Fatalf("error = %v", err)
-		}
-		if len(results) != 0 {
-			t.Errorf("expected empty, got %d", len(results))
-		}
+		require.NoError(t, err)
+		assert.Equal(t, 0, len(results))
 	})
 
 	t.Run("missing relationship", func(t *testing.T) {
 		results, err := ResolveToMany[testResource](included, rels, "nonexistent")
-		if err != nil {
-			t.Fatalf("error = %v", err)
-		}
-		if results != nil {
-			t.Errorf("expected nil, got %+v", results)
-		}
+		require.NoError(t, err)
+		assert.Nil(t, results)
 	})
 
 	t.Run("error on bad JSON", func(t *testing.T) {
@@ -558,9 +398,7 @@ func TestResolveToMany(t *testing.T) {
 			"tags": json.RawMessage(`{bad`),
 		}
 		_, err := ResolveToMany[testResource](included, badRels, "tags")
-		if err == nil {
-			t.Fatal("expected error")
-		}
+		require.Error(t, err)
 	})
 }
 
@@ -568,23 +406,17 @@ func TestReadOnlyKeys(t *testing.T) {
 	t.Run("mixed fields", func(t *testing.T) {
 		r := testResourceWithReadonly{}
 		keys := readOnlyKeys(r)
-		if len(keys) != 2 {
-			t.Fatalf("len = %d, want 2", len(keys))
-		}
+		require.Len(t, keys, 2)
 		expected := map[string]bool{"created_at": true, "status": true}
 		for _, k := range keys {
-			if !expected[k] {
-				t.Errorf("unexpected key %q", k)
-			}
+			assert.True(t, expected[k], "unexpected key %q", k)
 		}
 	})
 
 	t.Run("no readonly fields", func(t *testing.T) {
 		r := testResource{}
 		keys := readOnlyKeys(r)
-		if len(keys) != 0 {
-			t.Errorf("expected empty, got %v", keys)
-		}
+		assert.Len(t, keys, 0)
 	})
 
 	t.Run("json dash excluded", func(t *testing.T) {
@@ -592,9 +424,7 @@ func TestReadOnlyKeys(t *testing.T) {
 			Hidden string `json:"-" api:"readonly"`
 		}
 		keys := readOnlyKeys(dashField{})
-		if len(keys) != 0 {
-			t.Errorf("expected empty for json:\"-\", got %v", keys)
-		}
+		assert.Len(t, keys, 0)
 	})
 }
 
@@ -608,9 +438,7 @@ func TestJsonTagName(t *testing.T) {
 		{"", ""},
 	}
 	for _, tt := range tests {
-		if got := jsonTagName(tt.tag); got != tt.want {
-			t.Errorf("jsonTagName(%q) = %q, want %q", tt.tag, got, tt.want)
-		}
+		assert.Equal(t, tt.want, jsonTagName(tt.tag), "jsonTagName(%q)", tt.tag)
 	}
 }
 
@@ -653,10 +481,9 @@ func TestSplitRelTag(t *testing.T) {
 	}
 	for _, tt := range tests {
 		name, apiType, hasSep := splitRelTag(tt.tag)
-		if name != tt.name || apiType != tt.apiType || hasSep != tt.hasSep {
-			t.Errorf("splitRelTag(%q) = (%q, %q, %v), want (%q, %q, %v)",
-				tt.tag, name, apiType, hasSep, tt.name, tt.apiType, tt.hasSep)
-		}
+		assert.Equal(t, tt.name, name, "splitRelTag(%q) name", tt.tag)
+		assert.Equal(t, tt.apiType, apiType, "splitRelTag(%q) apiType", tt.tag)
+		assert.Equal(t, tt.hasSep, hasSep, "splitRelTag(%q) hasSep", tt.tag)
 	}
 }
 
@@ -664,70 +491,50 @@ func TestMarshalRelsFromTags(t *testing.T) {
 	t.Run("to-one relationship", func(t *testing.T) {
 		r := testResourceWithRelTags{Name: "Child", ParentID: "42"}
 		rels := marshalRelsFromTags(r)
-		if len(rels) != 1 {
-			t.Fatalf("expected 1 rel, got %d", len(rels))
-		}
-		parentRel, ok := rels["parent"]
-		if !ok {
-			t.Fatal("expected 'parent' relationship")
-		}
+		require.Len(t, rels, 1)
+		require.Contains(t, rels, "parent")
+		parentRel := rels["parent"]
 		m := parentRel.(map[string]any)
 		ref := m["data"].(RelationshipRef)
-		if ref.Type != "parents" || ref.ID != "42" {
-			t.Errorf("got ref %+v, want {Type:parents ID:42}", ref)
-		}
+		assert.Equal(t, "parents", ref.Type)
+		assert.Equal(t, "42", ref.ID)
 	})
 
 	t.Run("to-many relationship", func(t *testing.T) {
 		r := testResourceWithManyRelTags{Name: "Item", TagIDs: []string{"1", "2"}}
 		rels := marshalRelsFromTags(r)
-		if len(rels) != 1 {
-			t.Fatalf("expected 1 rel, got %d", len(rels))
-		}
-		tagsRel, ok := rels["tags"]
-		if !ok {
-			t.Fatal("expected 'tags' relationship")
-		}
+		require.Len(t, rels, 1)
+		require.Contains(t, rels, "tags")
+		tagsRel := rels["tags"]
 		m := tagsRel.(map[string]any)
 		refs := m["data"].([]RelationshipRef)
-		if len(refs) != 2 {
-			t.Fatalf("expected 2 refs, got %d", len(refs))
-		}
-		if refs[0].Type != "tag_items" || refs[0].ID != "1" {
-			t.Errorf("refs[0] = %+v, want {Type:tag_items ID:1}", refs[0])
-		}
+		require.Len(t, refs, 2)
+		assert.Equal(t, "tag_items", refs[0].Type)
+		assert.Equal(t, "1", refs[0].ID)
 	})
 
 	t.Run("empty ID skipped", func(t *testing.T) {
 		r := testResourceWithRelTags{Name: "Child", ParentID: ""}
 		rels := marshalRelsFromTags(r)
-		if len(rels) != 0 {
-			t.Errorf("expected empty map, got %d entries", len(rels))
-		}
+		assert.Len(t, rels, 0)
 	})
 
 	t.Run("empty slice skipped", func(t *testing.T) {
 		r := testResourceWithManyRelTags{Name: "Item", TagIDs: nil}
 		rels := marshalRelsFromTags(r)
-		if len(rels) != 0 {
-			t.Errorf("expected empty map, got %d entries", len(rels))
-		}
+		assert.Len(t, rels, 0)
 	})
 
 	t.Run("no tags returns nil", func(t *testing.T) {
 		r := testResource{Name: "Plain"}
 		rels := marshalRelsFromTags(r)
-		if rels != nil {
-			t.Errorf("expected nil, got %v", rels)
-		}
+		assert.Nil(t, rels)
 	})
 
 	t.Run("pointer receiver", func(t *testing.T) {
 		r := &testResourceWithRelTags{Name: "Child", ParentID: "99"}
 		rels := marshalRelsFromTags(r)
-		if len(rels) != 1 {
-			t.Fatalf("expected 1 rel, got %d", len(rels))
-		}
+		require.Len(t, rels, 1)
 	})
 }
 
@@ -741,18 +548,10 @@ func TestResolveRelsFromTags(t *testing.T) {
 		}
 		r := &testResourceWithRelTags{Name: "Child"}
 		err := resolveRelsFromTags(r, included, rels)
-		if err != nil {
-			t.Fatalf("error = %v", err)
-		}
-		if r.Parent == nil {
-			t.Fatal("expected Parent to be resolved")
-		}
-		if r.Parent.Name != "Dad" {
-			t.Errorf("Parent.Name = %q, want %q", r.Parent.Name, "Dad")
-		}
-		if r.Parent.ID != "42" {
-			t.Errorf("Parent.ID = %q, want %q", r.Parent.ID, "42")
-		}
+		require.NoError(t, err)
+		require.NotNil(t, r.Parent)
+		assert.Equal(t, "Dad", r.Parent.Name)
+		assert.Equal(t, "42", r.Parent.ID)
 	})
 
 	t.Run("to-many resolve", func(t *testing.T) {
@@ -765,15 +564,10 @@ func TestResolveRelsFromTags(t *testing.T) {
 		}
 		r := &testResourceWithManyRelTags{Name: "Item"}
 		err := resolveRelsFromTags(r, included, rels)
-		if err != nil {
-			t.Fatalf("error = %v", err)
-		}
-		if len(r.Tags) != 2 {
-			t.Fatalf("expected 2 tags, got %d", len(r.Tags))
-		}
-		if r.Tags[0].Name != "A" || r.Tags[1].Name != "B" {
-			t.Errorf("Tags = %+v, %+v", r.Tags[0], r.Tags[1])
-		}
+		require.NoError(t, err)
+		require.Len(t, r.Tags, 2)
+		assert.Equal(t, "A", r.Tags[0].Name)
+		assert.Equal(t, "B", r.Tags[1].Name)
 	})
 
 	t.Run("missing from included", func(t *testing.T) {
@@ -783,12 +577,8 @@ func TestResolveRelsFromTags(t *testing.T) {
 		}
 		r := &testResourceWithRelTags{Name: "Child"}
 		err := resolveRelsFromTags(r, included, rels)
-		if err != nil {
-			t.Fatalf("error = %v", err)
-		}
-		if r.Parent != nil {
-			t.Errorf("expected nil Parent, got %+v", r.Parent)
-		}
+		require.NoError(t, err)
+		assert.Nil(t, r.Parent)
 	})
 
 	t.Run("missing rel name", func(t *testing.T) {
@@ -798,12 +588,8 @@ func TestResolveRelsFromTags(t *testing.T) {
 		rels := map[string]json.RawMessage{} // no "parent" key
 		r := &testResourceWithRelTags{Name: "Child"}
 		err := resolveRelsFromTags(r, included, rels)
-		if err != nil {
-			t.Fatalf("error = %v", err)
-		}
-		if r.Parent != nil {
-			t.Errorf("expected nil Parent, got %+v", r.Parent)
-		}
+		require.NoError(t, err)
+		assert.Nil(t, r.Parent)
 	})
 
 	t.Run("nested rel tags", func(t *testing.T) {
@@ -817,21 +603,11 @@ func TestResolveRelsFromTags(t *testing.T) {
 		}
 		r := &testResourceWithNestedRelTags{Name: "Child"}
 		err := resolveRelsFromTags(r, included, rels)
-		if err != nil {
-			t.Fatalf("error = %v", err)
-		}
-		if r.Parent == nil {
-			t.Fatal("expected Parent to be resolved")
-		}
-		if r.Parent.Name != "Middle" {
-			t.Errorf("Parent.Name = %q, want %q", r.Parent.Name, "Middle")
-		}
-		if r.Parent.Parent == nil {
-			t.Fatal("expected nested Parent.Parent to be resolved")
-		}
-		if r.Parent.Parent.Name != "Grandparent" {
-			t.Errorf("Parent.Parent.Name = %q, want %q", r.Parent.Parent.Name, "Grandparent")
-		}
+		require.NoError(t, err)
+		require.NotNil(t, r.Parent)
+		assert.Equal(t, "Middle", r.Parent.Name)
+		require.NotNil(t, r.Parent.Parent)
+		assert.Equal(t, "Grandparent", r.Parent.Parent.Name)
 	})
 }
 
@@ -839,9 +615,7 @@ func TestMarshalResourceWithTags(t *testing.T) {
 	t.Run("to-one tag", func(t *testing.T) {
 		r := testResourceWithRelTags{Name: "Child", ParentID: "42"}
 		data, err := MarshalResource(r, "children")
-		if err != nil {
-			t.Fatalf("MarshalResource() error = %v", err)
-		}
+		require.NoError(t, err)
 		var doc struct {
 			Data struct {
 				Relationships map[string]struct {
@@ -849,24 +623,17 @@ func TestMarshalResourceWithTags(t *testing.T) {
 				} `json:"relationships"`
 			} `json:"data"`
 		}
-		if err := json.Unmarshal(data, &doc); err != nil {
-			t.Fatalf("unmarshal error = %v", err)
-		}
+		require.NoError(t, json.Unmarshal(data, &doc))
 		parent, ok := doc.Data.Relationships["parent"]
-		if !ok {
-			t.Fatal("expected 'parent' relationship")
-		}
-		if parent.Data.Type != "parents" || parent.Data.ID != "42" {
-			t.Errorf("parent ref = %+v, want {Type:parents ID:42}", parent.Data)
-		}
+		require.True(t, ok, "expected 'parent' relationship")
+		assert.Equal(t, "parents", parent.Data.Type)
+		assert.Equal(t, "42", parent.Data.ID)
 	})
 
 	t.Run("to-many tag", func(t *testing.T) {
 		r := testResourceWithManyRelTags{Name: "Item", TagIDs: []string{"1", "2"}}
 		data, err := MarshalResource(r, "items")
-		if err != nil {
-			t.Fatalf("MarshalResource() error = %v", err)
-		}
+		require.NoError(t, err)
 		var doc struct {
 			Data struct {
 				Relationships map[string]struct {
@@ -874,38 +641,26 @@ func TestMarshalResourceWithTags(t *testing.T) {
 				} `json:"relationships"`
 			} `json:"data"`
 		}
-		if err := json.Unmarshal(data, &doc); err != nil {
-			t.Fatalf("unmarshal error = %v", err)
-		}
+		require.NoError(t, json.Unmarshal(data, &doc))
 		tags, ok := doc.Data.Relationships["tags"]
-		if !ok {
-			t.Fatal("expected 'tags' relationship")
-		}
-		if len(tags.Data) != 2 {
-			t.Fatalf("expected 2 tag refs, got %d", len(tags.Data))
-		}
-		if tags.Data[0].Type != "tag_items" || tags.Data[0].ID != "1" {
-			t.Errorf("tags[0] = %+v, want {Type:tag_items ID:1}", tags.Data[0])
-		}
+		require.True(t, ok, "expected 'tags' relationship")
+		require.Len(t, tags.Data, 2)
+		assert.Equal(t, "tag_items", tags.Data[0].Type)
+		assert.Equal(t, "1", tags.Data[0].ID)
 	})
 
 	t.Run("no rels when IDs empty", func(t *testing.T) {
 		r := testResourceWithRelTags{Name: "Orphan"}
 		data, err := MarshalResource(r, "children")
-		if err != nil {
-			t.Fatalf("MarshalResource() error = %v", err)
-		}
+		require.NoError(t, err)
 		var doc struct {
 			Data struct {
 				Relationships json.RawMessage `json:"relationships"`
 			} `json:"data"`
 		}
-		if err := json.Unmarshal(data, &doc); err != nil {
-			t.Fatalf("unmarshal error = %v", err)
-		}
-		if len(doc.Data.Relationships) > 0 && string(doc.Data.Relationships) != "null" {
-			t.Errorf("expected no relationships, got %s", doc.Data.Relationships)
-		}
+		require.NoError(t, json.Unmarshal(data, &doc))
+		assert.True(t, len(doc.Data.Relationships) == 0 || string(doc.Data.Relationships) == "null",
+			"expected no relationships, got %s", doc.Data.Relationships)
 	})
 }
 
@@ -917,24 +672,12 @@ func TestUnmarshalOneWithTags(t *testing.T) {
 			"included":[{"id":"42","type":"parents","attributes":{"name":"Dad","age":40}}]
 		}`
 		r, err := UnmarshalOne[testResourceWithRelTags]([]byte(body))
-		if err != nil {
-			t.Fatalf("UnmarshalOne() error = %v", err)
-		}
-		if r.ID != "1" {
-			t.Errorf("ID = %q, want %q", r.ID, "1")
-		}
-		if r.Name != "Child" {
-			t.Errorf("Name = %q, want %q", r.Name, "Child")
-		}
-		if r.Parent == nil {
-			t.Fatal("expected Parent to be resolved")
-		}
-		if r.Parent.Name != "Dad" {
-			t.Errorf("Parent.Name = %q, want %q", r.Parent.Name, "Dad")
-		}
-		if r.Parent.ID != "42" {
-			t.Errorf("Parent.ID = %q, want %q", r.Parent.ID, "42")
-		}
+		require.NoError(t, err)
+		assert.Equal(t, "1", r.ID)
+		assert.Equal(t, "Child", r.Name)
+		require.NotNil(t, r.Parent)
+		assert.Equal(t, "Dad", r.Parent.Name)
+		assert.Equal(t, "42", r.Parent.ID)
 	})
 
 	t.Run("to-many tag resolve", func(t *testing.T) {
@@ -950,15 +693,10 @@ func TestUnmarshalOneWithTags(t *testing.T) {
 			]
 		}`
 		r, err := UnmarshalOne[testResourceWithManyRelTags]([]byte(body))
-		if err != nil {
-			t.Fatalf("UnmarshalOne() error = %v", err)
-		}
-		if len(r.Tags) != 2 {
-			t.Fatalf("expected 2 tags, got %d", len(r.Tags))
-		}
-		if r.Tags[0].Name != "A" || r.Tags[1].Name != "B" {
-			t.Errorf("Tags = %+v, %+v", r.Tags[0], r.Tags[1])
-		}
+		require.NoError(t, err)
+		require.Len(t, r.Tags, 2)
+		assert.Equal(t, "A", r.Tags[0].Name)
+		assert.Equal(t, "B", r.Tags[1].Name)
 	})
 
 	t.Run("nested tag resolve", func(t *testing.T) {
@@ -972,21 +710,11 @@ func TestUnmarshalOneWithTags(t *testing.T) {
 			]
 		}`
 		r, err := UnmarshalOne[testResourceWithNestedRelTags]([]byte(body))
-		if err != nil {
-			t.Fatalf("UnmarshalOne() error = %v", err)
-		}
-		if r.Parent == nil {
-			t.Fatal("expected Parent to be resolved")
-		}
-		if r.Parent.Name != "Middle" {
-			t.Errorf("Parent.Name = %q, want %q", r.Parent.Name, "Middle")
-		}
-		if r.Parent.Parent == nil {
-			t.Fatal("expected nested Parent.Parent to be resolved")
-		}
-		if r.Parent.Parent.Name != "Grandparent" {
-			t.Errorf("Parent.Parent.Name = %q, want %q", r.Parent.Parent.Name, "Grandparent")
-		}
+		require.NoError(t, err)
+		require.NotNil(t, r.Parent)
+		assert.Equal(t, "Middle", r.Parent.Name)
+		require.NotNil(t, r.Parent.Parent)
+		assert.Equal(t, "Grandparent", r.Parent.Parent.Name)
 	})
 
 	t.Run("without included stays nil", func(t *testing.T) {
@@ -995,12 +723,8 @@ func TestUnmarshalOneWithTags(t *testing.T) {
 				"relationships":{"parent":{"data":{"type":"parents","id":"42"}}}}
 		}`
 		r, err := UnmarshalOne[testResourceWithRelTags]([]byte(body))
-		if err != nil {
-			t.Fatalf("UnmarshalOne() error = %v", err)
-		}
-		if r.Parent != nil {
-			t.Errorf("expected nil Parent without included, got %+v", r.Parent)
-		}
+		require.NoError(t, err)
+		assert.Nil(t, r.Parent)
 	})
 }
 
@@ -1015,19 +739,11 @@ func TestUnmarshalManyWithTags(t *testing.T) {
 		"included":[{"id":"42","type":"parents","attributes":{"name":"Shared","age":40}}]
 	}`
 	results, err := UnmarshalMany[testResourceWithRelTags]([]byte(body))
-	if err != nil {
-		t.Fatalf("UnmarshalMany() error = %v", err)
-	}
-	if len(results) != 2 {
-		t.Fatalf("len = %d, want 2", len(results))
-	}
+	require.NoError(t, err)
+	require.Len(t, results, 2)
 	for i, r := range results {
-		if r.Parent == nil {
-			t.Fatalf("results[%d].Parent is nil", i)
-		}
-		if r.Parent.Name != "Shared" {
-			t.Errorf("results[%d].Parent.Name = %q, want %q", i, r.Parent.Name, "Shared")
-		}
+		require.NotNil(t, r.Parent, "results[%d].Parent is nil", i)
+		assert.Equal(t, "Shared", r.Parent.Name, "results[%d].Parent.Name", i)
 	}
 }
 
@@ -1036,9 +752,7 @@ func TestUnmarshalManyWithTags(t *testing.T) {
 func TestResourceType(t *testing.T) {
 	t.Run("reads jsonapi tag", func(t *testing.T) {
 		got := ResourceType[testResource]()
-		if got != "test_resources" {
-			t.Errorf("ResourceType[testResource]() = %q, want %q", got, "test_resources")
-		}
+		assert.Equal(t, "test_resources", got)
 	})
 
 	t.Run("panics on missing tag", func(t *testing.T) {
@@ -1048,9 +762,7 @@ func TestResourceType(t *testing.T) {
 		}
 		defer func() {
 			r := recover()
-			if r == nil {
-				t.Fatal("expected panic for missing jsonapi tag")
-			}
+			require.NotNil(t, r)
 		}()
 		ResourceType[noTag]()
 	})
@@ -1061,9 +773,7 @@ func TestResourceType(t *testing.T) {
 		}
 		defer func() {
 			r := recover()
-			if r == nil {
-				t.Fatal("expected panic for struct without ID field")
-			}
+			require.NotNil(t, r)
 		}()
 		ResourceType[noID]()
 	})
@@ -1073,68 +783,45 @@ func TestMarshalGeneric(t *testing.T) {
 	t.Run("derives type from tag", func(t *testing.T) {
 		r := &testResource{Name: "Alice", Age: 30}
 		data, err := Marshal(r)
-		if err != nil {
-			t.Fatalf("Marshal() error = %v", err)
-		}
+		require.NoError(t, err)
 		var doc struct {
 			Data struct {
 				Type string `json:"type"`
 			} `json:"data"`
 		}
-		if err := json.Unmarshal(data, &doc); err != nil {
-			t.Fatalf("unmarshal error = %v", err)
-		}
-		if doc.Data.Type != "test_resources" {
-			t.Errorf("type = %q, want %q", doc.Data.Type, "test_resources")
-		}
+		require.NoError(t, json.Unmarshal(data, &doc))
+		assert.Equal(t, "test_resources", doc.Data.Type)
 	})
 
 	t.Run("includes ID when set", func(t *testing.T) {
 		r := &testResource{ID: "42", Name: "Bob", Age: 25}
 		data, err := Marshal(r)
-		if err != nil {
-			t.Fatalf("Marshal() error = %v", err)
-		}
+		require.NoError(t, err)
 		var doc struct {
 			Data struct {
 				ID   string `json:"id"`
 				Type string `json:"type"`
 			} `json:"data"`
 		}
-		if err := json.Unmarshal(data, &doc); err != nil {
-			t.Fatalf("unmarshal error = %v", err)
-		}
-		if doc.Data.ID != "42" {
-			t.Errorf("id = %q, want %q", doc.Data.ID, "42")
-		}
-		if doc.Data.Type != "test_resources" {
-			t.Errorf("type = %q, want %q", doc.Data.Type, "test_resources")
-		}
+		require.NoError(t, json.Unmarshal(data, &doc))
+		assert.Equal(t, "42", doc.Data.ID)
+		assert.Equal(t, "test_resources", doc.Data.Type)
 	})
 }
 
 func TestResourceTypeFromTag(t *testing.T) {
 	t.Run("finds tag on struct value", func(t *testing.T) {
 		r := testResource{}
-		got := resourceTypeFromTag(r)
-		if got != "test_resources" {
-			t.Errorf("resourceTypeFromTag() = %q, want %q", got, "test_resources")
-		}
+		assert.Equal(t, "test_resources", resourceTypeFromTag(r))
 	})
 
 	t.Run("finds tag on pointer", func(t *testing.T) {
 		r := &testResource{}
-		got := resourceTypeFromTag(r)
-		if got != "test_resources" {
-			t.Errorf("resourceTypeFromTag() = %q, want %q", got, "test_resources")
-		}
+		assert.Equal(t, "test_resources", resourceTypeFromTag(r))
 	})
 
 	t.Run("returns empty for non-struct", func(t *testing.T) {
-		got := resourceTypeFromTag("hello")
-		if got != "" {
-			t.Errorf("resourceTypeFromTag() = %q, want empty", got)
-		}
+		assert.Equal(t, "", resourceTypeFromTag("hello"))
 	})
 
 	t.Run("returns empty for missing tag", func(t *testing.T) {
@@ -1142,30 +829,21 @@ func TestResourceTypeFromTag(t *testing.T) {
 			ID   string `json:"-"`
 			Name string `json:"name"`
 		}
-		got := resourceTypeFromTag(noTag{})
-		if got != "" {
-			t.Errorf("resourceTypeFromTag() = %q, want empty", got)
-		}
+		assert.Equal(t, "", resourceTypeFromTag(noTag{}))
 	})
 }
 
 func TestMarshalResourceAutoDetectsType(t *testing.T) {
 	r := testResource{Name: "Alice", Age: 30}
 	data, err := MarshalResource(r, "")
-	if err != nil {
-		t.Fatalf("MarshalResource() error = %v", err)
-	}
+	require.NoError(t, err)
 	var doc struct {
 		Data struct {
 			Type string `json:"type"`
 		} `json:"data"`
 	}
-	if err := json.Unmarshal(data, &doc); err != nil {
-		t.Fatalf("unmarshal error = %v", err)
-	}
-	if doc.Data.Type != "test_resources" {
-		t.Errorf("type = %q, want %q", doc.Data.Type, "test_resources")
-	}
+	require.NoError(t, json.Unmarshal(data, &doc))
+	assert.Equal(t, "test_resources", doc.Data.Type)
 }
 
 // --- dirty test helper types ---
@@ -1213,20 +891,14 @@ func TestMarshalPatch(t *testing.T) {
 	t.Run("new resource sends only set attribute", func(t *testing.T) {
 		r := &testDirtyResource{ID: "1", Name: "Alice"}
 		data, err := MarshalPatch(r)
-		if err != nil {
-			t.Fatalf("MarshalPatch() error = %v", err)
-		}
+		require.NoError(t, err)
 
 		doc := parsePatchDoc(t, data)
-		if doc.ID != "1" {
-			t.Errorf("id = %q, want %q", doc.ID, "1")
-		}
-		if doc.Type != "dirty_resources" {
-			t.Errorf("type = %q, want %q", doc.Type, "dirty_resources")
-		}
-		// Name changed from "" to "Alice" → dirty
+		assert.Equal(t, "1", doc.ID)
+		assert.Equal(t, "dirty_resources", doc.Type)
+		// Name changed from "" to "Alice" -> dirty
 		assertAttrEquals(t, doc.Attrs, "name", `"Alice"`)
-		// Age stayed 0 → not dirty
+		// Age stayed 0 -> not dirty
 		assertAttrMissing(t, doc.Attrs, "age")
 	})
 
@@ -1234,17 +906,13 @@ func TestMarshalPatch(t *testing.T) {
 		// Simulate loading from API
 		body := `{"data":{"id":"1","type":"dirty_resources","attributes":{"name":"Alice","age":30,"description":"hello"}}}`
 		r, err := UnmarshalOne[testDirtyResource]([]byte(body))
-		if err != nil {
-			t.Fatalf("UnmarshalOne() error = %v", err)
-		}
+		require.NoError(t, err)
 
 		// Change only age
 		r.Age = 31
 
 		data, err := MarshalPatch(r)
-		if err != nil {
-			t.Fatalf("MarshalPatch() error = %v", err)
-		}
+		require.NoError(t, err)
 
 		doc := parsePatchDoc(t, data)
 		// Only age changed
@@ -1259,20 +927,15 @@ func TestMarshalPatch(t *testing.T) {
 		desc := "hello"
 		body := `{"data":{"id":"1","type":"dirty_resources","attributes":{"name":"Alice","age":30,"description":"hello"}}}`
 		r, err := UnmarshalOne[testDirtyResource]([]byte(body))
-		if err != nil {
-			t.Fatalf("UnmarshalOne() error = %v", err)
-		}
-		if r.Description == nil || *r.Description != desc {
-			t.Fatalf("expected Description %q, got %v", desc, r.Description)
-		}
+		require.NoError(t, err)
+		require.NotNil(t, r.Description)
+		assert.Equal(t, desc, *r.Description)
 
 		// Clear description
 		r.Description = nil
 
 		data, err := MarshalPatch(r)
-		if err != nil {
-			t.Fatalf("MarshalPatch() error = %v", err)
-		}
+		require.NoError(t, err)
 
 		doc := parsePatchDoc(t, data)
 		assertAttrEquals(t, doc.Attrs, "description", `null`)
@@ -1283,35 +946,25 @@ func TestMarshalPatch(t *testing.T) {
 	t.Run("no changes produces empty attributes", func(t *testing.T) {
 		body := `{"data":{"id":"1","type":"dirty_resources","attributes":{"name":"Alice","age":30}}}`
 		r, err := UnmarshalOne[testDirtyResource]([]byte(body))
-		if err != nil {
-			t.Fatalf("UnmarshalOne() error = %v", err)
-		}
+		require.NoError(t, err)
 
 		data, err := MarshalPatch(r)
-		if err != nil {
-			t.Fatalf("MarshalPatch() error = %v", err)
-		}
+		require.NoError(t, err)
 
 		doc := parsePatchDoc(t, data)
-		if len(doc.Attrs) != 0 {
-			t.Errorf("expected empty attributes, got %v", doc.Attrs)
-		}
+		assert.Len(t, doc.Attrs, 0)
 	})
 
 	t.Run("readonly fields excluded from dirty tracking", func(t *testing.T) {
 		body := `{"data":{"id":"1","type":"dirty_ro_resources","attributes":{"name":"Alice","created_at":"2024-01-01"}}}`
 		r, err := UnmarshalOne[testDirtyWithReadonly]([]byte(body))
-		if err != nil {
-			t.Fatalf("UnmarshalOne() error = %v", err)
-		}
+		require.NoError(t, err)
 
 		r.Name = "Bob"
 		r.CreatedAt = "2025-01-01" // readonly, should be ignored
 
 		data, err := MarshalPatch(r)
-		if err != nil {
-			t.Fatalf("MarshalPatch() error = %v", err)
-		}
+		require.NoError(t, err)
 
 		doc := parsePatchDoc(t, data)
 		assertAttrEquals(t, doc.Attrs, "name", `"Bob"`)
@@ -1321,104 +974,69 @@ func TestMarshalPatch(t *testing.T) {
 	t.Run("relationship dirty on new resource", func(t *testing.T) {
 		r := &testDirtyWithRel{ID: "1", Name: "Child", ParentID: "99"}
 		data, err := MarshalPatch(r)
-		if err != nil {
-			t.Fatalf("MarshalPatch() error = %v", err)
-		}
+		require.NoError(t, err)
 
 		doc := parsePatchDoc(t, data)
 		assertAttrEquals(t, doc.Attrs, "name", `"Child"`)
-		if doc.Rels == nil {
-			t.Fatal("expected relationships in patch")
-		}
-		parentRaw, ok := doc.Rels["parent"]
-		if !ok {
-			t.Fatal("expected 'parent' relationship")
-		}
+		require.NotNil(t, doc.Rels)
+		require.Contains(t, doc.Rels, "parent")
+		parentRaw := doc.Rels["parent"]
 		ref, err := ParseToOneRelationship(parentRaw)
-		if err != nil {
-			t.Fatalf("ParseToOneRelationship error = %v", err)
-		}
-		if ref.Type != "parents" || ref.ID != "99" {
-			t.Errorf("parent ref = %+v, want {Type:parents ID:99}", ref)
-		}
+		require.NoError(t, err)
+		assert.Equal(t, "parents", ref.Type)
+		assert.Equal(t, "99", ref.ID)
 	})
 
 	t.Run("mutual exclusion trunk set nullifies group", func(t *testing.T) {
 		r := &testMutualExclusive{ID: "1", TrunkID: "t1"}
 		data, err := MarshalPatch(r)
-		if err != nil {
-			t.Fatalf("MarshalPatch() error = %v", err)
-		}
+		require.NoError(t, err)
 
 		doc := parsePatchDoc(t, data)
-		if doc.Rels == nil {
-			t.Fatal("expected relationships")
-		}
+		require.NotNil(t, doc.Rels)
 		// trunk should be set
-		trunkRaw, ok := doc.Rels["trunk"]
-		if !ok {
-			t.Fatal("expected 'trunk' relationship")
-		}
+		require.Contains(t, doc.Rels, "trunk")
+		trunkRaw := doc.Rels["trunk"]
 		ref, _ := ParseToOneRelationship(trunkRaw)
-		if ref == nil || ref.ID != "t1" {
-			t.Errorf("trunk ref = %+v, want {ID:t1}", ref)
-		}
+		require.NotNil(t, ref)
+		assert.Equal(t, "t1", ref.ID)
 		// group should be explicit null
-		groupRaw, ok := doc.Rels["group"]
-		if !ok {
-			t.Fatal("expected 'group' relationship (null clear)")
-		}
+		require.Contains(t, doc.Rels, "group")
+		groupRaw := doc.Rels["group"]
 		groupRef, _ := ParseToOneRelationship(groupRaw)
-		if groupRef != nil {
-			t.Errorf("expected null group, got %+v", groupRef)
-		}
+		assert.Nil(t, groupRef)
 	})
 
 	t.Run("mutual exclusion group set nullifies trunk", func(t *testing.T) {
 		r := &testMutualExclusive{ID: "1", GroupID: "g1"}
 		data, err := MarshalPatch(r)
-		if err != nil {
-			t.Fatalf("MarshalPatch() error = %v", err)
-		}
+		require.NoError(t, err)
 
 		doc := parsePatchDoc(t, data)
-		if doc.Rels == nil {
-			t.Fatal("expected relationships")
-		}
+		require.NotNil(t, doc.Rels)
 		// group should be set
-		groupRaw, ok := doc.Rels["group"]
-		if !ok {
-			t.Fatal("expected 'group' relationship")
-		}
+		require.Contains(t, doc.Rels, "group")
+		groupRaw := doc.Rels["group"]
 		ref, _ := ParseToOneRelationship(groupRaw)
-		if ref == nil || ref.ID != "g1" {
-			t.Errorf("group ref = %+v, want {ID:g1}", ref)
-		}
+		require.NotNil(t, ref)
+		assert.Equal(t, "g1", ref.ID)
 		// trunk should be explicit null
-		trunkRaw, ok := doc.Rels["trunk"]
-		if !ok {
-			t.Fatal("expected 'trunk' relationship (null clear)")
-		}
+		require.Contains(t, doc.Rels, "trunk")
+		trunkRaw := doc.Rels["trunk"]
 		trunkRef, _ := ParseToOneRelationship(trunkRaw)
-		if trunkRef != nil {
-			t.Errorf("expected null trunk, got %+v", trunkRef)
-		}
+		assert.Nil(t, trunkRef)
 	})
 
 	t.Run("multiple dirty attributes all included", func(t *testing.T) {
 		body := `{"data":{"id":"1","type":"dirty_resources","attributes":{"name":"Alice","age":30,"description":"hello"}}}`
 		r, err := UnmarshalOne[testDirtyResource]([]byte(body))
-		if err != nil {
-			t.Fatalf("UnmarshalOne() error = %v", err)
-		}
+		require.NoError(t, err)
 
 		r.Name = "Bob"
 		r.Age = 31
 
 		data, err := MarshalPatch(r)
-		if err != nil {
-			t.Fatalf("MarshalPatch() error = %v", err)
-		}
+		require.NoError(t, err)
 
 		doc := parsePatchDoc(t, data)
 		assertAttrEquals(t, doc.Attrs, "name", `"Bob"`)
@@ -1430,9 +1048,7 @@ func TestMarshalPatch(t *testing.T) {
 		desc := "new"
 		r := &testDirtyResource{ID: "1", Name: "Alice", Age: 25, Description: &desc}
 		data, err := MarshalPatch(r)
-		if err != nil {
-			t.Fatalf("MarshalPatch() error = %v", err)
-		}
+		require.NoError(t, err)
 
 		doc := parsePatchDoc(t, data)
 		assertAttrEquals(t, doc.Attrs, "name", `"Alice"`)
@@ -1443,23 +1059,17 @@ func TestMarshalPatch(t *testing.T) {
 	t.Run("ForgetCleanState makes resource fully dirty", func(t *testing.T) {
 		body := `{"data":{"id":"1","type":"dirty_resources","attributes":{"name":"Alice","age":30}}}`
 		r, err := UnmarshalOne[testDirtyResource]([]byte(body))
-		if err != nil {
-			t.Fatalf("UnmarshalOne() error = %v", err)
-		}
+		require.NoError(t, err)
 
 		// Without changes, patch is empty
 		data, _ := MarshalPatch(r)
 		doc := parsePatchDoc(t, data)
-		if len(doc.Attrs) != 0 {
-			t.Errorf("expected empty attrs before forget, got %v", doc.Attrs)
-		}
+		assert.Len(t, doc.Attrs, 0)
 
 		// After forgetting clean state, all non-zero attrs become dirty
 		ForgetCleanState(r)
 		data, err = MarshalPatch(r)
-		if err != nil {
-			t.Fatalf("MarshalPatch() error = %v", err)
-		}
+		require.NoError(t, err)
 		doc = parsePatchDoc(t, data)
 		assertAttrEquals(t, doc.Attrs, "name", `"Alice"`)
 		assertAttrEquals(t, doc.Attrs, "age", `30`)
@@ -1485,9 +1095,7 @@ func parsePatchDoc(t *testing.T, data []byte) patchDoc {
 			Relationships map[string]json.RawMessage `json:"relationships"`
 		} `json:"data"`
 	}
-	if err := json.Unmarshal(data, &doc); err != nil {
-		t.Fatalf("failed to parse patch doc: %v", err)
-	}
+	require.NoError(t, json.Unmarshal(data, &doc))
 	return patchDoc{
 		ID:    doc.Data.ID,
 		Type:  doc.Data.Type,
@@ -1498,19 +1106,11 @@ func parsePatchDoc(t *testing.T, data []byte) patchDoc {
 
 func assertAttrEquals(t *testing.T, attrs map[string]json.RawMessage, key, want string) {
 	t.Helper()
-	raw, ok := attrs[key]
-	if !ok {
-		t.Errorf("expected attribute %q to be present", key)
-		return
-	}
-	if string(raw) != want {
-		t.Errorf("attribute %q = %s, want %s", key, raw, want)
-	}
+	require.Contains(t, attrs, key)
+	assert.Equal(t, want, string(attrs[key]))
 }
 
 func assertAttrMissing(t *testing.T, attrs map[string]json.RawMessage, key string) {
 	t.Helper()
-	if raw, ok := attrs[key]; ok {
-		t.Errorf("expected attribute %q to be absent, got %s", key, raw)
-	}
+	assert.NotContains(t, attrs, key)
 }
