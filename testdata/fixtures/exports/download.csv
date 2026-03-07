@@ -1,0 +1,2 @@
+Date/Time Start (UTC),Date/Time Answer (UTC),Date/Time End (UTC),Duration,DID Number,Trunk,CLI,CLD,RTP Src Addr Fwd,RTP Src Addr Bwd,Country,City,Rate,Cost,Disconnect Initiator,Disconnect Code,Disconnect Reason
+2025-01-15 10:30:00,2025-01-15 10:30:05,2025-01-15 10:35:00,295,972397239159652,trunk-1,+1234567890,+0987654321,10.0.0.1,10.0.0.2,US,New York,0.01,0.05,caller,200,Normal
