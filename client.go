@@ -1,7 +1,11 @@
 package didww
 
 import (
+	"bytes"
+	"compress/gzip"
+	"context"
 	"fmt"
+	"io"
 	"net/http"
 	"time"
 )
@@ -71,6 +75,53 @@ func (c *Client) BaseURL() string {
 // APIKey returns the API key of the client.
 func (c *Client) APIKey() string {
 	return c.apiKey
+}
+
+// DownloadExport downloads an export file from the given URL and writes it to the destination writer.
+func (c *Client) DownloadExport(ctx context.Context, downloadURL string, dest io.Writer) error {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, downloadURL, http.NoBody)
+	if err != nil {
+		return &ClientError{Message: fmt.Sprintf("failed to create download request: %v", err)}
+	}
+	req.Header.Set("Api-Key", c.apiKey)
+	req.Header.Set("X-DIDWW-API-Version", apiVersion)
+	req.Header.Set("User-Agent", "didww-go-sdk")
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return &ClientError{Message: fmt.Sprintf("download request failed: %v", err)}
+	}
+	defer resp.Body.Close() //nolint:errcheck // best-effort close
+
+	if resp.StatusCode >= 400 {
+		body, _ := io.ReadAll(resp.Body)
+		return &ClientError{Message: fmt.Sprintf("download failed: HTTP %d %s", resp.StatusCode, string(body))}
+	}
+
+	if _, err := io.Copy(dest, resp.Body); err != nil {
+		return &ClientError{Message: fmt.Sprintf("failed to write export data: %v", err)}
+	}
+	return nil
+}
+
+// DownloadAndDecompressExport downloads a gzip-compressed export file (.csv.gz) and writes the decompressed CSV to dest.
+func (c *Client) DownloadAndDecompressExport(ctx context.Context, downloadURL string, dest io.Writer) error {
+	var buf bytes.Buffer
+	if err := c.DownloadExport(ctx, downloadURL, &buf); err != nil {
+		return err
+	}
+
+	gz, err := gzip.NewReader(&buf)
+	if err != nil {
+		return &ClientError{Message: fmt.Sprintf("failed to create gzip reader: %v", err)}
+	}
+	defer gz.Close() //nolint:errcheck // best-effort close
+
+	const maxDecompressedSize = 1 << 30 // 1 GB
+	if _, err := io.Copy(dest, io.LimitReader(gz, maxDecompressedSize)); err != nil {
+		return &ClientError{Message: fmt.Sprintf("failed to decompress export data: %v", err)}
+	}
+	return nil
 }
 
 // --- Repository Accessors ---

@@ -1,9 +1,11 @@
 package didww
 
 import (
+	"bytes"
 	"context"
 	"io"
 	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	"github.com/didww/didww-api-3-go-sdk/resource/enums"
@@ -104,4 +106,68 @@ func TestExportsFind(t *testing.T) {
 	assert.Equal(t, enums.ExportTypeCdrIn, export.ExportType)
 	require.NotNil(t, export.URL)
 	assert.NotEmpty(t, *export.URL)
+}
+
+func TestDownloadExport(t *testing.T) {
+	gzData := loadFixture(t, "exports/download.csv.gz")
+
+	var capturedAuth string
+	var capturedAPIVersion string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		capturedAuth = r.Header.Get("Api-Key")
+		capturedAPIVersion = r.Header.Get("X-DIDWW-API-Version")
+		w.Header().Set("Content-Type", "application/octet-stream")
+		w.WriteHeader(http.StatusOK)
+		w.Write(gzData)
+	}))
+	defer server.Close()
+
+	client, err := NewClient("test-api-key", WithBaseURL(server.URL))
+	require.NoError(t, err)
+
+	var buf bytes.Buffer
+	err = client.DownloadExport(context.Background(), server.URL+"/v3/exports/02bf6df4.csv.gz", &buf)
+	require.NoError(t, err)
+
+	assert.Equal(t, gzData, buf.Bytes())
+	assert.Equal(t, "test-api-key", capturedAuth)
+	assert.Equal(t, apiVersion, capturedAPIVersion)
+}
+
+func TestDownloadAndDecompressExport(t *testing.T) {
+	gzData := loadFixture(t, "exports/download.csv.gz")
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/octet-stream")
+		w.WriteHeader(http.StatusOK)
+		w.Write(gzData)
+	}))
+	defer server.Close()
+
+	client, err := NewClient("test-api-key", WithBaseURL(server.URL))
+	require.NoError(t, err)
+
+	var buf bytes.Buffer
+	err = client.DownloadAndDecompressExport(context.Background(), server.URL+"/v3/exports/02bf6df4.csv.gz", &buf)
+	require.NoError(t, err)
+
+	content := buf.String()
+	assert.Contains(t, content, "Date/Time Start (UTC)")
+	assert.Contains(t, content, "972397239159652")
+}
+
+func TestDownloadExportError(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNotFound)
+		w.Write([]byte("not found"))
+	}))
+	defer server.Close()
+
+	client, err := NewClient("test-api-key", WithBaseURL(server.URL))
+	require.NoError(t, err)
+
+	var buf bytes.Buffer
+	err = client.DownloadExport(context.Background(), server.URL+"/v3/exports/missing.csv.gz", &buf)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "HTTP 404")
 }
