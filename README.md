@@ -10,6 +10,8 @@ The DIDWW API provides a simple yet powerful interface that allows you to fully 
 
 The DIDWW API v3 is a fully compliant implementation of the [JSON API specification](http://jsonapi.org/format/).
 
+This SDK implements JSON:API serialization and deserialization without external dependencies, using only the Go standard library.
+
 Read more https://doc.didww.com/api
 
 This SDK targets DIDWW API v3 documentation version:
