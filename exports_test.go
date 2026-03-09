@@ -113,9 +113,11 @@ func TestDownloadExport(t *testing.T) {
 
 	var capturedAuth string
 	var capturedAPIVersion string
+	var capturedUserAgent string
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		capturedAuth = r.Header.Get("Api-Key")
 		capturedAPIVersion = r.Header.Get("X-DIDWW-API-Version")
+		capturedUserAgent = r.Header.Get("User-Agent")
 		w.Header().Set("Content-Type", "application/octet-stream")
 		w.WriteHeader(http.StatusOK)
 		w.Write(gzData)
@@ -132,6 +134,7 @@ func TestDownloadExport(t *testing.T) {
 	assert.Equal(t, gzData, buf.Bytes())
 	assert.Equal(t, "test-api-key", capturedAuth)
 	assert.Equal(t, apiVersion, capturedAPIVersion)
+	assert.Equal(t, "didww-go-sdk/"+sdkVersion, capturedUserAgent)
 }
 
 func TestDownloadAndDecompressExport(t *testing.T) {
