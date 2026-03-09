@@ -397,6 +397,179 @@ func TestDirtyPatch_UpdateFromLoadedChangedDescription(t *testing.T) {
 	assertRequestJSON(t, capturedBody, "dids/update_from_loaded_request.json")
 }
 
+const testVoiceOutTrunkID = "425ce763-a3a9-49b4-af5b-ada1a65c8864"
+
+// TestDirtyPatch_VoiceOutTrunk_LoadedResourceOnlyChangedField verifies that after loading
+// a VoiceOutTrunk from the API, setting one field sends only that field.
+func TestDirtyPatch_VoiceOutTrunk_LoadedResourceOnlyChangedField(t *testing.T) {
+	var capturedBody []byte
+	server := newTestServerWithInspector(t, map[string]testRoute{
+		"GET /v3/voice_out_trunks/" + testVoiceOutTrunkID:   {status: http.StatusOK, fixture: "voice_out_trunks/show.json"},
+		"PATCH /v3/voice_out_trunks/" + testVoiceOutTrunkID: {status: http.StatusOK, fixture: "voice_out_trunks/update.json"},
+	}, func(r *http.Request) {
+		if r.Method == http.MethodPatch {
+			capturedBody, _ = io.ReadAll(r.Body)
+		}
+	})
+
+	trunk, err := server.client.VoiceOutTrunks().Find(context.Background(), testVoiceOutTrunkID)
+	require.NoError(t, err)
+
+	// Change only name
+	trunk.Name = "updated-name"
+
+	_, err = server.client.VoiceOutTrunks().Update(context.Background(), trunk)
+	require.NoError(t, err)
+
+	assertRequestJSON(t, capturedBody, "voice_out_trunks/update_from_loaded_request.json")
+}
+
+// TestDirtyPatch_VoiceOutTrunk_BuiltSingleAttr verifies that building a VoiceOutTrunk with ID
+// and setting only capacity_limit sends just that attribute.
+func TestDirtyPatch_VoiceOutTrunk_BuiltSingleAttr(t *testing.T) {
+	var capturedBody []byte
+	server := newTestServerWithInspector(t, map[string]testRoute{
+		"PATCH /v3/voice_out_trunks/" + testVoiceOutTrunkID: {status: http.StatusOK, fixture: "voice_out_trunks/update.json"},
+	}, func(r *http.Request) {
+		capturedBody, _ = io.ReadAll(r.Body)
+	})
+
+	cl := 50
+	_, err := server.client.VoiceOutTrunks().Update(context.Background(), &VoiceOutTrunk{
+		ID:            testVoiceOutTrunkID,
+		CapacityLimit: &cl,
+	})
+	require.NoError(t, err)
+
+	assertRequestJSON(t, capturedBody, "voice_out_trunks/update_capacity_limit_request.json")
+}
+
+// TestDirtyPatch_VoiceOutTrunk_LoadedNoChangesEmptyPatch verifies that after loading
+// a VoiceOutTrunk from the API, updating without changes sends empty attributes.
+func TestDirtyPatch_VoiceOutTrunk_LoadedNoChangesEmptyPatch(t *testing.T) {
+	var capturedBody []byte
+	server := newTestServerWithInspector(t, map[string]testRoute{
+		"GET /v3/voice_out_trunks/" + testVoiceOutTrunkID:   {status: http.StatusOK, fixture: "voice_out_trunks/show.json"},
+		"PATCH /v3/voice_out_trunks/" + testVoiceOutTrunkID: {status: http.StatusOK, fixture: "voice_out_trunks/update.json"},
+	}, func(r *http.Request) {
+		if r.Method == http.MethodPatch {
+			capturedBody, _ = io.ReadAll(r.Body)
+		}
+	})
+
+	trunk, err := server.client.VoiceOutTrunks().Find(context.Background(), testVoiceOutTrunkID)
+	require.NoError(t, err)
+
+	_, err = server.client.VoiceOutTrunks().Update(context.Background(), trunk)
+	require.NoError(t, err)
+
+	doc := parsePatchBody(t, capturedBody)
+	assert.Empty(t, doc.Attrs)
+	assert.Empty(t, doc.Rels)
+}
+
+// TestDirtyPatch_SetCapacityPoolNullifiesSharedCapacityGroup verifies mutual
+// exclusion: setting capacity_pool sends explicit null for shared_capacity_group.
+func TestDirtyPatch_SetCapacityPoolNullifiesSharedCapacityGroup(t *testing.T) {
+	var capturedBody []byte
+	server := newTestServerWithInspector(t, map[string]testRoute{
+		"PATCH /v3/dids/" + testDIDID: {status: http.StatusOK, fixture: "dids/show.json"},
+	}, func(r *http.Request) {
+		capturedBody, _ = io.ReadAll(r.Body)
+	})
+
+	_, err := server.client.DIDs().Update(context.Background(), &DID{
+		ID:             testDIDID,
+		CapacityPoolID: "pool-1",
+	})
+	require.NoError(t, err)
+
+	assertRequestJSON(t, capturedBody, "dids/update_set_capacity_pool_request.json")
+}
+
+// TestDirtyPatch_SetSharedCapacityGroupNullifiesCapacityPool verifies mutual
+// exclusion: setting shared_capacity_group sends explicit null for capacity_pool.
+func TestDirtyPatch_SetSharedCapacityGroupNullifiesCapacityPool(t *testing.T) {
+	var capturedBody []byte
+	server := newTestServerWithInspector(t, map[string]testRoute{
+		"PATCH /v3/dids/" + testDIDID: {status: http.StatusOK, fixture: "dids/show.json"},
+	}, func(r *http.Request) {
+		capturedBody, _ = io.ReadAll(r.Body)
+	})
+
+	_, err := server.client.DIDs().Update(context.Background(), &DID{
+		ID:                    testDIDID,
+		SharedCapacityGroupID: "group-1",
+	})
+	require.NoError(t, err)
+
+	assertRequestJSON(t, capturedBody, "dids/update_set_shared_capacity_group_request.json")
+}
+
+// TestDirtyPatch_LoadedSetCapacityPoolOnlyRelChange verifies that after loading
+// from the API, setting CapacityPoolID sends only the relationship changes.
+func TestDirtyPatch_LoadedSetCapacityPoolOnlyRelChange(t *testing.T) {
+	var capturedBody []byte
+	server := newTestServerWithInspector(t, map[string]testRoute{
+		"GET /v3/dids/" + testDIDID:   {status: http.StatusOK, fixture: "dids/show.json"},
+		"PATCH /v3/dids/" + testDIDID: {status: http.StatusOK, fixture: "dids/show.json"},
+	}, func(r *http.Request) {
+		if r.Method == http.MethodPatch {
+			capturedBody, _ = io.ReadAll(r.Body)
+		}
+	})
+
+	did, err := server.client.DIDs().Find(context.Background(), testDIDID)
+	require.NoError(t, err)
+
+	did.CapacityPoolID = "pool-1"
+
+	_, err = server.client.DIDs().Update(context.Background(), did)
+	require.NoError(t, err)
+
+	doc := parsePatchBody(t, capturedBody)
+
+	// No attribute changes
+	assert.Empty(t, doc.Attrs)
+
+	// capacity_pool should be set
+	assertRelSet(t, doc.Rels, "capacity_pool", "capacity_pools", "pool-1")
+	// shared_capacity_group should be null
+	assertRelNull(t, doc.Rels, "shared_capacity_group")
+}
+
+// TestDirtyPatch_LoadedSetSharedCapacityGroupOnlyRelChange verifies that after loading
+// from the API, setting SharedCapacityGroupID sends only the relationship changes.
+func TestDirtyPatch_LoadedSetSharedCapacityGroupOnlyRelChange(t *testing.T) {
+	var capturedBody []byte
+	server := newTestServerWithInspector(t, map[string]testRoute{
+		"GET /v3/dids/" + testDIDID:   {status: http.StatusOK, fixture: "dids/show.json"},
+		"PATCH /v3/dids/" + testDIDID: {status: http.StatusOK, fixture: "dids/show.json"},
+	}, func(r *http.Request) {
+		if r.Method == http.MethodPatch {
+			capturedBody, _ = io.ReadAll(r.Body)
+		}
+	})
+
+	did, err := server.client.DIDs().Find(context.Background(), testDIDID)
+	require.NoError(t, err)
+
+	did.SharedCapacityGroupID = "group-1"
+
+	_, err = server.client.DIDs().Update(context.Background(), did)
+	require.NoError(t, err)
+
+	doc := parsePatchBody(t, capturedBody)
+
+	// No attribute changes
+	assert.Empty(t, doc.Attrs)
+
+	// shared_capacity_group should be set
+	assertRelSet(t, doc.Rels, "shared_capacity_group", "shared_capacity_groups", "group-1")
+	// capacity_pool should be null
+	assertRelNull(t, doc.Rels, "capacity_pool")
+}
+
 // --- test helpers ---
 
 type patchBodyDoc struct {

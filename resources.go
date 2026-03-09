@@ -258,14 +258,18 @@ type DID struct {
 	ChannelsIncludedCount  int     `json:"channels_included_count" api:"readonly"`
 	DedicatedChannelsCount int     `json:"dedicated_channels_count"`
 	// Relationship IDs for create/update
-	VoiceInTrunkID      string `json:"-" rel:"voice_in_trunk,voice_in_trunks"`
-	VoiceInTrunkGroupID string `json:"-" rel:"voice_in_trunk_group,voice_in_trunk_groups"`
+	VoiceInTrunkID        string `json:"-" rel:"voice_in_trunk,voice_in_trunks"`
+	VoiceInTrunkGroupID   string `json:"-" rel:"voice_in_trunk_group,voice_in_trunk_groups"`
+	CapacityPoolID        string `json:"-" rel:"capacity_pool,capacity_pools"`
+	SharedCapacityGroupID string `json:"-" rel:"shared_capacity_group,shared_capacity_groups"`
 	// Resolved relationships
 	Order               *Order               `json:"-" rel:"order"`
 	AddressVerification *AddressVerification `json:"-" rel:"address_verification"`
 	DIDGroup            *DIDGroup            `json:"-" rel:"did_group"`
 	VoiceInTrunk        *VoiceInTrunk        `json:"-" rel:"voice_in_trunk"`
 	VoiceInTrunkGroup   *VoiceInTrunkGroup   `json:"-" rel:"voice_in_trunk_group"`
+	CapacityPool        *CapacityPool        `json:"-" rel:"capacity_pool"`
+	SharedCapacityGroup *SharedCapacityGroup `json:"-" rel:"shared_capacity_group"`
 }
 
 // MarshalRelationships implements RelationshipMarshaler for DID.
@@ -277,6 +281,12 @@ func (d *DID) MarshalRelationships() (map[string]any, error) {
 	}
 	if d.VoiceInTrunkGroupID != "" {
 		rels["voice_in_trunk"] = jsonapi.NullRelationship()
+	}
+	if d.CapacityPoolID != "" {
+		rels["shared_capacity_group"] = jsonapi.NullRelationship()
+	}
+	if d.SharedCapacityGroupID != "" {
+		rels["capacity_pool"] = jsonapi.NullRelationship()
 	}
 	return rels, nil
 }
