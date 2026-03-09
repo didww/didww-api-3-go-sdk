@@ -85,7 +85,7 @@ func (c *Client) DownloadExport(ctx context.Context, downloadURL string, dest io
 	}
 	req.Header.Set("Api-Key", c.apiKey)
 	req.Header.Set("X-DIDWW-API-Version", apiVersion)
-	req.Header.Set("User-Agent", "didww-go-sdk")
+	req.Header.Set("User-Agent", "didww-go-sdk/"+sdkVersion)
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
