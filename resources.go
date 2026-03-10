@@ -2,6 +2,7 @@ package didww
 
 import (
 	"encoding/json"
+	"strings"
 
 	"github.com/didww/didww-api-3-go-sdk/jsonapi"
 	"github.com/didww/didww-api-3-go-sdk/resource/enums"
@@ -551,6 +552,15 @@ type AddressVerification struct {
 	DIDIDs    []string `json:"-" rel:"dids,dids"`
 	// Resolved relationships
 	AddressRel *Address `json:"-" rel:"address"`
+}
+
+// RejectReasonsList splits the semicolon-separated RejectReasons string into a slice.
+// Returns nil if RejectReasons is nil.
+func (a *AddressVerification) RejectReasonsList() []string {
+	if a.RejectReasons == nil {
+		return nil
+	}
+	return strings.Split(*a.RejectReasons, "; ")
 }
 
 // EncryptedFile represents an encrypted file upload.
