@@ -4,7 +4,6 @@
     "type": "did_groups",
     "attributes": {
       "prefix": "241",
-      "local_prefix": "",
       "features": [
         "voice_in"
       ],

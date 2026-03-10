@@ -375,7 +375,6 @@ type Export struct {
 type DIDGroup struct {
 	ID                      string          `json:"-" jsonapi:"did_groups"`
 	Prefix                  string          `json:"prefix"`
-	LocalPrefix             string          `json:"local_prefix"`
 	Features                []enums.Feature `json:"features"`
 	IsMetered               bool            `json:"is_metered"`
 	AreaName                string          `json:"area_name"`
