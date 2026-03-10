@@ -190,12 +190,13 @@ updated, _ := client.DIDs().Update(ctx, did)
 import "github.com/didww/didww-api-3-go-sdk/resource/enums"
 
 // Create SIP trunk
+ringingTimeout := 30
 trunk := &didww.VoiceInTrunk{
     Name:           "My SIP Trunk",
     Priority:       1,
     Weight:         100,
     CliFormat:      enums.CliFormatE164,
-    RingingTimeout: 30,
+    RingingTimeout: &ringingTimeout,
     Configuration: &didww.SIPConfiguration{
         Host:                "sip.example.com",
         Port:                5060,
@@ -206,7 +207,8 @@ trunk := &didww.VoiceInTrunk{
 created, _ := client.VoiceInTrunks().Create(ctx, trunk)
 
 // Update trunk
-created.Description = "Updated"
+desc := "Updated"
+created.Description = &desc
 updated, _ := client.VoiceInTrunks().Update(ctx, created)
 
 // Delete trunk
@@ -216,9 +218,10 @@ client.VoiceInTrunks().Delete(ctx, created.ID)
 ### Voice In Trunk Groups
 
 ```go
+capacityLimit := 50
 group := &didww.VoiceInTrunkGroup{
     Name:            "Primary Group",
-    CapacityLimit:   50,
+    CapacityLimit:   &capacityLimit,
     VoiceInTrunkIDs: []string{trunkA.ID, trunkB.ID},
 }
 created, _ := client.VoiceInTrunkGroups().Create(ctx, group)
@@ -235,8 +238,11 @@ import "github.com/didww/didww-api-3-go-sdk/resource/enums"
 trunk := &didww.VoiceOutTrunk{
     Name:                "My Outbound Trunk",
     AllowedSipIPs:       []string{"0.0.0.0/0"},
+    AllowedRtpIPs:       []string{"0.0.0.0/0"},
+    DstPrefixes:         []string{},
     DefaultDstAction:    enums.DefaultDstActionAllowAll,
     OnCliMismatchAction: enums.OnCliMismatchActionRejectCall,
+    MediaEncryptionMode: enums.MediaEncryptionModeDisabled,
 }
 created, _ := client.VoiceOutTrunks().Create(ctx, trunk)
 ```
@@ -281,6 +287,7 @@ client.DIDReservations().Delete(ctx, created.ID)
 group := &didww.SharedCapacityGroup{
     Name:                 "Shared Group",
     SharedChannelsCount:  20,
+    MeteredChannelsCount: 0,
     CapacityPoolID:       "pool-uuid",
 }
 created, _ := client.SharedCapacityGroups().Create(ctx, group)
@@ -289,11 +296,13 @@ created, _ := client.SharedCapacityGroups().Create(ctx, group)
 ### Identities
 
 ```go
+import "github.com/didww/didww-api-3-go-sdk/resource/enums"
+
 identity := &didww.Identity{
     FirstName:    "John",
     LastName:     "Doe",
     PhoneNumber:  "12125551234",
-    IdentityType: "Personal",
+    IdentityType: enums.IdentityTypePersonal,
     CountryID:    "country-uuid",
 }
 created, _ := client.Identities().Create(ctx, identity)
@@ -329,8 +338,10 @@ created, _ := client.AddressVerifications().Create(ctx, verification)
 ### Exports
 
 ```go
+import "github.com/didww/didww-api-3-go-sdk/resource/enums"
+
 export := &didww.Export{
-    ExportType: "cdr_in",
+    ExportType: enums.ExportTypeCdrIn,
     Filters:    map[string]interface{}{"year": 2025, "month": 1},
 }
 created, _ := client.Exports().Create(ctx, export)
