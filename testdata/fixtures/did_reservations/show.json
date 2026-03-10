@@ -45,7 +45,6 @@
       "type": "did_groups",
       "attributes": {
         "prefix": "949",
-        "local_prefix": "",
         "features": [
           "voice_in"
         ],
