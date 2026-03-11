@@ -96,14 +96,34 @@ func TestIdentitiesCreatePersonal(t *testing.T) {
 }
 
 func TestIdentitiesUpdate(t *testing.T) {
-	_, client := newTestServer(t, map[string]testRoute{
+	var capturedBody []byte
+	server := newTestServerWithInspector(t, map[string]testRoute{
 		"PATCH /v3/identities/e96ae7d1-11d5-42bc-a5c5-211f3c3788ae": {status: http.StatusOK, fixture: "identities/update.json"},
+	}, func(r *http.Request) {
+		capturedBody, _ = io.ReadAll(r.Body)
 	})
 
-	identity, err := client.Identities().Update(context.Background(), &Identity{
-		ID:        "e96ae7d1-11d5-42bc-a5c5-211f3c3788ae",
-		FirstName: "Jake",
-		LastName:  "Johnson",
+	companyName := "Some Company Limited"
+	companyRegNumber := "1222776"
+	vatID := "GB1235"
+	description := "test"
+	personalTaxID := "983217654"
+	externalRefID := "112"
+	contactEmail := "jake.johnson@example.com"
+	identity, err := server.client.Identities().Update(context.Background(), &Identity{
+		ID:                  "e96ae7d1-11d5-42bc-a5c5-211f3c3788ae",
+		FirstName:           "Jake",
+		LastName:            "Johnson",
+		PhoneNumber:         "1111111",
+		BirthDate:           "1979-01-01",
+		CompanyName:         &companyName,
+		CompanyRegNumber:    &companyRegNumber,
+		VatID:               &vatID,
+		Description:         &description,
+		PersonalTaxID:       &personalTaxID,
+		IdentityType:        enums.IdentityTypeBusiness,
+		ExternalReferenceID: &externalRefID,
+		ContactEmail:        &contactEmail,
 	})
 	require.NoError(t, err)
 
@@ -112,6 +132,10 @@ func TestIdentitiesUpdate(t *testing.T) {
 	assert.Equal(t, "Johnson", identity.LastName)
 	require.NotNil(t, identity.CompanyName)
 	assert.Equal(t, "Some Company Limited", *identity.CompanyName)
+	require.NotNil(t, identity.ContactEmail)
+	assert.Equal(t, "jake.johnson@example.com", *identity.ContactEmail)
+
+	assertRequestJSON(t, capturedBody, "identities/update_request.json")
 }
 
 func TestIdentitiesFindWithContactEmail(t *testing.T) {
