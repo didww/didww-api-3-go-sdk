@@ -112,6 +112,21 @@ func TestIdentitiesUpdate(t *testing.T) {
 	assert.Equal(t, "Some Company Limited", *identity.CompanyName)
 }
 
+func TestIdentitiesFindWithContactEmail(t *testing.T) {
+	_, client := newTestServer(t, map[string]testRoute{
+		"GET /v3/identities/e96ae7d1-11d5-42bc-a5c5-211f3c3788ae": {status: http.StatusOK, fixture: "identities/show_with_contact_email.json"},
+	})
+
+	identity, err := client.Identities().Find(context.Background(), "e96ae7d1-11d5-42bc-a5c5-211f3c3788ae")
+	require.NoError(t, err)
+
+	assert.Equal(t, "e96ae7d1-11d5-42bc-a5c5-211f3c3788ae", identity.ID)
+	assert.Equal(t, "John", identity.FirstName)
+	assert.Equal(t, enums.IdentityTypeBusiness, identity.IdentityType)
+	require.NotNil(t, identity.ContactEmail)
+	assert.Equal(t, "john.doe@example.com", *identity.ContactEmail)
+}
+
 func TestIdentitiesDelete(t *testing.T) {
 	_, client := newTestServer(t, map[string]testRoute{
 		"DELETE /v3/identities/e96ae7d1-11d5-42bc-a5c5-211f3c3788ae": {status: http.StatusNoContent},
