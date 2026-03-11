@@ -354,6 +354,7 @@ type Identity struct {
 	CreatedAt           string             `json:"created_at" api:"readonly"`
 	ExternalReferenceID *string            `json:"external_reference_id"`
 	Verified            bool               `json:"verified" api:"readonly"`
+	ContactEmail        *string            `json:"contact_email"`
 	// Relationship IDs for create/update
 	CountryID string `json:"-" rel:"country,countries"`
 	// Resolved relationships
