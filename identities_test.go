@@ -43,6 +43,7 @@ func TestIdentitiesCreate(t *testing.T) {
 	description := "test identity"
 	personalTaxID := "987654321"
 	externalRefID := "111"
+	contactEmail := "john.doe@example.com"
 	identity, err := server.client.Identities().Create(context.Background(), &Identity{
 		FirstName:           "John",
 		LastName:            "Doe",
@@ -56,6 +57,7 @@ func TestIdentitiesCreate(t *testing.T) {
 		PersonalTaxID:       &personalTaxID,
 		IdentityType:        enums.IdentityTypeBusiness,
 		ExternalReferenceID: &externalRefID,
+		ContactEmail:        &contactEmail,
 		CountryID:           "1f6fc2bd-f081-4202-9b1a-d9cb88d942b9",
 	})
 	require.NoError(t, err)
