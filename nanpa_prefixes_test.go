@@ -35,3 +35,24 @@ func TestNanpaPrefixesFindWithIncludedCountry(t *testing.T) {
 	require.NotNil(t, prefix.Country)
 	assert.Equal(t, "United States", prefix.Country.Name)
 }
+
+func TestNanpaPrefixesFindWithIncludedRegion(t *testing.T) {
+	_, client := newTestServer(t, map[string]testRoute{
+		"GET /v3/nanpa_prefixes/1e622e21-c740-4d3f-a615-2a7ef4991922": {status: http.StatusOK, fixture: "nanpa_prefixes/show_with_region.json"},
+	})
+
+	params := NewQueryParams().Include("region")
+	prefix, err := client.NanpaPrefixes().Find(context.Background(), "1e622e21-c740-4d3f-a615-2a7ef4991922", params)
+	require.NoError(t, err)
+
+	assert.Equal(t, "1e622e21-c740-4d3f-a615-2a7ef4991922", prefix.ID)
+	assert.Equal(t, "201", prefix.NPA)
+	assert.Equal(t, "221", prefix.NXX)
+
+	// Verify included region
+	require.NotNil(t, prefix.Region)
+	assert.Equal(t, "346e64c8-18c2-4a12-b1e2-20e090043fca", prefix.Region.ID)
+	assert.Equal(t, "New Jersey", prefix.Region.Name)
+	require.NotNil(t, prefix.Region.ISO)
+	assert.Equal(t, "US-NJ", *prefix.Region.ISO)
+}
