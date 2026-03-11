@@ -544,7 +544,7 @@ type AddressVerification struct {
 	CallbackURL        *string                         `json:"callback_url,omitempty"`
 	CallbackMethod     *string                         `json:"callback_method,omitempty"`
 	Status             enums.AddressVerificationStatus `json:"status" api:"readonly"`
-	RejectReasons      *string                         `json:"reject_reasons" api:"readonly"`
+	RejectReasons      []string                        `json:"reject_reasons" api:"readonly"`
 	CreatedAt          string                          `json:"created_at" api:"readonly"`
 	Reference          string                          `json:"reference" api:"readonly"`
 	// Relationship IDs for create/update
@@ -554,21 +554,28 @@ type AddressVerification struct {
 	AddressRel *Address `json:"-" rel:"address"`
 }
 
-// RejectReasonsList splits the semicolon-separated RejectReasons string into a slice.
-// Returns nil if RejectReasons is nil.
-func (a *AddressVerification) RejectReasonsList() []string {
-	if a.RejectReasons == nil {
-		return nil
+// UnmarshalJSON splits the semicolon-separated reject_reasons string into a slice.
+func (a *AddressVerification) UnmarshalJSON(data []byte) error {
+	type Alias AddressVerification
+	aux := &struct {
+		RejectReasons *string `json:"reject_reasons"`
+		*Alias
+	}{
+		Alias: (*Alias)(a),
 	}
-	rawItems := strings.Split(*a.RejectReasons, ";")
-	reasons := make([]string, 0, len(rawItems))
-	for _, item := range rawItems {
-		item = strings.TrimSpace(item)
-		if item != "" {
-			reasons = append(reasons, item)
+	if err := json.Unmarshal(data, aux); err != nil {
+		return err
+	}
+	if aux.RejectReasons != nil {
+		rawItems := strings.Split(*aux.RejectReasons, "; ")
+		a.RejectReasons = make([]string, 0, len(rawItems))
+		for _, item := range rawItems {
+			if item != "" {
+				a.RejectReasons = append(a.RejectReasons, item)
+			}
 		}
 	}
-	return reasons
+	return nil
 }
 
 // EncryptedFile represents an encrypted file upload.

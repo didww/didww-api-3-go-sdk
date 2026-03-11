@@ -64,7 +64,6 @@ func TestAddressVerificationsFind(t *testing.T) {
 	assert.Equal(t, enums.AddressVerificationStatusApproved, av.Status)
 	assert.Equal(t, "SHB-485120", av.Reference)
 	assert.Nil(t, av.RejectReasons)
-	assert.Nil(t, av.RejectReasonsList())
 }
 
 func TestAddressVerificationsFindRejected(t *testing.T) {
@@ -77,8 +76,6 @@ func TestAddressVerificationsFindRejected(t *testing.T) {
 
 	assert.Equal(t, "429e6d4e-2ee9-4953-aa98-0b3ac07f0f96", av.ID)
 	assert.Equal(t, enums.AddressVerificationStatusRejected, av.Status)
-	require.NotNil(t, av.RejectReasons)
-	assert.Equal(t, "Address cannot be validated; Proof of address should be not older than of 6 months", *av.RejectReasons)
-	assert.Equal(t, []string{"Address cannot be validated", "Proof of address should be not older than of 6 months"}, av.RejectReasonsList())
+	assert.Equal(t, []string{"Address cannot be validated", "Proof of address should be not older than of 6 months"}, av.RejectReasons)
 	assert.Equal(t, "ODW-879912", av.Reference)
 }
