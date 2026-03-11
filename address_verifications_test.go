@@ -63,6 +63,8 @@ func TestAddressVerificationsFind(t *testing.T) {
 	assert.Equal(t, "c8e004b0-87ec-4987-b4fb-ee89db099f0e", av.ID)
 	assert.Equal(t, enums.AddressVerificationStatusApproved, av.Status)
 	assert.Equal(t, "SHB-485120", av.Reference)
+	assert.Nil(t, av.RejectReasons)
+	assert.Nil(t, av.RejectReasonsList())
 }
 
 func TestAddressVerificationsFindRejected(t *testing.T) {
