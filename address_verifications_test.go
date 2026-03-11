@@ -63,4 +63,19 @@ func TestAddressVerificationsFind(t *testing.T) {
 	assert.Equal(t, "c8e004b0-87ec-4987-b4fb-ee89db099f0e", av.ID)
 	assert.Equal(t, enums.AddressVerificationStatusApproved, av.Status)
 	assert.Equal(t, "SHB-485120", av.Reference)
+	assert.Nil(t, av.RejectReasons)
+}
+
+func TestAddressVerificationsFindRejected(t *testing.T) {
+	_, client := newTestServer(t, map[string]testRoute{
+		"GET /v3/address_verifications/429e6d4e-2ee9-4953-aa98-0b3ac07f0f96": {status: http.StatusOK, fixture: "address_verifications/show_rejected.json"},
+	})
+
+	av, err := client.AddressVerifications().Find(context.Background(), "429e6d4e-2ee9-4953-aa98-0b3ac07f0f96")
+	require.NoError(t, err)
+
+	assert.Equal(t, "429e6d4e-2ee9-4953-aa98-0b3ac07f0f96", av.ID)
+	assert.Equal(t, enums.AddressVerificationStatusRejected, av.Status)
+	assert.Equal(t, []string{"Address cannot be validated", "Proof of address should be not older than of 6 months"}, av.RejectReasons)
+	assert.Equal(t, "ODW-879912", av.Reference)
 }
