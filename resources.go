@@ -566,6 +566,7 @@ type NanpaPrefix struct {
 	NXX string `json:"nxx"`
 	// Resolved relationships
 	Country *Country `json:"-" rel:"country"`
+	Region  *Region  `json:"-" rel:"region"`
 }
 
 // Requirement represents a regulatory requirement.
