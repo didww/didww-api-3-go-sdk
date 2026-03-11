@@ -51,7 +51,7 @@ func (rv *RequestValidator) ComputeSignature(rawURL string, payload map[string]s
 	}
 
 	mac := hmac.New(sha1.New, []byte(rv.apiKey))
-	mac.Write([]byte(data.String()))
+	_, _ = mac.Write([]byte(data.String()))
 	return hex.EncodeToString(mac.Sum(nil))
 }
 
@@ -59,7 +59,7 @@ func normalizeURL(rawURL string) string {
 	// If no scheme is present, prepend "http://" so url.Parse correctly
 	// identifies the host (otherwise "foo.com/bar" is treated as a path).
 	if !strings.Contains(rawURL, "://") {
-		rawURL = "http://" + rawURL
+		rawURL = "http://" + rawURL // NOSONAR
 	}
 
 	parsed, err := url.Parse(rawURL)
