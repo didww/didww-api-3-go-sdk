@@ -3,7 +3,6 @@ package didww
 import (
 	"crypto/hmac"
 	"crypto/sha1" //nolint:gosec // SHA-1 required by DIDWW callback signature protocol
-	"crypto/subtle"
 	"encoding/hex"
 	"net/url"
 	"sort"
@@ -29,12 +28,21 @@ func (rv *RequestValidator) Validate(rawURL string, payload map[string]string, s
 	if signature == "" {
 		return false
 	}
-	expected := rv.ComputeSignature(rawURL, payload)
-	return subtle.ConstantTimeCompare([]byte(signature), []byte(expected)) == 1
+	sigBytes, err := hex.DecodeString(signature)
+	if err != nil {
+		return false
+	}
+	expected := rv.computeSignatureBytes(rawURL, payload)
+	return hmac.Equal(sigBytes, expected)
 }
 
 // ComputeSignature computes the HMAC-SHA1 hex digest for the given URL and payload.
 func (rv *RequestValidator) ComputeSignature(rawURL string, payload map[string]string) string {
+	return hex.EncodeToString(rv.computeSignatureBytes(rawURL, payload))
+}
+
+// computeSignatureBytes computes the raw HMAC-SHA1 digest for the given URL and payload.
+func (rv *RequestValidator) computeSignatureBytes(rawURL string, payload map[string]string) []byte {
 	normalized := normalizeURL(rawURL)
 
 	keys := make([]string, 0, len(payload))
@@ -52,7 +60,7 @@ func (rv *RequestValidator) ComputeSignature(rawURL string, payload map[string]s
 
 	mac := hmac.New(sha1.New, []byte(rv.apiKey))
 	_, _ = mac.Write([]byte(data.String()))
-	return hex.EncodeToString(mac.Sum(nil))
+	return mac.Sum(nil)
 }
 
 func normalizeURL(rawURL string) string {
@@ -79,10 +87,20 @@ func normalizeURL(rawURL string) string {
 		b.WriteString(parsed.User.String())
 		b.WriteByte('@')
 	}
-	b.WriteString(host)
+	if strings.Contains(host, ":") {
+		b.WriteByte('[')
+		b.WriteString(host)
+		b.WriteByte(']')
+	} else {
+		b.WriteString(host)
+	}
 	b.WriteByte(':')
 	b.WriteString(port)
-	b.WriteString(parsed.Path)
+	path := parsed.EscapedPath()
+	if path == "" {
+		path = "/"
+	}
+	b.WriteString(path)
 	if parsed.RawQuery != "" {
 		b.WriteByte('?')
 		b.WriteString(parsed.RawQuery)
