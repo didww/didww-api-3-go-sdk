@@ -56,22 +56,12 @@ func (rv *RequestValidator) ComputeSignature(rawURL string, payload map[string]s
 }
 
 func normalizeURL(rawURL string) string {
-	// If no scheme is present, prepend "http://" so url.Parse correctly
-	// identifies the host (otherwise "foo.com/bar" is treated as a path).
-	if !strings.Contains(rawURL, "://") {
-		rawURL = "http://" + rawURL // NOSONAR
-	}
-
 	parsed, err := url.Parse(rawURL)
 	if err != nil {
 		return rawURL
 	}
 
 	scheme := parsed.Scheme
-	if scheme == "" {
-		scheme = "http"
-	}
-
 	host := parsed.Hostname()
 	port := parsed.Port()
 	if port == "" {
