@@ -560,7 +560,15 @@ func (a *AddressVerification) RejectReasonsList() []string {
 	if a.RejectReasons == nil {
 		return nil
 	}
-	return strings.Split(*a.RejectReasons, "; ")
+	rawItems := strings.Split(*a.RejectReasons, ";")
+	reasons := make([]string, 0, len(rawItems))
+	for _, item := range rawItems {
+		item = strings.TrimSpace(item)
+		if item != "" {
+			reasons = append(reasons, item)
+		}
+	}
+	return reasons
 }
 
 // EncryptedFile represents an encrypted file upload.
