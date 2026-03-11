@@ -97,9 +97,6 @@ func normalizeURL(rawURL string) string {
 	b.WriteByte(':')
 	b.WriteString(port)
 	path := parsed.EscapedPath()
-	if path == "" {
-		path = "/"
-	}
 	b.WriteString(path)
 	if parsed.RawQuery != "" {
 		b.WriteByte('?')
