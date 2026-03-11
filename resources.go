@@ -574,6 +574,8 @@ func (a *AddressVerification) UnmarshalJSON(data []byte) error {
 				a.RejectReasons = append(a.RejectReasons, item)
 			}
 		}
+	} else {
+		a.RejectReasons = nil
 	}
 	return nil
 }
