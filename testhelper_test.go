@@ -185,7 +185,9 @@ func captureRequestBody(t *testing.T, routes map[string]testRoute) (*testServerW
 	t.Helper()
 	var body []byte
 	server := newTestServerWithInspector(t, routes, func(r *http.Request) {
-		body, _ = io.ReadAll(r.Body)
+		if r.Method == http.MethodPatch || r.Method == http.MethodPost {
+			body, _ = io.ReadAll(r.Body)
+		}
 	})
 	return server, &body
 }
