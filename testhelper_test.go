@@ -2,9 +2,9 @@ package didww
 
 import (
 	"encoding/json"
+	"io"
 	"net/http"
 	"net/http/httptest"
-	"io"
 	"os"
 	"path/filepath"
 	"runtime"
