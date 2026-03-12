@@ -45,64 +45,71 @@ func TestClientSendsCorrectHeaders(t *testing.T) {
 	assert.Equal(t, "didww-go-sdk/1.0.0", receivedUserAgent)
 }
 
-func TestClientHandles404(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/vnd.api+json")
-		w.WriteHeader(http.StatusNotFound)
-		w.Write([]byte(`{"errors":[{"title":"not found","detail":"Resource not found","status":"404"}]}`))
-	}))
-	defer server.Close()
+func TestClientHandlesHTTPErrors(t *testing.T) {
+	tests := []struct {
+		name         string
+		statusCode   int
+		responseBody string
+		makeRequest  func(*Client) error
+		checkErrors  func(*testing.T, *APIError)
+	}{
+		{
+			name:         "404 Not Found",
+			statusCode:   http.StatusNotFound,
+			responseBody: `{"errors":[{"title":"not found","detail":"Resource not found","status":"404"}]}`,
+			makeRequest: func(c *Client) error {
+				_, err := c.Countries().Find(context.Background(), "nonexistent-id")
+				return err
+			},
+		},
+		{
+			name:         "500 Internal Server Error",
+			statusCode:   http.StatusInternalServerError,
+			responseBody: `{"errors":[{"title":"server error","detail":"Internal server error","status":"500"}]}`,
+			makeRequest: func(c *Client) error {
+				_, err := c.Balance().Find(context.Background())
+				return err
+			},
+		},
+		{
+			name:         "422 Unprocessable Entity",
+			statusCode:   http.StatusUnprocessableEntity,
+			responseBody: `{"errors":[{"title":"is invalid","detail":"name - is invalid","code":"100","source":{"pointer":"/data/attributes/name"},"status":"422"}]}`,
+			makeRequest: func(c *Client) error {
+				_, err := c.VoiceInTrunks().Create(context.Background(), &VoiceInTrunk{Name: "test"})
+				return err
+			},
+			checkErrors: func(t *testing.T, apiErr *APIError) {
+				require.Len(t, apiErr.Errors, 1)
+				assert.Equal(t, "100", apiErr.Errors[0].Code)
+				assert.Equal(t, "/data/attributes/name", apiErr.Errors[0].Source.Pointer)
+			},
+		},
+	}
 
-	client, err := NewClient("test-api-key", WithBaseURL(server.URL))
-	require.NoError(t, err)
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("Content-Type", "application/vnd.api+json")
+				w.WriteHeader(tc.statusCode)
+				w.Write([]byte(tc.responseBody))
+			}))
+			defer server.Close()
 
-	_, err = client.Countries().Find(context.Background(), "nonexistent-id")
-	require.Error(t, err)
+			client, err := NewClient("test-api-key", WithBaseURL(server.URL))
+			require.NoError(t, err)
 
-	apiErr, ok := err.(*APIError)
-	require.True(t, ok, "expected *APIError")
-	assert.Equal(t, http.StatusNotFound, apiErr.HTTPStatus)
-}
+			err = tc.makeRequest(client)
+			require.Error(t, err)
 
-func TestClientHandles500(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/vnd.api+json")
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(`{"errors":[{"title":"server error","detail":"Internal server error","status":"500"}]}`))
-	}))
-	defer server.Close()
-
-	client, err := NewClient("test-api-key", WithBaseURL(server.URL))
-	require.NoError(t, err)
-
-	_, err = client.Balance().Find(context.Background())
-	require.Error(t, err)
-
-	apiErr, ok := err.(*APIError)
-	require.True(t, ok, "expected *APIError")
-	assert.Equal(t, http.StatusInternalServerError, apiErr.HTTPStatus)
-}
-
-func TestClientHandles422(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/vnd.api+json")
-		w.WriteHeader(http.StatusUnprocessableEntity)
-		w.Write([]byte(`{"errors":[{"title":"is invalid","detail":"name - is invalid","code":"100","source":{"pointer":"/data/attributes/name"},"status":"422"}]}`))
-	}))
-	defer server.Close()
-
-	client, err := NewClient("test-api-key", WithBaseURL(server.URL))
-	require.NoError(t, err)
-
-	_, err = client.VoiceInTrunks().Create(context.Background(), &VoiceInTrunk{Name: "test"})
-	require.Error(t, err)
-
-	apiErr, ok := err.(*APIError)
-	require.True(t, ok, "expected *APIError")
-	assert.Equal(t, http.StatusUnprocessableEntity, apiErr.HTTPStatus)
-	require.Len(t, apiErr.Errors, 1)
-	assert.Equal(t, "100", apiErr.Errors[0].Code)
-	assert.Equal(t, "/data/attributes/name", apiErr.Errors[0].Source.Pointer)
+			apiErr, ok := err.(*APIError)
+			require.True(t, ok, "expected *APIError")
+			assert.Equal(t, tc.statusCode, apiErr.HTTPStatus)
+			if tc.checkErrors != nil {
+				tc.checkErrors(t, apiErr)
+			}
+		})
+	}
 }
 
 func TestClientWithQueryParamsAppendedToURL(t *testing.T) {

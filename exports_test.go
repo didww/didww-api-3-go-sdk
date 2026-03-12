@@ -3,7 +3,6 @@ package didww
 import (
 	"bytes"
 	"context"
-	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -33,11 +32,8 @@ func TestExportsList(t *testing.T) {
 }
 
 func TestExportsCreate(t *testing.T) {
-	var capturedBody []byte
-	server := newTestServerWithInspector(t, map[string]testRoute{
+	server, capturedBodyPtr := captureRequestBody(t, map[string]testRoute{
 		"POST /v3/exports": {status: http.StatusCreated, fixture: "exports/create.json"},
-	}, func(r *http.Request) {
-		capturedBody, _ = io.ReadAll(r.Body)
 	})
 
 	export, err := server.client.Exports().Create(context.Background(), &Export{
@@ -54,7 +50,7 @@ func TestExportsCreate(t *testing.T) {
 	assert.Equal(t, enums.ExportStatusPending, export.Status)
 	assert.Equal(t, enums.ExportTypeCdrIn, export.ExportType)
 
-	assertRequestJSON(t, capturedBody, "exports/create_request.json")
+	assertRequestJSON(t, *capturedBodyPtr, "exports/create_request.json")
 }
 
 func TestExportsCreateCdrOut(t *testing.T) {

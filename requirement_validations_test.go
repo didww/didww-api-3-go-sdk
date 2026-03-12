@@ -2,7 +2,6 @@ package didww
 
 import (
 	"context"
-	"io"
 	"net/http"
 	"testing"
 
@@ -11,11 +10,8 @@ import (
 )
 
 func TestRequirementValidationsCreate(t *testing.T) {
-	var capturedBody []byte
-	server := newTestServerWithInspector(t, map[string]testRoute{
+	server, capturedBodyPtr := captureRequestBody(t, map[string]testRoute{
 		"POST /v3/requirement_validations": {status: http.StatusCreated, fixture: "requirement_validations/create.json"},
-	}, func(r *http.Request) {
-		capturedBody, _ = io.ReadAll(r.Body)
 	})
 
 	rv, err := server.client.RequirementValidations().Create(context.Background(), &RequirementValidation{
@@ -26,15 +22,12 @@ func TestRequirementValidationsCreate(t *testing.T) {
 
 	assert.NotEmpty(t, rv.ID)
 
-	assertRequestJSON(t, capturedBody, "requirement_validations/create_request.json")
+	assertRequestJSON(t, *capturedBodyPtr, "requirement_validations/create_request.json")
 }
 
 func TestRequirementValidationsCreateError(t *testing.T) {
-	var capturedBody []byte
-	server := newTestServerWithInspector(t, map[string]testRoute{
+	server, capturedBodyPtr := captureRequestBody(t, map[string]testRoute{
 		"POST /v3/requirement_validations": {status: http.StatusUnprocessableEntity, fixture: "requirement_validations/create_error_validation.json"},
-	}, func(r *http.Request) {
-		capturedBody, _ = io.ReadAll(r.Body)
 	})
 
 	_, err := server.client.RequirementValidations().Create(context.Background(), &RequirementValidation{
@@ -48,5 +41,5 @@ func TestRequirementValidationsCreateError(t *testing.T) {
 	require.True(t, ok, "expected *APIError")
 	require.Len(t, apiErr.Errors, 3)
 
-	assertRequestJSON(t, capturedBody, "requirement_validations/create_request_failed.json")
+	assertRequestJSON(t, *capturedBodyPtr, "requirement_validations/create_request_failed.json")
 }

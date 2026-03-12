@@ -2,7 +2,6 @@ package didww
 
 import (
 	"context"
-	"io"
 	"net/http"
 	"testing"
 
@@ -22,11 +21,8 @@ func TestAddressesList(t *testing.T) {
 }
 
 func TestAddressesCreate(t *testing.T) {
-	var capturedBody []byte
-	server := newTestServerWithInspector(t, map[string]testRoute{
+	server, capturedBodyPtr := captureRequestBody(t, map[string]testRoute{
 		"POST /v3/addresses": {status: http.StatusCreated, fixture: "addresses/create.json"},
-	}, func(r *http.Request) {
-		capturedBody, _ = io.ReadAll(r.Body)
 	})
 
 	address, err := server.client.Addresses().Create(context.Background(), &Address{
@@ -46,7 +42,7 @@ func TestAddressesCreate(t *testing.T) {
 	require.NotNil(t, address.Country)
 	assert.Equal(t, "United States", address.Country.Name)
 
-	assertRequestJSON(t, capturedBody, "addresses/create_request.json")
+	assertRequestJSON(t, *capturedBodyPtr, "addresses/create_request.json")
 }
 
 func TestAddressesUpdate(t *testing.T) {

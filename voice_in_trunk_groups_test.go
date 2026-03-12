@@ -2,7 +2,6 @@ package didww
 
 import (
 	"context"
-	"io"
 	"net/http"
 	"testing"
 
@@ -26,11 +25,8 @@ func TestVoiceInTrunkGroupsList(t *testing.T) {
 }
 
 func TestVoiceInTrunkGroupsCreate(t *testing.T) {
-	var capturedBody []byte
-	server := newTestServerWithInspector(t, map[string]testRoute{
+	server, capturedBodyPtr := captureRequestBody(t, map[string]testRoute{
 		"POST /v3/voice_in_trunk_groups": {status: http.StatusCreated, fixture: "voice_in_trunk_groups/create.json"},
-	}, func(r *http.Request) {
-		capturedBody, _ = io.ReadAll(r.Body)
 	})
 
 	group, err := server.client.VoiceInTrunkGroups().Create(context.Background(), &VoiceInTrunkGroup{
@@ -47,7 +43,7 @@ func TestVoiceInTrunkGroupsCreate(t *testing.T) {
 	require.Len(t, group.VoiceInTrunks, 2)
 	assert.Equal(t, "test custom11", group.VoiceInTrunks[0].Name)
 
-	assertRequestJSON(t, capturedBody, "voice_in_trunk_groups/create_request.json")
+	assertRequestJSON(t, *capturedBodyPtr, "voice_in_trunk_groups/create_request.json")
 }
 
 func TestVoiceInTrunkGroupsUpdate(t *testing.T) {

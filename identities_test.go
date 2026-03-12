@@ -2,7 +2,6 @@ package didww
 
 import (
 	"context"
-	"io"
 	"net/http"
 	"testing"
 
@@ -29,11 +28,8 @@ func TestIdentitiesList(t *testing.T) {
 }
 
 func TestIdentitiesCreate(t *testing.T) {
-	var capturedBody []byte
-	server := newTestServerWithInspector(t, map[string]testRoute{
+	server, capturedBodyPtr := captureRequestBody(t, map[string]testRoute{
 		"POST /v3/identities": {status: http.StatusCreated, fixture: "identities/create.json"},
-	}, func(r *http.Request) {
-		capturedBody, _ = io.ReadAll(r.Body)
 	})
 
 	idNumber := "ABC1234"
@@ -70,7 +66,7 @@ func TestIdentitiesCreate(t *testing.T) {
 	require.NotNil(t, identity.Country)
 	assert.Equal(t, "United States", identity.Country.Name)
 
-	assertRequestJSON(t, capturedBody, "identities/create_request.json")
+	assertRequestJSON(t, *capturedBodyPtr, "identities/create_request.json")
 }
 
 func TestIdentitiesCreatePersonal(t *testing.T) {
@@ -96,11 +92,8 @@ func TestIdentitiesCreatePersonal(t *testing.T) {
 }
 
 func TestIdentitiesUpdate(t *testing.T) {
-	var capturedBody []byte
-	server := newTestServerWithInspector(t, map[string]testRoute{
+	server, capturedBodyPtr := captureRequestBody(t, map[string]testRoute{
 		"PATCH /v3/identities/e96ae7d1-11d5-42bc-a5c5-211f3c3788ae": {status: http.StatusOK, fixture: "identities/update.json"},
-	}, func(r *http.Request) {
-		capturedBody, _ = io.ReadAll(r.Body)
 	})
 
 	companyName := "Some Company Limited"
@@ -135,7 +128,7 @@ func TestIdentitiesUpdate(t *testing.T) {
 	require.NotNil(t, identity.ContactEmail)
 	assert.Equal(t, "jake.johnson@example.com", *identity.ContactEmail)
 
-	assertRequestJSON(t, capturedBody, "identities/update_request.json")
+	assertRequestJSON(t, *capturedBodyPtr, "identities/update_request.json")
 }
 
 func TestIdentitiesFindWithContactEmail(t *testing.T) {

@@ -2,7 +2,6 @@ package didww
 
 import (
 	"context"
-	"io"
 	"net/http"
 	"testing"
 
@@ -40,11 +39,8 @@ func TestVoiceInTrunksList(t *testing.T) {
 }
 
 func TestVoiceInTrunksCreate(t *testing.T) {
-	var capturedBody []byte
-	server := newTestServerWithInspector(t, map[string]testRoute{
+	server, capturedBodyPtr := captureRequestBody(t, map[string]testRoute{
 		"POST /v3/voice_in_trunks": {status: http.StatusCreated, fixture: "voice_in_trunks/create.json"},
-	}, func(r *http.Request) {
-		capturedBody, _ = io.ReadAll(r.Body)
 	})
 
 	trunk, err := server.client.VoiceInTrunks().Create(context.Background(), &VoiceInTrunk{
@@ -57,15 +53,12 @@ func TestVoiceInTrunksCreate(t *testing.T) {
 
 	assert.Equal(t, "41b94706-325e-4704-a433-d65105758836", trunk.ID)
 
-	assertRequestJSON(t, capturedBody, "voice_in_trunks/create_request.json")
+	assertRequestJSON(t, *capturedBodyPtr, "voice_in_trunks/create_request.json")
 }
 
 func TestVoiceInTrunksCreateSipWithReroutingCodes(t *testing.T) {
-	var capturedBody []byte
-	server := newTestServerWithInspector(t, map[string]testRoute{
+	server, capturedBodyPtr := captureRequestBody(t, map[string]testRoute{
 		"POST /v3/voice_in_trunks": {status: http.StatusCreated, fixture: "voice_in_trunks/create.json"},
-	}, func(r *http.Request) {
-		capturedBody, _ = io.ReadAll(r.Body)
 	})
 
 	_, err := server.client.VoiceInTrunks().Create(context.Background(), &VoiceInTrunk{
@@ -103,7 +96,7 @@ func TestVoiceInTrunksCreateSipWithReroutingCodes(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	assertRequestJSON(t, capturedBody, "voice_in_trunks/create_sip_request.json")
+	assertRequestJSON(t, *capturedBodyPtr, "voice_in_trunks/create_sip_request.json")
 }
 
 func TestVoiceInTrunksCreateSip(t *testing.T) {

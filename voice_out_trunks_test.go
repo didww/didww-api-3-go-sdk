@@ -2,7 +2,6 @@ package didww
 
 import (
 	"context"
-	"io"
 	"net/http"
 	"testing"
 
@@ -55,11 +54,8 @@ func TestVoiceOutTrunksFindWithIncludedDids(t *testing.T) {
 }
 
 func TestVoiceOutTrunksCreate(t *testing.T) {
-	var capturedBody []byte
-	server := newTestServerWithInspector(t, map[string]testRoute{
+	server, capturedBodyPtr := captureRequestBody(t, map[string]testRoute{
 		"POST /v3/voice_out_trunks": {status: http.StatusCreated, fixture: "voice_out_trunks/create.json"},
-	}, func(r *http.Request) {
-		capturedBody, _ = io.ReadAll(r.Body)
 	})
 
 	trunk, err := server.client.VoiceOutTrunks().Create(context.Background(), &VoiceOutTrunk{
@@ -73,7 +69,7 @@ func TestVoiceOutTrunksCreate(t *testing.T) {
 
 	assert.Equal(t, "b60201c1-21f0-4d9a-aafa-0e6d1e12f22e", trunk.ID)
 
-	assertRequestJSON(t, capturedBody, "voice_out_trunks/create_request.json")
+	assertRequestJSON(t, *capturedBodyPtr, "voice_out_trunks/create_request.json")
 }
 
 func TestVoiceOutTrunksUpdate(t *testing.T) {

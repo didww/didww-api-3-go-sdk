@@ -2,7 +2,6 @@ package didww
 
 import (
 	"context"
-	"io"
 	"net/http"
 	"testing"
 
@@ -24,11 +23,8 @@ func TestAddressVerificationsList(t *testing.T) {
 }
 
 func TestAddressVerificationsCreate(t *testing.T) {
-	var capturedBody []byte
-	server := newTestServerWithInspector(t, map[string]testRoute{
+	server, capturedBodyPtr := captureRequestBody(t, map[string]testRoute{
 		"POST /v3/address_verifications": {status: http.StatusCreated, fixture: "address_verifications/create.json"},
-	}, func(r *http.Request) {
-		capturedBody, _ = io.ReadAll(r.Body)
 	})
 
 	cbURL := "http://example.com"
@@ -49,7 +45,7 @@ func TestAddressVerificationsCreate(t *testing.T) {
 	assert.Equal(t, "d3414687-40f4-4346-a267-c2c65117d28c", av.AddressRel.ID)
 	assert.Equal(t, "Chicago", av.AddressRel.CityName)
 
-	assertRequestJSON(t, capturedBody, "address_verifications/create_request.json")
+	assertRequestJSON(t, *capturedBodyPtr, "address_verifications/create_request.json")
 }
 
 func TestAddressVerificationsFind(t *testing.T) {

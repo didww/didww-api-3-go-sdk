@@ -2,7 +2,6 @@ package didww
 
 import (
 	"context"
-	"io"
 	"net/http"
 	"testing"
 
@@ -11,11 +10,8 @@ import (
 )
 
 func TestPermanentSupportingDocumentsCreate(t *testing.T) {
-	var capturedBody []byte
-	server := newTestServerWithInspector(t, map[string]testRoute{
+	server, capturedBodyPtr := captureRequestBody(t, map[string]testRoute{
 		"POST /v3/permanent_supporting_documents": {status: http.StatusCreated, fixture: "permanent_supporting_documents/create.json"},
-	}, func(r *http.Request) {
-		capturedBody, _ = io.ReadAll(r.Body)
 	})
 
 	doc, err := server.client.PermanentSupportingDocuments().Create(context.Background(), &PermanentSupportingDocument{
@@ -32,7 +28,7 @@ func TestPermanentSupportingDocumentsCreate(t *testing.T) {
 	assert.Equal(t, "Germany Special Registration Form", doc.Template.Name)
 	assert.True(t, doc.Template.Permanent)
 
-	assertRequestJSON(t, capturedBody, "permanent_supporting_documents/create_request.json")
+	assertRequestJSON(t, *capturedBodyPtr, "permanent_supporting_documents/create_request.json")
 }
 
 func TestPermanentSupportingDocumentsDelete(t *testing.T) {

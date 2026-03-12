@@ -2,7 +2,6 @@ package didww
 
 import (
 	"context"
-	"io"
 	"net/http"
 	"testing"
 
@@ -41,11 +40,8 @@ func TestCapacityPoolsFindWithIncludes(t *testing.T) {
 }
 
 func TestCapacityPoolsUpdate(t *testing.T) {
-	var capturedBody []byte
-	server := newTestServerWithInspector(t, map[string]testRoute{
+	server, capturedBodyPtr := captureRequestBody(t, map[string]testRoute{
 		"PATCH /v3/capacity_pools/f288d07c-e2fc-4ae6-9837-b18fb469c324": {status: http.StatusOK, fixture: "capacity_pools/update.json"},
-	}, func(r *http.Request) {
-		capturedBody, _ = io.ReadAll(r.Body)
 	})
 
 	pool, err := server.client.CapacityPools().Update(context.Background(), &CapacityPool{
@@ -56,5 +52,5 @@ func TestCapacityPoolsUpdate(t *testing.T) {
 
 	assert.Equal(t, "f288d07c-e2fc-4ae6-9837-b18fb469c324", pool.ID)
 
-	assertRequestJSON(t, capturedBody, "capacity_pools/update_request.json")
+	assertRequestJSON(t, *capturedBodyPtr, "capacity_pools/update_request.json")
 }

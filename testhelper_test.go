@@ -2,6 +2,7 @@ package didww
 
 import (
 	"encoding/json"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -176,4 +177,17 @@ func assertRequestJSON(t *testing.T, actual []byte, fixturePath string) {
 	require.NoError(t, json.Unmarshal(expected, &expectedObj), "failed to parse expected fixture %s", fixturePath)
 
 	assert.Equal(t, expectedObj, actualObj, "request body mismatch for fixture %s", fixturePath)
+}
+
+// captureRequestBody creates a test server with an inspector that captures the request body.
+// Returns the server wrapper and a pointer to the captured body bytes.
+func captureRequestBody(t *testing.T, routes map[string]testRoute) (*testServerWithClient, *[]byte) {
+	t.Helper()
+	var body []byte
+	server := newTestServerWithInspector(t, routes, func(r *http.Request) {
+		if r.Method == http.MethodPatch || r.Method == http.MethodPost {
+			body, _ = io.ReadAll(r.Body)
+		}
+	})
+	return server, &body
 }
