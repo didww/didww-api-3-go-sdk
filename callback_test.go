@@ -65,6 +65,20 @@ func TestRequestValidator_InvalidSignature(t *testing.T) {
 	assert.False(t, validator.Validate(url, payload, "fbdb1d1b18aa6c08324b7d64b71fb76370690e1d"))
 }
 
+// TestRequestValidator_DocumentationExample verifies the working example from the official DIDWW API documentation:
+// https://doc.didww.com/api3/2022-05-10/callbacks-details.html#algorithm-implementation-details
+func TestRequestValidator_DocumentationExample(t *testing.T) {
+	validator := NewRequestValidator("szrdgh6547umt7tht7xbqhj6g9gdbyp7") // NOSONAR
+	url := "https://mycompany.com/didww_callbacks?opaque=123"
+	payload := map[string]string{
+		"id":     "bf2cee72-6caa-4ae2-917e-bea01945691e",
+		"status": "completed",
+		"type":   "orders",
+	}
+	signature := "30f66e9d72eb5e193051fd02952f70d8e934b4ff"
+	assert.True(t, validator.Validate(url, payload, signature))
+}
+
 func TestRequestValidator_URLNormalization(t *testing.T) {
 	validator := NewRequestValidator("SOMEAPIKEY")
 	payload := map[string]string{
