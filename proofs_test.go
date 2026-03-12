@@ -2,7 +2,6 @@ package didww
 
 import (
 	"context"
-	"io"
 	"net/http"
 	"testing"
 
@@ -11,11 +10,8 @@ import (
 )
 
 func TestProofsCreateWithProofTypeAndFiles(t *testing.T) {
-	var capturedBody []byte
-	server := newTestServerWithInspector(t, map[string]testRoute{
+	server, capturedBodyPtr := captureRequestBody(t, map[string]testRoute{
 		"POST /v3/proofs": {status: http.StatusCreated, fixture: "proofs/create.json"},
-	}, func(r *http.Request) {
-		capturedBody, _ = io.ReadAll(r.Body)
 	})
 
 	proof, err := server.client.Proofs().Create(context.Background(), &Proof{
@@ -26,15 +22,12 @@ func TestProofsCreateWithProofTypeAndFiles(t *testing.T) {
 
 	assert.NotEmpty(t, proof.ID)
 
-	assertRequestJSON(t, capturedBody, "proofs/create_request.json")
+	assertRequestJSON(t, *capturedBodyPtr, "proofs/create_request.json")
 }
 
 func TestProofsCreateWithIdentityEntity(t *testing.T) {
-	var capturedBody []byte
-	server := newTestServerWithInspector(t, map[string]testRoute{
+	server, capturedBodyPtr := captureRequestBody(t, map[string]testRoute{
 		"POST /v3/proofs": {status: http.StatusCreated, fixture: "proofs/create_with_identity.json"},
-	}, func(r *http.Request) {
-		capturedBody, _ = io.ReadAll(r.Body)
 	})
 
 	_, err := server.client.Proofs().Create(context.Background(), &Proof{
@@ -45,15 +38,12 @@ func TestProofsCreateWithIdentityEntity(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	assertRequestJSON(t, capturedBody, "proofs/create_with_identity_request.json")
+	assertRequestJSON(t, *capturedBodyPtr, "proofs/create_with_identity_request.json")
 }
 
 func TestProofsCreateWithAddressEntity(t *testing.T) {
-	var capturedBody []byte
-	server := newTestServerWithInspector(t, map[string]testRoute{
+	server, capturedBodyPtr := captureRequestBody(t, map[string]testRoute{
 		"POST /v3/proofs": {status: http.StatusCreated, fixture: "proofs/create_with_address.json"},
-	}, func(r *http.Request) {
-		capturedBody, _ = io.ReadAll(r.Body)
 	})
 
 	_, err := server.client.Proofs().Create(context.Background(), &Proof{
@@ -64,7 +54,7 @@ func TestProofsCreateWithAddressEntity(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	assertRequestJSON(t, capturedBody, "proofs/create_with_address_request.json")
+	assertRequestJSON(t, *capturedBodyPtr, "proofs/create_with_address_request.json")
 }
 
 func TestProofsList(t *testing.T) {

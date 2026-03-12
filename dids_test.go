@@ -2,7 +2,6 @@ package didww
 
 import (
 	"context"
-	"io"
 	"net/http"
 	"testing"
 
@@ -112,11 +111,8 @@ func TestDIDsFindBlockedTerminated(t *testing.T) {
 }
 
 func TestDIDsUpdateTerminated(t *testing.T) {
-	var capturedBody []byte
-	server := newTestServerWithInspector(t, map[string]testRoute{
+	server, capturedBodyPtr := captureRequestBody(t, map[string]testRoute{
 		"PATCH /v3/dids/9df99644-f1a5-4a3c-99a4-559d758eb96b": {status: http.StatusOK, fixture: "dids/update_blocked_terminated.json"},
-	}, func(r *http.Request) {
-		capturedBody, _ = io.ReadAll(r.Body)
 	})
 
 	did, err := server.client.DIDs().Update(context.Background(), &DID{
@@ -125,7 +121,7 @@ func TestDIDsUpdateTerminated(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	assertRequestJSON(t, capturedBody, "dids/update_terminated_request.json")
+	assertRequestJSON(t, *capturedBodyPtr, "dids/update_terminated_request.json")
 
 	assert.Equal(t, "9df99644-f1a5-4a3c-99a4-559d758eb96b", did.ID)
 	assert.True(t, did.Blocked)
@@ -177,11 +173,8 @@ func TestDIDsUpdateRequiresID(t *testing.T) {
 }
 
 func TestDIDsUpdateAssignTrunk(t *testing.T) {
-	var capturedBody []byte
-	server := newTestServerWithInspector(t, map[string]testRoute{
+	server, capturedBodyPtr := captureRequestBody(t, map[string]testRoute{
 		"PATCH /v3/dids/9df99644-f1a5-4a3c-99a4-559d758eb96b": {status: http.StatusOK, fixture: "dids/show_with_trunk.json"},
-	}, func(r *http.Request) {
-		capturedBody, _ = io.ReadAll(r.Body)
 	})
 
 	did, err := server.client.DIDs().Update(context.Background(), &DID{
@@ -190,7 +183,7 @@ func TestDIDsUpdateAssignTrunk(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	assertRequestJSON(t, capturedBody, "dids/update_assign_trunk_request.json")
+	assertRequestJSON(t, *capturedBodyPtr, "dids/update_assign_trunk_request.json")
 
 	require.NotNil(t, did.VoiceInTrunk)
 	assert.Equal(t, "41b94706-325e-4704-a433-d65105758836", did.VoiceInTrunk.ID)
@@ -198,11 +191,8 @@ func TestDIDsUpdateAssignTrunk(t *testing.T) {
 }
 
 func TestDIDsUpdateAssignTrunkGroup(t *testing.T) {
-	var capturedBody []byte
-	server := newTestServerWithInspector(t, map[string]testRoute{
+	server, capturedBodyPtr := captureRequestBody(t, map[string]testRoute{
 		"PATCH /v3/dids/9df99644-f1a5-4a3c-99a4-559d758eb96b": {status: http.StatusOK, fixture: "dids/show_with_trunk_group.json"},
-	}, func(r *http.Request) {
-		capturedBody, _ = io.ReadAll(r.Body)
 	})
 
 	did, err := server.client.DIDs().Update(context.Background(), &DID{
@@ -211,7 +201,7 @@ func TestDIDsUpdateAssignTrunkGroup(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	assertRequestJSON(t, capturedBody, "dids/update_assign_trunk_group_request.json")
+	assertRequestJSON(t, *capturedBodyPtr, "dids/update_assign_trunk_group_request.json")
 
 	require.NotNil(t, did.VoiceInTrunkGroup)
 	assert.Equal(t, "b2319703-ce6c-480d-bb53-614e7abcfc96", did.VoiceInTrunkGroup.ID)

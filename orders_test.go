@@ -2,7 +2,6 @@ package didww
 
 import (
 	"context"
-	"io"
 	"net/http"
 	"testing"
 
@@ -13,11 +12,8 @@ import (
 )
 
 func TestOrdersCreate(t *testing.T) {
-	var capturedBody []byte
-	server := newTestServerWithInspector(t, map[string]testRoute{
+	server, capturedBodyPtr := captureRequestBody(t, map[string]testRoute{
 		"POST /v3/orders": {status: http.StatusCreated, fixture: "orders/create.json"},
-	}, func(r *http.Request) {
-		capturedBody, _ = io.ReadAll(r.Body)
 	})
 
 	order, err := server.client.Orders().Create(context.Background(), &Order{
@@ -54,15 +50,12 @@ func TestOrdersCreate(t *testing.T) {
 	assert.Equal(t, "0.0", item1.Attributes.Nrc)
 	assert.Equal(t, "5.6", item1.Attributes.Mrc)
 
-	assertRequestJSON(t, capturedBody, "orders/create_request.json")
+	assertRequestJSON(t, *capturedBodyPtr, "orders/create_request.json")
 }
 
 func TestOrdersCreateAvailableDid(t *testing.T) {
-	var capturedBody []byte
-	server := newTestServerWithInspector(t, map[string]testRoute{
+	server, capturedBodyPtr := captureRequestBody(t, map[string]testRoute{
 		"POST /v3/orders": {status: http.StatusCreated, fixture: "orders/create_available_did.json"},
-	}, func(r *http.Request) {
-		capturedBody, _ = io.ReadAll(r.Body)
 	})
 
 	_, err := server.client.Orders().Create(context.Background(), &Order{
@@ -78,15 +71,12 @@ func TestOrdersCreateAvailableDid(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	assertRequestJSON(t, capturedBody, "orders/create_request_available_did.json")
+	assertRequestJSON(t, *capturedBodyPtr, "orders/create_request_available_did.json")
 }
 
 func TestOrdersCreateReservation(t *testing.T) {
-	var capturedBody []byte
-	server := newTestServerWithInspector(t, map[string]testRoute{
+	server, capturedBodyPtr := captureRequestBody(t, map[string]testRoute{
 		"POST /v3/orders": {status: http.StatusCreated, fixture: "orders/create_reservation.json"},
-	}, func(r *http.Request) {
-		capturedBody, _ = io.ReadAll(r.Body)
 	})
 
 	_, err := server.client.Orders().Create(context.Background(), &Order{
@@ -102,15 +92,12 @@ func TestOrdersCreateReservation(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	assertRequestJSON(t, capturedBody, "orders/create_request_reservation.json")
+	assertRequestJSON(t, *capturedBodyPtr, "orders/create_request_reservation.json")
 }
 
 func TestOrdersCreateCapacity(t *testing.T) {
-	var capturedBody []byte
-	server := newTestServerWithInspector(t, map[string]testRoute{
+	server, capturedBodyPtr := captureRequestBody(t, map[string]testRoute{
 		"POST /v3/orders": {status: http.StatusCreated, fixture: "orders/create_capacity.json"},
-	}, func(r *http.Request) {
-		capturedBody, _ = io.ReadAll(r.Body)
 	})
 
 	_, err := server.client.Orders().Create(context.Background(), &Order{
@@ -126,15 +113,12 @@ func TestOrdersCreateCapacity(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	assertRequestJSON(t, capturedBody, "orders/create_request_capacity.json")
+	assertRequestJSON(t, *capturedBodyPtr, "orders/create_request_capacity.json")
 }
 
 func TestOrdersCreateBillingCycles(t *testing.T) {
-	var capturedBody []byte
-	server := newTestServerWithInspector(t, map[string]testRoute{
+	server, capturedBodyPtr := captureRequestBody(t, map[string]testRoute{
 		"POST /v3/orders": {status: http.StatusCreated, fixture: "orders/create_billing_cycles.json"},
-	}, func(r *http.Request) {
-		capturedBody, _ = io.ReadAll(r.Body)
 	})
 
 	billingCycles := 5
@@ -153,15 +137,12 @@ func TestOrdersCreateBillingCycles(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	assertRequestJSON(t, capturedBody, "orders/create_request_billing_cycles.json")
+	assertRequestJSON(t, *capturedBodyPtr, "orders/create_request_billing_cycles.json")
 }
 
 func TestOrdersCreateNanpa(t *testing.T) {
-	var capturedBody []byte
-	server := newTestServerWithInspector(t, map[string]testRoute{
+	server, capturedBodyPtr := captureRequestBody(t, map[string]testRoute{
 		"POST /v3/orders": {status: http.StatusCreated, fixture: "orders/create_nanpa.json"},
-	}, func(r *http.Request) {
-		capturedBody, _ = io.ReadAll(r.Body)
 	})
 
 	_, err := server.client.Orders().Create(context.Background(), &Order{
@@ -179,15 +160,12 @@ func TestOrdersCreateNanpa(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	assertRequestJSON(t, capturedBody, "orders/create_request_nanpa.json")
+	assertRequestJSON(t, *capturedBodyPtr, "orders/create_request_nanpa.json")
 }
 
 func TestOrdersCreateWithCallback(t *testing.T) {
-	var capturedBody []byte
-	server := newTestServerWithInspector(t, map[string]testRoute{
+	server, capturedBodyPtr := captureRequestBody(t, map[string]testRoute{
 		"POST /v3/orders": {status: http.StatusCreated, fixture: "orders_with_callback/create.json"},
-	}, func(r *http.Request) {
-		capturedBody, _ = io.ReadAll(r.Body)
 	})
 
 	cbURL := "https://example.com/callback"
@@ -208,7 +186,7 @@ func TestOrdersCreateWithCallback(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	assertRequestJSON(t, capturedBody, "orders_with_callback/create_request.json")
+	assertRequestJSON(t, *capturedBodyPtr, "orders_with_callback/create_request.json")
 }
 
 func TestOrdersFind(t *testing.T) {

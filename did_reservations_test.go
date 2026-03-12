@@ -2,7 +2,6 @@ package didww
 
 import (
 	"context"
-	"io"
 	"net/http"
 	"testing"
 
@@ -22,11 +21,8 @@ func TestDIDReservationsList(t *testing.T) {
 }
 
 func TestDIDReservationsCreate(t *testing.T) {
-	var capturedBody []byte
-	server := newTestServerWithInspector(t, map[string]testRoute{
+	server, capturedBodyPtr := captureRequestBody(t, map[string]testRoute{
 		"POST /v3/did_reservations": {status: http.StatusCreated, fixture: "did_reservations/create.json"},
-	}, func(r *http.Request) {
-		capturedBody, _ = io.ReadAll(r.Body)
 	})
 
 	reservation, err := server.client.DIDReservations().Create(context.Background(), &DIDReservation{
@@ -37,7 +33,7 @@ func TestDIDReservationsCreate(t *testing.T) {
 
 	assert.Equal(t, "fd38d3ff-80cf-4e67-a605-609a2884a5c4", reservation.ID)
 
-	assertRequestJSON(t, capturedBody, "did_reservations/create_request.json")
+	assertRequestJSON(t, *capturedBodyPtr, "did_reservations/create_request.json")
 }
 
 func TestDIDReservationsFindWithIncludedAvailableDID(t *testing.T) {
