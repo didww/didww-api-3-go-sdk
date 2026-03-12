@@ -515,6 +515,21 @@ The SDK provides enum types in `github.com/didww/didww-api-3-go-sdk/resource/enu
 
 \* `replace_cli` and `randomize_cli` require account configuration.
 
+## Webhook Signature Validation
+
+Validate incoming webhook callbacks from DIDWW using HMAC-SHA1 signature verification.
+
+```go
+import didww "github.com/didww/didww-api-3-go-sdk"
+
+validator := didww.NewRequestValidator("YOUR_API_KEY")
+
+// In your webhook handler:
+signature := r.Header.Get(didww.SignatureHeaderName) // "X-DIDWW-Signature"
+payload := map[string]string{"key": "value"}         // parsed form/query payload
+valid := validator.Validate(requestURL, payload, signature)
+```
+
 ## Contributing
 
 Bug reports and pull requests are welcome on GitHub at https://github.com/didww/didww-api-3-go-sdk
