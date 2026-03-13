@@ -149,7 +149,7 @@ type VoiceInTrunk struct {
 	Description    *string            `json:"description,omitempty"`
 	RingingTimeout *int               `json:"ringing_timeout,omitempty"`
 	Configuration  TrunkConfiguration `json:"-"`
-	CreatedAt      time.Time             `json:"created_at" api:"readonly"`
+	CreatedAt      time.Time          `json:"created_at" api:"readonly"`
 	// Resolved relationships
 	Pop               *Pop               `json:"-" rel:"pop"`
 	VoiceInTrunkGroup *VoiceInTrunkGroup `json:"-" rel:"voice_in_trunk_group"`
@@ -206,9 +206,9 @@ func (v VoiceInTrunk) MarshalJSON() ([]byte, error) { //nolint:gocritic // value
 
 // VoiceInTrunkGroup represents a group of voice inbound trunks.
 type VoiceInTrunkGroup struct {
-	ID            string `json:"-" jsonapi:"voice_in_trunk_groups"`
-	Name          string `json:"name,omitempty"`
-	CapacityLimit *int   `json:"capacity_limit,omitempty"`
+	ID            string    `json:"-" jsonapi:"voice_in_trunk_groups"`
+	Name          string    `json:"name,omitempty"`
+	CapacityLimit *int      `json:"capacity_limit,omitempty"`
 	CreatedAt     time.Time `json:"created_at" api:"readonly"`
 	// Relationship IDs for create/update
 	VoiceInTrunkIDs []string `json:"-" rel:"voice_in_trunks,voice_in_trunks"`
@@ -228,7 +228,7 @@ type VoiceOutTrunk struct {
 	CapacityLimit       *int                      `json:"capacity_limit,omitempty"`
 	Username            string                    `json:"username" api:"readonly"`
 	Password            string                    `json:"password" api:"readonly"`
-	CreatedAt           time.Time                    `json:"created_at" api:"readonly"`
+	CreatedAt           time.Time                 `json:"created_at" api:"readonly"`
 	ThresholdReached    bool                      `json:"threshold_reached" api:"readonly"`
 	ThresholdAmount     *string                   `json:"threshold_amount,omitempty"`
 	MediaEncryptionMode enums.MediaEncryptionMode `json:"media_encryption_mode,omitempty"`
@@ -247,18 +247,18 @@ type VoiceOutTrunk struct {
 
 // DID represents a DID (phone number) resource.
 type DID struct {
-	ID                     string  `json:"-" jsonapi:"dids"`
-	Blocked                bool    `json:"blocked" api:"readonly"`
-	CapacityLimit          *int    `json:"capacity_limit"`
-	Description            *string `json:"description"`
-	Terminated             bool    `json:"terminated"`
-	AwaitingRegistration   bool    `json:"awaiting_registration" api:"readonly"`
+	ID                     string     `json:"-" jsonapi:"dids"`
+	Blocked                bool       `json:"blocked" api:"readonly"`
+	CapacityLimit          *int       `json:"capacity_limit"`
+	Description            *string    `json:"description"`
+	Terminated             bool       `json:"terminated"`
+	AwaitingRegistration   bool       `json:"awaiting_registration" api:"readonly"`
 	CreatedAt              time.Time  `json:"created_at" api:"readonly"`
-	BillingCyclesCount     *int    `json:"billing_cycles_count" api:"readonly"`
-	Number                 string  `json:"number" api:"readonly"`
-	ExpiresAt              *time.Time  `json:"expires_at" api:"readonly"`
-	ChannelsIncludedCount  int     `json:"channels_included_count" api:"readonly"`
-	DedicatedChannelsCount int     `json:"dedicated_channels_count"`
+	BillingCyclesCount     *int       `json:"billing_cycles_count" api:"readonly"`
+	Number                 string     `json:"number" api:"readonly"`
+	ExpiresAt              *time.Time `json:"expires_at" api:"readonly"`
+	ChannelsIncludedCount  int        `json:"channels_included_count" api:"readonly"`
+	DedicatedChannelsCount int        `json:"dedicated_channels_count"`
 	// Relationship IDs for create/update
 	VoiceInTrunkID        string `json:"-" rel:"voice_in_trunk,voice_in_trunks"`
 	VoiceInTrunkGroupID   string `json:"-" rel:"voice_in_trunk_group,voice_in_trunk_groups"`
@@ -329,7 +329,7 @@ type Order struct {
 	ID                string            `json:"-" jsonapi:"orders"`
 	Amount            string            `json:"amount" api:"readonly"`
 	Status            enums.OrderStatus `json:"status" api:"readonly"`
-	CreatedAt         time.Time            `json:"created_at" api:"readonly"`
+	CreatedAt         time.Time         `json:"created_at" api:"readonly"`
 	Description       string            `json:"description" api:"readonly"`
 	Reference         string            `json:"reference" api:"readonly"`
 	Items             []OrderItem       `json:"items"`
@@ -352,7 +352,7 @@ type Identity struct {
 	Description         *string            `json:"description"`
 	PersonalTaxID       *string            `json:"personal_tax_id"`
 	IdentityType        enums.IdentityType `json:"identity_type"`
-	CreatedAt           time.Time             `json:"created_at" api:"readonly"`
+	CreatedAt           time.Time          `json:"created_at" api:"readonly"`
 	ExternalReferenceID *string            `json:"external_reference_id"`
 	Verified            bool               `json:"verified" api:"readonly"`
 	ContactEmail        *string            `json:"contact_email"`
@@ -366,7 +366,7 @@ type Identity struct {
 type Export struct {
 	ID             string                 `json:"-" jsonapi:"exports"`
 	Status         enums.ExportStatus     `json:"status" api:"readonly"`
-	CreatedAt      time.Time                 `json:"created_at" api:"readonly"`
+	CreatedAt      time.Time              `json:"created_at" api:"readonly"`
 	URL            *string                `json:"url" api:"readonly"`
 	CallbackURL    *string                `json:"callback_url,omitempty"`
 	CallbackMethod *string                `json:"callback_method,omitempty"`
@@ -433,11 +433,11 @@ type CapacityPool struct {
 
 // SharedCapacityGroup represents a shared capacity group.
 type SharedCapacityGroup struct {
-	ID                   string `json:"-" jsonapi:"shared_capacity_groups"`
-	Name                 string `json:"name"`
-	SharedChannelsCount  int    `json:"shared_channels_count"`
+	ID                   string    `json:"-" jsonapi:"shared_capacity_groups"`
+	Name                 string    `json:"name"`
+	SharedChannelsCount  int       `json:"shared_channels_count"`
 	CreatedAt            time.Time `json:"created_at" api:"readonly"`
-	MeteredChannelsCount int    `json:"metered_channels_count"`
+	MeteredChannelsCount int       `json:"metered_channels_count"`
 	// Relationship IDs for create/update
 	CapacityPoolID string `json:"-" rel:"capacity_pool,capacity_pools"`
 	// Resolved relationships
@@ -447,13 +447,13 @@ type SharedCapacityGroup struct {
 
 // Address represents a customer address.
 type Address struct {
-	ID          string `json:"-" jsonapi:"addresses"`
-	CityName    string `json:"city_name"`
-	PostalCode  string `json:"postal_code"`
-	Address     string `json:"address"`
-	Description string `json:"description"`
+	ID          string    `json:"-" jsonapi:"addresses"`
+	CityName    string    `json:"city_name"`
+	PostalCode  string    `json:"postal_code"`
+	Address     string    `json:"address"`
+	Description string    `json:"description"`
 	CreatedAt   time.Time `json:"created_at" api:"readonly"`
-	Verified    bool   `json:"verified" api:"readonly"`
+	Verified    bool      `json:"verified" api:"readonly"`
 	// Relationship IDs for create/update
 	IdentityID string `json:"-" rel:"identity,identities"`
 	CountryID  string `json:"-" rel:"country,countries"`
@@ -474,10 +474,10 @@ type AvailableDID struct {
 
 // DIDReservation represents a reserved DID.
 type DIDReservation struct {
-	ID          string `json:"-" jsonapi:"did_reservations"`
+	ID          string    `json:"-" jsonapi:"did_reservations"`
 	ExpireAt    time.Time `json:"expire_at" api:"readonly"`
 	CreatedAt   time.Time `json:"created_at" api:"readonly"`
-	Description string `json:"description"`
+	Description string    `json:"description"`
 	// Relationship IDs for create/update
 	AvailableDIDID string `json:"-" rel:"available_did,available_dids"`
 	// Resolved relationships
@@ -486,7 +486,7 @@ type DIDReservation struct {
 
 // Proof represents a proof document.
 type Proof struct {
-	ID        string  `json:"-" jsonapi:"proofs"`
+	ID        string     `json:"-" jsonapi:"proofs"`
 	CreatedAt time.Time  `json:"created_at" api:"readonly"`
 	ExpiresAt *time.Time `json:"expires_at" api:"readonly"`
 	// Polymorphic entity relationship (type: "identities" or "addresses")
@@ -547,7 +547,7 @@ type AddressVerification struct {
 	CallbackMethod     *string                         `json:"callback_method,omitempty"`
 	Status             enums.AddressVerificationStatus `json:"status" api:"readonly"`
 	RejectReasons      []string                        `json:"reject_reasons" api:"readonly"`
-	CreatedAt          time.Time                          `json:"created_at" api:"readonly"`
+	CreatedAt          time.Time                       `json:"created_at" api:"readonly"`
 	Reference          string                          `json:"reference" api:"readonly"`
 	// Relationship IDs for create/update
 	AddressID string   `json:"-" rel:"address,addresses"`
@@ -652,7 +652,7 @@ type SupportingDocumentTemplate struct {
 
 // PermanentSupportingDocument represents a permanent supporting document.
 type PermanentSupportingDocument struct {
-	ID        string `json:"-" jsonapi:"permanent_supporting_documents"`
+	ID        string    `json:"-" jsonapi:"permanent_supporting_documents"`
 	CreatedAt time.Time `json:"created_at" api:"readonly"`
 	// Relationship IDs for create/update
 	TemplateID string   `json:"-" rel:"template,supporting_document_templates"`
