@@ -33,6 +33,7 @@ func TestEncryptedFilesFind(t *testing.T) {
 
 	assert.Equal(t, "6eed102c-66a9-4a9b-a95f-4312d70ec12a", file.ID)
 	assert.Equal(t, "some description", file.Description)
+	assert.Equal(t, time.Date(2021, 4, 1, 10, 0, 0, 0, time.UTC), file.CreatedAt)
 }
 
 func TestEncryptedFilesFindWithExpiration(t *testing.T) {
@@ -44,6 +45,7 @@ func TestEncryptedFilesFindWithExpiration(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.Equal(t, "371eafbd-ac6a-485c-aadf-9e3c5da37eb4", file.ID)
+	assert.Equal(t, time.Date(2021, 4, 1, 12, 0, 0, 0, time.UTC), file.CreatedAt)
 	require.NotNil(t, file.ExpireAt)
 	assert.Equal(t, time.Date(2021, 4, 6, 16, 38, 34, 437000000, time.UTC), *file.ExpireAt)
 }

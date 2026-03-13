@@ -508,12 +508,18 @@ if err != nil {
 
 The SDK distinguishes between date-only and datetime fields:
 
-- **Datetime fields** (`created_at`, `expires_at`, `expire_at`) are deserialized as `time.Time` (UTC).
-- **Date-only fields** (`birth_date`, `renew_date`, `billed_from`, `billed_to`) remain as `string` in format `"YYYY-MM-DD"` — Go has no separate date-only type, so the raw string avoids timezone ambiguity.
+- **Datetime fields** are deserialized as `time.Time` (UTC) when always present, or `*time.Time` when optional (nil if the API omits the value):
+  - `DID.CreatedAt time.Time`, `DID.ExpiresAt *time.Time`
+  - `EncryptedFile.CreatedAt time.Time`, `EncryptedFile.ExpireAt *time.Time`
+  - `DIDReservation.CreatedAt time.Time`, `DIDReservation.ExpireAt time.Time`
+  - `Proof.CreatedAt time.Time`, `Proof.ExpiresAt *time.Time`
+  - `Order.CreatedAt`, `Identity.CreatedAt`, `Address.CreatedAt`, `VoiceInTrunk.CreatedAt`, `VoiceInTrunkGroup.CreatedAt`, `VoiceOutTrunk.CreatedAt`, `SharedCapacityGroup.CreatedAt`, `Export.CreatedAt`, `AddressVerification.CreatedAt`, `PermanentSupportingDocument.CreatedAt` — all `time.Time`
+- **Date-only fields** (`Identity.BirthDate`, `CapacityPool.RenewDate`, order item `BilledFrom`/`BilledTo`) remain as `string` in `"YYYY-MM-DD"` format — Go has no separate date-only type, so the raw string avoids timezone ambiguity.
 
 ```go
 did, _ := client.DIDs().Find(ctx, "uuid")
-fmt.Println(did.CreatedAt)  // time.Time{2024-01-15 10:00:00 +0000 UTC}
+fmt.Println(did.CreatedAt)   // 2024-01-15 10:00:00 +0000 UTC
+fmt.Println(did.ExpiresAt)   // <nil> or &2025-01-15 10:00:00 +0000 UTC
 
 identity, _ := client.Identities().Find(ctx, "uuid")
 fmt.Println(identity.BirthDate)  // "1990-05-20"
