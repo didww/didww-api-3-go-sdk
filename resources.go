@@ -586,7 +586,6 @@ func (a *AddressVerification) UnmarshalJSON(data []byte) error {
 type EncryptedFile struct {
 	ID          string     `json:"-" jsonapi:"encrypted_files"`
 	Description string     `json:"description"`
-	CreatedAt   time.Time  `json:"created_at" api:"readonly"`
 	ExpireAt    *time.Time `json:"expire_at" api:"readonly"`
 }
 

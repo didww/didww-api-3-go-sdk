@@ -510,7 +510,7 @@ The SDK distinguishes between date-only and datetime fields:
 
 - **Datetime fields** are deserialized as `time.Time` (UTC) when always present, or `*time.Time` when optional (nil if the API omits the value):
   - `DID.CreatedAt time.Time`, `DID.ExpiresAt *time.Time`
-  - `EncryptedFile.CreatedAt time.Time`, `EncryptedFile.ExpireAt *time.Time`
+  - `EncryptedFile.ExpireAt *time.Time`
   - `DIDReservation.CreatedAt time.Time`, `DIDReservation.ExpireAt time.Time`
   - `Proof.CreatedAt time.Time`, `Proof.ExpiresAt *time.Time`
   - `Order.CreatedAt`, `Identity.CreatedAt`, `Address.CreatedAt`, `VoiceInTrunk.CreatedAt`, `VoiceInTrunkGroup.CreatedAt`, `VoiceOutTrunk.CreatedAt`, `SharedCapacityGroup.CreatedAt`, `Export.CreatedAt`, `AddressVerification.CreatedAt`, `PermanentSupportingDocument.CreatedAt` — all `time.Time`
