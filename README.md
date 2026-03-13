@@ -509,7 +509,7 @@ if err != nil {
 The SDK distinguishes between date-only and datetime fields:
 
 - **Datetime fields** are deserialized as `time.Time` (UTC) when always present, or `*time.Time` when optional (nil if the API omits the value):
-  - All `CreatedAt` fields — `time.Time`, present on most resources (`EncryptedFile` has no `CreatedAt`)
+  - All `CreatedAt` fields — `time.Time`, present on most resources
   - Expiry fields — `*time.Time`: `DID.ExpiresAt`, `Proof.ExpiresAt`, `EncryptedFile.ExpireAt`; `DIDReservation.ExpireAt` is `time.Time` (always present)
 - **Date-only fields** (`Identity.BirthDate`, `CapacityPool.RenewDate`, order item `BilledFrom`/`BilledTo`) remain as `string` in `"YYYY-MM-DD"` format — Go has no separate date-only type, so the raw string avoids timezone ambiguity.
 
