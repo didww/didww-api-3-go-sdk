@@ -30,6 +30,7 @@ DIDWW_API_KEY=your_api_key go run ./examples/balance/
 | [`shared_capacity_groups`](shared_capacity_groups/) | Creates a shared capacity group in a capacity pool. |
 | [`orders`](orders/) | Lists orders and creates/cancels a DID order using live SKU lookup. |
 | [`orders_sku`](orders_sku/) | Creates a DID order by SKU resolved from DID groups. |
+| [`orders_nanpa`](orders_nanpa/) | Orders a DID number by NPA/NXX prefix. |
 | [`orders_capacity`](orders_capacity/) | Purchases capacity by creating a capacity order item. |
 | [`orders_available_dids`](orders_available_dids/) | Orders an available DID using included DID group SKU. |
 | [`orders_reservation_dids`](orders_reservation_dids/) | Reserves a DID and then places an order from that reservation. |
