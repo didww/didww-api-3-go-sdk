@@ -504,6 +504,21 @@ if err != nil {
 > **Note:** `StockKeepingUnit` and `QtyBasedPricing` have no standalone API endpoints.
 > Access them via `include` on `DIDGroups` and `CapacityPools` respectively.
 
+## Date and Datetime Fields
+
+The SDK distinguishes between date-only and datetime fields:
+
+- **Datetime fields** (`created_at`, `expires_at`, `expire_at`) are deserialized as `time.Time` (UTC).
+- **Date-only fields** (`birth_date`, `renew_date`, `billed_from`, `billed_to`) remain as `string` in format `"YYYY-MM-DD"` — Go has no separate date-only type, so the raw string avoids timezone ambiguity.
+
+```go
+did, _ := client.DIDs().Find(ctx, "uuid")
+fmt.Println(did.CreatedAt)  // time.Time{2024-01-15 10:00:00 +0000 UTC}
+
+identity, _ := client.Identities().Find(ctx, "uuid")
+fmt.Println(identity.BirthDate)  // "1990-05-20"
+```
+
 ## Enums
 
 The SDK provides enum types in `github.com/didww/didww-api-3-go-sdk/resource/enums`:
