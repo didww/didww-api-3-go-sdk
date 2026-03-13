@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -93,7 +94,8 @@ func TestDIDsUpdateDescription(t *testing.T) {
 
 	require.NotNil(t, did.Description)
 	assert.Equal(t, "something", *did.Description)
-	assert.Equal(t, "2019-01-27T10:00:04.755Z", did.ExpiresAt)
+	require.NotNil(t, did.ExpiresAt)
+	assert.Equal(t, time.Date(2019, 1, 27, 10, 0, 4, 755000000, time.UTC), *did.ExpiresAt)
 }
 
 func TestDIDsFindBlockedTerminated(t *testing.T) {
