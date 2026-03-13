@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -44,7 +45,7 @@ func TestEncryptedFilesFindWithExpiration(t *testing.T) {
 
 	assert.Equal(t, "371eafbd-ac6a-485c-aadf-9e3c5da37eb4", file.ID)
 	require.NotNil(t, file.ExpireAt)
-	assert.Equal(t, "2021-04-06T16:38:34.437Z", *file.ExpireAt)
+	assert.Equal(t, time.Date(2021, 4, 6, 16, 38, 34, 437000000, time.UTC), *file.ExpireAt)
 }
 
 func TestEncryptedFilesDelete(t *testing.T) {
