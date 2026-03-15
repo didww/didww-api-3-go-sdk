@@ -9,6 +9,7 @@ import (
 
 	didww "github.com/didww/didww-api-3-go-sdk"
 	"github.com/didww/didww-api-3-go-sdk/examples"
+	"github.com/didww/didww-api-3-go-sdk/resource"
 	"github.com/didww/didww-api-3-go-sdk/resource/enums"
 )
 
@@ -29,14 +30,14 @@ func main() {
 	}
 
 	// Create a SIP trunk
-	newTrunk := &didww.VoiceInTrunk{
+	newTrunk := &resource.VoiceInTrunk{
 		Name:           "My SIP Trunk",
 		Priority:       1,
 		Weight:         100,
 		CliFormat:      enums.CliFormatE164,
 		RingingTimeout: examples.Ptr(30),
 		CapacityLimit:  examples.Ptr(10),
-		Configuration: &didww.SIPConfiguration{
+		Configuration: &resource.SIPConfiguration{
 			Host:                "sip.example.com",
 			Port:                5060,
 			CodecIDs:            []enums.Codec{enums.CodecPCMU, enums.CodecPCMA},
@@ -79,10 +80,10 @@ func main() {
 	fmt.Println("SIP trunk deleted")
 
 	// --- Create a PSTN trunk ---
-	pstnTrunk := &didww.VoiceInTrunk{
+	pstnTrunk := &resource.VoiceInTrunk{
 		Name:           "My PSTN Trunk",
 		RingingTimeout: examples.Ptr(30),
-		Configuration: &didww.PSTNConfiguration{
+		Configuration: &resource.PSTNConfiguration{
 			Dst: "12125551234",
 		},
 	}
@@ -92,7 +93,7 @@ func main() {
 	}
 	fmt.Printf("Created PSTN trunk: %s - %s\n", createdPstn.ID, createdPstn.Name)
 
-	if pstn, ok := createdPstn.Configuration.(*didww.PSTNConfiguration); ok {
+	if pstn, ok := createdPstn.Configuration.(*resource.PSTNConfiguration); ok {
 		fmt.Println("  DST:", pstn.Dst)
 	}
 

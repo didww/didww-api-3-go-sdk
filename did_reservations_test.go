@@ -7,6 +7,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/didww/didww-api-3-go-sdk/resource"
 )
 
 func TestDIDReservationsList(t *testing.T) {
@@ -25,7 +27,7 @@ func TestDIDReservationsCreate(t *testing.T) {
 		"POST /v3/did_reservations": {status: http.StatusCreated, fixture: "did_reservations/create.json"},
 	})
 
-	reservation, err := server.client.DIDReservations().Create(context.Background(), &DIDReservation{
+	reservation, err := server.client.DIDReservations().Create(context.Background(), &resource.DIDReservation{
 		Description:    "DIDWW",
 		AvailableDIDID: "857d1462-5f43-4238-b007-ff05f282e41b",
 	})

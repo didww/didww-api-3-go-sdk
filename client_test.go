@@ -8,6 +8,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/didww/didww-api-3-go-sdk/resource"
 )
 
 func TestClientSendsCorrectHeaders(t *testing.T) {
@@ -76,7 +78,7 @@ func TestClientHandlesHTTPErrors(t *testing.T) {
 			statusCode:   http.StatusUnprocessableEntity,
 			responseBody: `{"errors":[{"title":"is invalid","detail":"name - is invalid","code":"100","source":{"pointer":"/data/attributes/name"},"status":"422"}]}`,
 			makeRequest: func(c *Client) error {
-				_, err := c.VoiceInTrunks().Create(context.Background(), &VoiceInTrunk{Name: "test"})
+				_, err := c.VoiceInTrunks().Create(context.Background(), &resource.VoiceInTrunk{Name: "test"})
 				return err
 			},
 			checkErrors: func(t *testing.T, apiErr *APIError) {

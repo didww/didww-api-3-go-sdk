@@ -7,8 +7,8 @@ import (
 	"context"
 	"fmt"
 
-	didww "github.com/didww/didww-api-3-go-sdk"
 	"github.com/didww/didww-api-3-go-sdk/examples"
+	"github.com/didww/didww-api-3-go-sdk/resource"
 )
 
 func main() {
@@ -27,11 +27,11 @@ func main() {
 	fmt.Println("Capacity pool:", pool.Name)
 
 	// Purchase capacity
-	order := &didww.Order{
-		Items: []didww.OrderItem{
+	order := &resource.Order{
+		Items: []resource.OrderItem{
 			{
 				Type: "capacity_order_items",
-				Attributes: didww.OrderItemAttributes{
+				Attributes: resource.OrderItemAttributes{
 					CapacityPoolID: pool.ID,
 					Qty:            1,
 				},

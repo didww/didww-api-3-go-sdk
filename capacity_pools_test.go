@@ -7,6 +7,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/didww/didww-api-3-go-sdk/resource"
 )
 
 func TestCapacityPoolsList(t *testing.T) {
@@ -44,7 +46,7 @@ func TestCapacityPoolsUpdate(t *testing.T) {
 		"PATCH /v3/capacity_pools/f288d07c-e2fc-4ae6-9837-b18fb469c324": {status: http.StatusOK, fixture: "capacity_pools/update.json"},
 	})
 
-	pool, err := server.client.CapacityPools().Update(context.Background(), &CapacityPool{
+	pool, err := server.client.CapacityPools().Update(context.Background(), &resource.CapacityPool{
 		ID:                 "f288d07c-e2fc-4ae6-9837-b18fb469c324",
 		TotalChannelsCount: 25,
 	})

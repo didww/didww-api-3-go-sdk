@@ -11,8 +11,8 @@ import (
 	"fmt"
 	"time"
 
-	didww "github.com/didww/didww-api-3-go-sdk"
 	"github.com/didww/didww-api-3-go-sdk/examples"
+	"github.com/didww/didww-api-3-go-sdk/resource"
 	"github.com/didww/didww-api-3-go-sdk/resource/enums"
 )
 
@@ -21,7 +21,7 @@ func main() {
 	ctx := context.Background()
 
 	// Create a voice out trunk
-	trunk := &didww.VoiceOutTrunk{
+	trunk := &resource.VoiceOutTrunk{
 		Name:                fmt.Sprintf("SDK Outbound Trunk %d", time.Now().UnixMilli()),
 		AllowedSipIPs:       []string{"192.168.1.1"},
 		AllowedRtpIPs:       []string{"192.168.1.1"},

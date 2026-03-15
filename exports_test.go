@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/didww/didww-api-3-go-sdk/resource"
 	"github.com/didww/didww-api-3-go-sdk/resource/enums"
 
 	"github.com/stretchr/testify/assert"
@@ -36,7 +37,7 @@ func TestExportsCreate(t *testing.T) {
 		"POST /v3/exports": {status: http.StatusCreated, fixture: "exports/create.json"},
 	})
 
-	export, err := server.client.Exports().Create(context.Background(), &Export{
+	export, err := server.client.Exports().Create(context.Background(), &resource.Export{
 		ExportType: enums.ExportTypeCdrIn,
 		Filters: map[string]interface{}{
 			"did_number": "1234556789",
@@ -58,7 +59,7 @@ func TestExportsCreateCdrOut(t *testing.T) {
 		"POST /v3/exports": {status: http.StatusCreated, fixture: "exports/create_cdr_out.json"},
 	})
 
-	export, err := client.Exports().Create(context.Background(), &Export{
+	export, err := client.Exports().Create(context.Background(), &resource.Export{
 		ExportType: enums.ExportTypeCdrOut,
 		Filters: map[string]interface{}{
 			"year":  "2019",
@@ -77,7 +78,7 @@ func TestExportsCreateUnauthorized(t *testing.T) {
 		"POST /v3/exports": {status: http.StatusUnauthorized, fixture: "exports/create_error_unauthorized.json"},
 	})
 
-	_, err := client.Exports().Create(context.Background(), &Export{
+	_, err := client.Exports().Create(context.Background(), &resource.Export{
 		ExportType: enums.ExportTypeCdrIn,
 	})
 	require.Error(t, err)

@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/didww/didww-api-3-go-sdk/resource"
 	"github.com/didww/didww-api-3-go-sdk/resource/enums"
 
 	"github.com/stretchr/testify/assert"
@@ -58,7 +59,7 @@ func TestVoiceOutTrunksCreate(t *testing.T) {
 		"POST /v3/voice_out_trunks": {status: http.StatusCreated, fixture: "voice_out_trunks/create.json"},
 	})
 
-	trunk, err := server.client.VoiceOutTrunks().Create(context.Background(), &VoiceOutTrunk{
+	trunk, err := server.client.VoiceOutTrunks().Create(context.Background(), &resource.VoiceOutTrunk{
 		Name:                "java-test",
 		AllowedSipIPs:       []string{"0.0.0.0/0"},
 		OnCliMismatchAction: enums.OnCliMismatchActionReplaceCli,
@@ -77,7 +78,7 @@ func TestVoiceOutTrunksUpdate(t *testing.T) {
 		"PATCH /v3/voice_out_trunks/425ce763-a3a9-49b4-af5b-ada1a65c8864": {status: http.StatusOK, fixture: "voice_out_trunks/update.json"},
 	})
 
-	trunk, err := client.VoiceOutTrunks().Update(context.Background(), &VoiceOutTrunk{
+	trunk, err := client.VoiceOutTrunks().Update(context.Background(), &resource.VoiceOutTrunk{
 		ID:            "425ce763-a3a9-49b4-af5b-ada1a65c8864",
 		AllowedSipIPs: []string{"10.11.12.13/32"},
 		CapacityLimit: intPtr(123),

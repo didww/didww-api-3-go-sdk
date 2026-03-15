@@ -9,6 +9,7 @@ import (
 
 	didww "github.com/didww/didww-api-3-go-sdk"
 	"github.com/didww/didww-api-3-go-sdk/examples"
+	"github.com/didww/didww-api-3-go-sdk/resource"
 )
 
 func main() {
@@ -45,12 +46,12 @@ func main() {
 	fmt.Printf("DID group: %s SKU: %s (monthly=%s)\n", didGroups[0].ID, sku.ID, sku.MonthlyPrice)
 
 	// Step 3: create the order
-	order := &didww.Order{
+	order := &resource.Order{
 		AllowBackOrdering: true,
-		Items: []didww.OrderItem{
+		Items: []resource.OrderItem{
 			{
 				Type: "did_order_items",
-				Attributes: didww.OrderItemAttributes{
+				Attributes: resource.OrderItemAttributes{
 					SkuID:         sku.ID,
 					NanpaPrefixID: nanpaPrefix.ID,
 					Qty:           1,

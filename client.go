@@ -8,6 +8,8 @@ import (
 	"io"
 	"net/http"
 	"time"
+
+	"github.com/didww/didww-api-3-go-sdk/resource"
 )
 
 // Client is the DIDWW API client.
@@ -126,51 +128,77 @@ func (c *Client) DownloadAndDecompressExport(ctx context.Context, downloadURL st
 
 // --- Repository Accessors ---
 
-func (c *Client) Balance() *SingletonRepository[Balance] { return NewSingletonRepository[Balance](c) }
+func (c *Client) Balance() *SingletonRepository[resource.Balance] {
+	return NewSingletonRepository[resource.Balance](c)
+}
 
-func (c *Client) Countries() *Repository[Country]          { return NewRepository[Country](c) }
-func (c *Client) Regions() *Repository[Region]             { return NewRepository[Region](c) }
-func (c *Client) Cities() *Repository[City]                { return NewRepository[City](c) }
-func (c *Client) Areas() *Repository[Area]                 { return NewRepository[Area](c) }
-func (c *Client) Pops() *Repository[Pop]                   { return NewRepository[Pop](c) }
-func (c *Client) VoiceInTrunks() *Repository[VoiceInTrunk] { return NewRepository[VoiceInTrunk](c) }
-func (c *Client) VoiceInTrunkGroups() *Repository[VoiceInTrunkGroup] {
-	return NewRepository[VoiceInTrunkGroup](c)
+func (c *Client) Countries() *Repository[resource.Country] { return NewRepository[resource.Country](c) }
+func (c *Client) Regions() *Repository[resource.Region]    { return NewRepository[resource.Region](c) }
+func (c *Client) Cities() *Repository[resource.City]       { return NewRepository[resource.City](c) }
+func (c *Client) Areas() *Repository[resource.Area]        { return NewRepository[resource.Area](c) }
+func (c *Client) Pops() *Repository[resource.Pop]          { return NewRepository[resource.Pop](c) }
+func (c *Client) VoiceInTrunks() *Repository[resource.VoiceInTrunk] {
+	return NewRepository[resource.VoiceInTrunk](c)
 }
-func (c *Client) VoiceOutTrunks() *Repository[VoiceOutTrunk] { return NewRepository[VoiceOutTrunk](c) }
-func (c *Client) DIDs() *Repository[DID]                     { return NewRepository[DID](c) }
-func (c *Client) DIDGroups() *Repository[DIDGroup]           { return NewRepository[DIDGroup](c) }
-func (c *Client) DIDGroupTypes() *Repository[DIDGroupType]   { return NewRepository[DIDGroupType](c) }
-func (c *Client) DIDReservations() *Repository[DIDReservation] {
-	return NewRepository[DIDReservation](c)
+func (c *Client) VoiceInTrunkGroups() *Repository[resource.VoiceInTrunkGroup] {
+	return NewRepository[resource.VoiceInTrunkGroup](c)
 }
-func (c *Client) AvailableDIDs() *Repository[AvailableDID] { return NewRepository[AvailableDID](c) }
-func (c *Client) Orders() *Repository[Order]               { return NewRepository[Order](c) }
-func (c *Client) Identities() *Repository[Identity]        { return NewRepository[Identity](c) }
-func (c *Client) Addresses() *Repository[Address]          { return NewRepository[Address](c) }
-func (c *Client) AddressVerifications() *Repository[AddressVerification] {
-	return NewRepository[AddressVerification](c)
+func (c *Client) VoiceOutTrunks() *Repository[resource.VoiceOutTrunk] {
+	return NewRepository[resource.VoiceOutTrunk](c)
 }
-func (c *Client) Proofs() *Repository[Proof]             { return NewRepository[Proof](c) }
-func (c *Client) ProofTypes() *Repository[ProofType]     { return NewRepository[ProofType](c) }
-func (c *Client) Requirements() *Repository[Requirement] { return NewRepository[Requirement](c) }
-func (c *Client) RequirementValidations() *Repository[RequirementValidation] {
-	return NewRepository[RequirementValidation](c)
+func (c *Client) DIDs() *Repository[resource.DID] { return NewRepository[resource.DID](c) }
+func (c *Client) DIDGroups() *Repository[resource.DIDGroup] {
+	return NewRepository[resource.DIDGroup](c)
 }
-func (c *Client) Exports() *Repository[Export]             { return NewRepository[Export](c) }
-func (c *Client) CapacityPools() *Repository[CapacityPool] { return NewRepository[CapacityPool](c) }
-func (c *Client) SharedCapacityGroups() *Repository[SharedCapacityGroup] {
-	return NewRepository[SharedCapacityGroup](c)
+func (c *Client) DIDGroupTypes() *Repository[resource.DIDGroupType] {
+	return NewRepository[resource.DIDGroupType](c)
 }
-func (c *Client) PublicKeys() *Repository[PublicKey]         { return NewRepository[PublicKey](c) }
-func (c *Client) EncryptedFiles() *Repository[EncryptedFile] { return NewRepository[EncryptedFile](c) }
-func (c *Client) SupportingDocumentTemplates() *Repository[SupportingDocumentTemplate] {
-	return NewRepository[SupportingDocumentTemplate](c)
+func (c *Client) DIDReservations() *Repository[resource.DIDReservation] {
+	return NewRepository[resource.DIDReservation](c)
 }
-func (c *Client) PermanentSupportingDocuments() *Repository[PermanentSupportingDocument] {
-	return NewRepository[PermanentSupportingDocument](c)
+func (c *Client) AvailableDIDs() *Repository[resource.AvailableDID] {
+	return NewRepository[resource.AvailableDID](c)
 }
-func (c *Client) NanpaPrefixes() *Repository[NanpaPrefix] { return NewRepository[NanpaPrefix](c) }
-func (c *Client) VoiceOutTrunkRegenerateCredentials() *Repository[VoiceOutTrunkRegenerateCredential] {
-	return NewRepository[VoiceOutTrunkRegenerateCredential](c)
+func (c *Client) Orders() *Repository[resource.Order] { return NewRepository[resource.Order](c) }
+func (c *Client) Identities() *Repository[resource.Identity] {
+	return NewRepository[resource.Identity](c)
+}
+func (c *Client) Addresses() *Repository[resource.Address] { return NewRepository[resource.Address](c) }
+func (c *Client) AddressVerifications() *Repository[resource.AddressVerification] {
+	return NewRepository[resource.AddressVerification](c)
+}
+func (c *Client) Proofs() *Repository[resource.Proof] { return NewRepository[resource.Proof](c) }
+func (c *Client) ProofTypes() *Repository[resource.ProofType] {
+	return NewRepository[resource.ProofType](c)
+}
+func (c *Client) Requirements() *Repository[resource.Requirement] {
+	return NewRepository[resource.Requirement](c)
+}
+func (c *Client) RequirementValidations() *Repository[resource.RequirementValidation] {
+	return NewRepository[resource.RequirementValidation](c)
+}
+func (c *Client) Exports() *Repository[resource.Export] { return NewRepository[resource.Export](c) }
+func (c *Client) CapacityPools() *Repository[resource.CapacityPool] {
+	return NewRepository[resource.CapacityPool](c)
+}
+func (c *Client) SharedCapacityGroups() *Repository[resource.SharedCapacityGroup] {
+	return NewRepository[resource.SharedCapacityGroup](c)
+}
+func (c *Client) PublicKeys() *Repository[resource.PublicKey] {
+	return NewRepository[resource.PublicKey](c)
+}
+func (c *Client) EncryptedFiles() *Repository[resource.EncryptedFile] {
+	return NewRepository[resource.EncryptedFile](c)
+}
+func (c *Client) SupportingDocumentTemplates() *Repository[resource.SupportingDocumentTemplate] {
+	return NewRepository[resource.SupportingDocumentTemplate](c)
+}
+func (c *Client) PermanentSupportingDocuments() *Repository[resource.PermanentSupportingDocument] {
+	return NewRepository[resource.PermanentSupportingDocument](c)
+}
+func (c *Client) NanpaPrefixes() *Repository[resource.NanpaPrefix] {
+	return NewRepository[resource.NanpaPrefix](c)
+}
+func (c *Client) VoiceOutTrunkRegenerateCredentials() *Repository[resource.VoiceOutTrunkRegenerateCredential] {
+	return NewRepository[resource.VoiceOutTrunkRegenerateCredential](c)
 }

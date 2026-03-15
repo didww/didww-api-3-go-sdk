@@ -9,6 +9,7 @@ import (
 
 	didww "github.com/didww/didww-api-3-go-sdk"
 	"github.com/didww/didww-api-3-go-sdk/examples"
+	"github.com/didww/didww-api-3-go-sdk/resource"
 )
 
 func main() {
@@ -29,7 +30,7 @@ func main() {
 	fmt.Println("Reserving DID:", available[0].Number)
 
 	// Create a reservation
-	reservation := &didww.DIDReservation{
+	reservation := &resource.DIDReservation{
 		Description:    "SDK example reservation",
 		AvailableDIDID: available[0].ID,
 	}

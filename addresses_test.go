@@ -7,6 +7,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/didww/didww-api-3-go-sdk/resource"
 )
 
 func TestAddressesList(t *testing.T) {
@@ -25,7 +27,7 @@ func TestAddressesCreate(t *testing.T) {
 		"POST /v3/addresses": {status: http.StatusCreated, fixture: "addresses/create.json"},
 	})
 
-	address, err := server.client.Addresses().Create(context.Background(), &Address{
+	address, err := server.client.Addresses().Create(context.Background(), &resource.Address{
 		CityName:    "New York",
 		PostalCode:  "123",
 		Address:     "some street",
@@ -50,7 +52,7 @@ func TestAddressesUpdate(t *testing.T) {
 		"PATCH /v3/addresses/bf69bc70-e1c2-442c-9f30-335ee299b663": {status: http.StatusOK, fixture: "addresses/update.json"},
 	})
 
-	address, err := client.Addresses().Update(context.Background(), &Address{
+	address, err := client.Addresses().Update(context.Background(), &resource.Address{
 		ID:       "bf69bc70-e1c2-442c-9f30-335ee299b663",
 		CityName: "Chicago",
 	})

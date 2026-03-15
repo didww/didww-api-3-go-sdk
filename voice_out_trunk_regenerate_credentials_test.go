@@ -7,6 +7,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/didww/didww-api-3-go-sdk/resource"
 )
 
 func TestVoiceOutTrunkRegenerateCredentialsCreate(t *testing.T) {
@@ -14,7 +16,7 @@ func TestVoiceOutTrunkRegenerateCredentialsCreate(t *testing.T) {
 		"POST /v3/voice_out_trunk_regenerate_credentials": {status: http.StatusCreated, fixture: "voice_out_trunk_regenerate_credentials/create.json"},
 	})
 
-	cred, err := client.VoiceOutTrunkRegenerateCredentials().Create(context.Background(), &VoiceOutTrunkRegenerateCredential{})
+	cred, err := client.VoiceOutTrunkRegenerateCredentials().Create(context.Background(), &resource.VoiceOutTrunkRegenerateCredential{})
 	require.NoError(t, err)
 
 	assert.Equal(t, "5fc59e7e-79eb-498a-8779-800416b5c68a", cred.ID)

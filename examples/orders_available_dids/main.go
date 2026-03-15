@@ -9,6 +9,7 @@ import (
 
 	didww "github.com/didww/didww-api-3-go-sdk"
 	"github.com/didww/didww-api-3-go-sdk/examples"
+	"github.com/didww/didww-api-3-go-sdk/resource"
 )
 
 func main() {
@@ -32,11 +33,11 @@ func main() {
 	}
 
 	// Create order with available DID
-	order := &didww.Order{
-		Items: []didww.OrderItem{
+	order := &resource.Order{
+		Items: []resource.OrderItem{
 			{
 				Type: "did_order_items",
-				Attributes: didww.OrderItemAttributes{
+				Attributes: resource.OrderItemAttributes{
 					AvailableDidID: ad.ID,
 					SkuID:          ad.DIDGroup.StockKeepingUnits[0].ID,
 				},

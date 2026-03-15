@@ -7,6 +7,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/didww/didww-api-3-go-sdk/resource"
 )
 
 func TestProofsCreateWithProofTypeAndFiles(t *testing.T) {
@@ -14,7 +16,7 @@ func TestProofsCreateWithProofTypeAndFiles(t *testing.T) {
 		"POST /v3/proofs": {status: http.StatusCreated, fixture: "proofs/create.json"},
 	})
 
-	proof, err := server.client.Proofs().Create(context.Background(), &Proof{
+	proof, err := server.client.Proofs().Create(context.Background(), &resource.Proof{
 		ProofTypeID: "19cd7b22-559b-41d4-99c9-7ad7ad63d5d1",
 		FileIDs:     []string{"254b3c2d-c40c-4ff7-93b1-a677aee7fa10"},
 	})
@@ -30,7 +32,7 @@ func TestProofsCreateWithIdentityEntity(t *testing.T) {
 		"POST /v3/proofs": {status: http.StatusCreated, fixture: "proofs/create_with_identity.json"},
 	})
 
-	_, err := server.client.Proofs().Create(context.Background(), &Proof{
+	_, err := server.client.Proofs().Create(context.Background(), &resource.Proof{
 		ProofTypeID: "d2c1b3fb-29f7-46ca-ba82-b617f4630b78",
 		EntityID:    "54c92d8e-f135-4b55-ac48-748d44437509",
 		EntityType:  "identities",
@@ -46,7 +48,7 @@ func TestProofsCreateWithAddressEntity(t *testing.T) {
 		"POST /v3/proofs": {status: http.StatusCreated, fixture: "proofs/create_with_address.json"},
 	})
 
-	_, err := server.client.Proofs().Create(context.Background(), &Proof{
+	_, err := server.client.Proofs().Create(context.Background(), &resource.Proof{
 		ProofTypeID: "d2c1b3fb-29f7-46ca-ba82-b617f4630b78",
 		EntityID:    "54c92d8e-f135-4b55-ac48-748d44437509",
 		EntityType:  "addresses",
@@ -79,7 +81,7 @@ func TestProofsCreateResponseParsesProofTypeFromRelationships(t *testing.T) {
 		"POST /v3/proofs": {status: http.StatusCreated, fixture: "proofs/create.json"},
 	})
 
-	proof, err := client.Proofs().Create(context.Background(), &Proof{
+	proof, err := client.Proofs().Create(context.Background(), &resource.Proof{
 		ProofTypeID: "19cd7b22-559b-41d4-99c9-7ad7ad63d5d1",
 		EntityID:    "some-entity-id",
 		EntityType:  "identities",
