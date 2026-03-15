@@ -15,14 +15,16 @@ func main() {
 	client := examples.ClientFromEnv()
 	ctx := context.Background()
 
-	// Step 1: find the NANPA prefix by NPA/NXX (e.g. 201-221)
-	params := didww.NewQueryParams().Filter("npanxx", "201221").Page(1, 1)
+	// Step 1: find the NANPA prefix by NPA-NXX (e.g. 201-221)
+	npa := "201"
+	nxx := "221"
+	params := didww.NewQueryParams().Filter("npanxx", npa+nxx).Page(1, 1)
 	nanpaPrefixes, err := client.NanpaPrefixes().List(ctx, params)
 	if err != nil {
 		panic(err)
 	}
 	if len(nanpaPrefixes) == 0 {
-		panic("NANPA prefix 201-221 not found")
+		panic(fmt.Sprintf("NANPA prefix %s-%s not found", npa, nxx))
 	}
 	nanpaPrefix := nanpaPrefixes[0]
 	fmt.Printf("NANPA prefix: %s NPA=%s NXX=%s\n", nanpaPrefix.ID, nanpaPrefix.NPA, nanpaPrefix.NXX)
@@ -40,7 +42,7 @@ func main() {
 		panic("No DID group with SKUs found for this NANPA prefix")
 	}
 	sku := didGroups[0].StockKeepingUnits[0]
-	fmt.Printf("DID group: %s  SKU: %s (monthly=%s)\n", didGroups[0].ID, sku.ID, sku.MonthlyPrice)
+	fmt.Printf("DID group: %s SKU: %s (monthly=%s)\n", didGroups[0].ID, sku.ID, sku.MonthlyPrice)
 
 	// Step 3: create the order
 	order := &didww.Order{
