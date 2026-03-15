@@ -7,9 +7,10 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/didww/didww-api-3-go-sdk/resource"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/didww/didww-api-3-go-sdk/resource"
 )
 
 const testDIDID = "9df99644-f1a5-4a3c-99a4-559d758eb96b"
