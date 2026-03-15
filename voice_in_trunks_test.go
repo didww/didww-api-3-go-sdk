@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/didww/didww-api-3-go-sdk/resource"
 	"github.com/didww/didww-api-3-go-sdk/resource/enums"
 
 	"github.com/stretchr/testify/assert"
@@ -26,14 +27,14 @@ func TestVoiceInTrunksList(t *testing.T) {
 	assert.Equal(t, "2b4b1fcf-fe6a-4de9-8a58-7df46820ba13", pstn.ID)
 	assert.Equal(t, "sample trunk pstn", pstn.Name)
 	assert.Equal(t, enums.CliFormatE164, pstn.CliFormat)
-	pstnCfg, ok := pstn.Configuration.(*PSTNConfiguration)
+	pstnCfg, ok := pstn.Configuration.(*resource.PSTNConfiguration)
 	require.True(t, ok, "expected PSTN configuration")
 	assert.Equal(t, "442080995011", pstnCfg.Dst)
 
 	// Second trunk is SIP
 	sip := trunks[1]
 	assert.Equal(t, "Sip trunk sample", sip.Name)
-	sipCfg, ok := sip.Configuration.(*SIPConfiguration)
+	sipCfg, ok := sip.Configuration.(*resource.SIPConfiguration)
 	require.True(t, ok, "expected SIP configuration")
 	assert.Equal(t, "216.58.215.78", sipCfg.Host)
 }
@@ -43,9 +44,9 @@ func TestVoiceInTrunksCreate(t *testing.T) {
 		"POST /v3/voice_in_trunks": {status: http.StatusCreated, fixture: "voice_in_trunks/create.json"},
 	})
 
-	trunk, err := server.client.VoiceInTrunks().Create(context.Background(), &VoiceInTrunk{
+	trunk, err := server.client.VoiceInTrunks().Create(context.Background(), &resource.VoiceInTrunk{
 		Name: "hello, test pstn trunk",
-		Configuration: &PSTNConfiguration{
+		Configuration: &resource.PSTNConfiguration{
 			Dst: "558540420024",
 		},
 	})
@@ -61,9 +62,9 @@ func TestVoiceInTrunksCreateSipWithReroutingCodes(t *testing.T) {
 		"POST /v3/voice_in_trunks": {status: http.StatusCreated, fixture: "voice_in_trunks/create.json"},
 	})
 
-	_, err := server.client.VoiceInTrunks().Create(context.Background(), &VoiceInTrunk{
+	_, err := server.client.VoiceInTrunks().Create(context.Background(), &resource.VoiceInTrunk{
 		Name: "hello, test sip trunk",
-		Configuration: &SIPConfiguration{
+		Configuration: &resource.SIPConfiguration{
 			Username:           "username",
 			Host:               "216.58.215.110",
 			SstRefreshMethodID: enums.SstRefreshMethodInvite,
@@ -104,9 +105,9 @@ func TestVoiceInTrunksCreateSip(t *testing.T) {
 		"POST /v3/voice_in_trunks": {status: http.StatusCreated, fixture: "voice_in_trunks/create_sip.json"},
 	})
 
-	trunk, err := client.VoiceInTrunks().Create(context.Background(), &VoiceInTrunk{
+	trunk, err := client.VoiceInTrunks().Create(context.Background(), &resource.VoiceInTrunk{
 		Name: "hello, test sip trunk",
-		Configuration: &SIPConfiguration{
+		Configuration: &resource.SIPConfiguration{
 			Username: "username",
 			Host:     "216.58.215.110",
 			Port:     5060,
@@ -116,7 +117,7 @@ func TestVoiceInTrunksCreateSip(t *testing.T) {
 
 	assert.Equal(t, "a80006b6-4183-4865-8b99-7ebbd359a762", trunk.ID)
 	assert.Equal(t, "hello, test sip trunk", trunk.Name)
-	sipCfg, ok := trunk.Configuration.(*SIPConfiguration)
+	sipCfg, ok := trunk.Configuration.(*resource.SIPConfiguration)
 	require.True(t, ok, "expected SIP configuration")
 	assert.Equal(t, "username", sipCfg.Username)
 	assert.Equal(t, "216.58.215.110", sipCfg.Host)
@@ -127,10 +128,10 @@ func TestVoiceInTrunksUpdatePstn(t *testing.T) {
 		"PATCH /v3/voice_in_trunks/41b94706-325e-4704-a433-d65105758836": {status: http.StatusOK, fixture: "voice_in_trunks/update_pstn.json"},
 	})
 
-	trunk, err := client.VoiceInTrunks().Update(context.Background(), &VoiceInTrunk{
+	trunk, err := client.VoiceInTrunks().Update(context.Background(), &resource.VoiceInTrunk{
 		ID:   "41b94706-325e-4704-a433-d65105758836",
 		Name: "hello, updated test pstn trunk",
-		Configuration: &PSTNConfiguration{
+		Configuration: &resource.PSTNConfiguration{
 			Dst: "558540420025",
 		},
 	})
@@ -138,7 +139,7 @@ func TestVoiceInTrunksUpdatePstn(t *testing.T) {
 
 	assert.Equal(t, "41b94706-325e-4704-a433-d65105758836", trunk.ID)
 	assert.Equal(t, "hello, updated test pstn trunk", trunk.Name)
-	pstnCfg, ok := trunk.Configuration.(*PSTNConfiguration)
+	pstnCfg, ok := trunk.Configuration.(*resource.PSTNConfiguration)
 	require.True(t, ok, "expected PSTN configuration")
 	assert.Equal(t, "558540420025", pstnCfg.Dst)
 }
@@ -149,11 +150,11 @@ func TestVoiceInTrunksUpdateSip(t *testing.T) {
 	})
 
 	desc := "just a description"
-	trunk, err := client.VoiceInTrunks().Update(context.Background(), &VoiceInTrunk{
+	trunk, err := client.VoiceInTrunks().Update(context.Background(), &resource.VoiceInTrunk{
 		ID:          "a80006b6-4183-4865-8b99-7ebbd359a762",
 		Name:        "hello, updated test sip trunk",
 		Description: &desc,
-		Configuration: &SIPConfiguration{
+		Configuration: &resource.SIPConfiguration{
 			Username:     "new-username",
 			Host:         "216.58.215.110",
 			MaxTransfers: 5,
@@ -163,7 +164,7 @@ func TestVoiceInTrunksUpdateSip(t *testing.T) {
 
 	assert.Equal(t, "a80006b6-4183-4865-8b99-7ebbd359a762", trunk.ID)
 	assert.Equal(t, "hello, updated test sip trunk", trunk.Name)
-	sipCfg, ok := trunk.Configuration.(*SIPConfiguration)
+	sipCfg, ok := trunk.Configuration.(*resource.SIPConfiguration)
 	require.True(t, ok, "expected SIP configuration")
 	assert.Equal(t, "new-username", sipCfg.Username)
 	assert.Equal(t, 5, sipCfg.MaxTransfers)

@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/didww/didww-api-3-go-sdk/resource"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -14,7 +15,7 @@ func TestPermanentSupportingDocumentsCreate(t *testing.T) {
 		"POST /v3/permanent_supporting_documents": {status: http.StatusCreated, fixture: "permanent_supporting_documents/create.json"},
 	})
 
-	doc, err := server.client.PermanentSupportingDocuments().Create(context.Background(), &PermanentSupportingDocument{
+	doc, err := server.client.PermanentSupportingDocuments().Create(context.Background(), &resource.PermanentSupportingDocument{
 		TemplateID: "4199435f-646e-4e9d-a143-8f3b972b10c5",
 		IdentityID: "5e9df058-50d2-4e34-b0d4-d1746b86f41a",
 		FileIDs:    []string{"254b3c2d-c40c-4ff7-93b1-a677aee7fa10"},

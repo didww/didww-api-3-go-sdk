@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/didww/didww-api-3-go-sdk/resource"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -29,7 +30,7 @@ func TestVoiceInTrunkGroupsCreate(t *testing.T) {
 		"POST /v3/voice_in_trunk_groups": {status: http.StatusCreated, fixture: "voice_in_trunk_groups/create.json"},
 	})
 
-	group, err := server.client.VoiceInTrunkGroups().Create(context.Background(), &VoiceInTrunkGroup{
+	group, err := server.client.VoiceInTrunkGroups().Create(context.Background(), &resource.VoiceInTrunkGroup{
 		Name:            "trunk group sample with 2 trunks",
 		CapacityLimit:   intPtr(1000),
 		VoiceInTrunkIDs: []string{"7c15bca2-7f17-46fb-9486-7e2a17158c7e", "b07a4cab-48c6-4b3a-9670-11b90b81bdef"},
@@ -51,7 +52,7 @@ func TestVoiceInTrunkGroupsUpdate(t *testing.T) {
 		"PATCH /v3/voice_in_trunk_groups/b2319703-ce6c-480d-bb53-614e7abcfc96": {status: http.StatusOK, fixture: "voice_in_trunk_groups/update.json"},
 	})
 
-	group, err := client.VoiceInTrunkGroups().Update(context.Background(), &VoiceInTrunkGroup{
+	group, err := client.VoiceInTrunkGroups().Update(context.Background(), &resource.VoiceInTrunkGroup{
 		ID:            "b2319703-ce6c-480d-bb53-614e7abcfc96",
 		Name:          "trunk group sample updated with 2 trunks",
 		CapacityLimit: intPtr(500),

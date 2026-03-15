@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/didww/didww-api-3-go-sdk/resource"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -43,7 +44,7 @@ func TestSharedCapacityGroupsCreate(t *testing.T) {
 		"POST /v3/shared_capacity_groups": {status: http.StatusCreated, fixture: "shared_capacity_groups/create.json"},
 	})
 
-	group, err := server.client.SharedCapacityGroups().Create(context.Background(), &SharedCapacityGroup{
+	group, err := server.client.SharedCapacityGroups().Create(context.Background(), &resource.SharedCapacityGroup{
 		Name:                 "java-sdk",
 		SharedChannelsCount:  5,
 		MeteredChannelsCount: 0,
@@ -61,7 +62,7 @@ func TestSharedCapacityGroupsCreateWithChannels(t *testing.T) {
 		"POST /v3/shared_capacity_groups": {status: http.StatusCreated, fixture: "shared_capacity_groups/create_with_channels.json"},
 	})
 
-	group, err := client.SharedCapacityGroups().Create(context.Background(), &SharedCapacityGroup{
+	group, err := client.SharedCapacityGroups().Create(context.Background(), &resource.SharedCapacityGroup{
 		Name:                 "java-sdk",
 		SharedChannelsCount:  5,
 		MeteredChannelsCount: 0,
@@ -79,7 +80,7 @@ func TestSharedCapacityGroupsCreateMissingPool(t *testing.T) {
 		"POST /v3/shared_capacity_groups": {status: http.StatusUnprocessableEntity, fixture: "shared_capacity_groups/create_error_missing_pool.json"},
 	})
 
-	_, err := client.SharedCapacityGroups().Create(context.Background(), &SharedCapacityGroup{
+	_, err := client.SharedCapacityGroups().Create(context.Background(), &resource.SharedCapacityGroup{
 		Name: "missing pool",
 	})
 	require.Error(t, err)
@@ -96,7 +97,7 @@ func TestSharedCapacityGroupsUpdate(t *testing.T) {
 		"PATCH /v3/shared_capacity_groups/89f987e2-0862-4bf4-a3f4-cdc89af0d875": {status: http.StatusOK, fixture: "shared_capacity_groups/update.json"},
 	})
 
-	group, err := client.SharedCapacityGroups().Update(context.Background(), &SharedCapacityGroup{
+	group, err := client.SharedCapacityGroups().Update(context.Background(), &resource.SharedCapacityGroup{
 		ID:   "89f987e2-0862-4bf4-a3f4-cdc89af0d875",
 		Name: "didww1",
 	})

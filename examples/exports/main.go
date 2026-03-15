@@ -7,8 +7,8 @@ import (
 	"context"
 	"fmt"
 
-	didww "github.com/didww/didww-api-3-go-sdk"
 	"github.com/didww/didww-api-3-go-sdk/examples"
+	"github.com/didww/didww-api-3-go-sdk/resource"
 	"github.com/didww/didww-api-3-go-sdk/resource/enums"
 )
 
@@ -17,7 +17,7 @@ func main() {
 	ctx := context.Background()
 
 	// Create an export
-	export := &didww.Export{
+	export := &resource.Export{
 		ExportType: enums.ExportTypeCdrIn,
 		Filters:    map[string]interface{}{"year": 2025, "month": 1},
 	}

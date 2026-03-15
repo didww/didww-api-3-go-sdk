@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/didww/didww-api-3-go-sdk/resource"
 	"github.com/didww/didww-api-3-go-sdk/resource/enums"
 
 	"github.com/stretchr/testify/assert"
@@ -40,7 +41,7 @@ func TestIdentitiesCreate(t *testing.T) {
 	personalTaxID := "987654321"
 	externalRefID := "111"
 	contactEmail := "john.doe@example.com"
-	identity, err := server.client.Identities().Create(context.Background(), &Identity{
+	identity, err := server.client.Identities().Create(context.Background(), &resource.Identity{
 		FirstName:           "John",
 		LastName:            "Doe",
 		PhoneNumber:         "123456789",
@@ -74,7 +75,7 @@ func TestIdentitiesCreatePersonal(t *testing.T) {
 		"POST /v3/identities": {status: http.StatusCreated, fixture: "identities/create_personal.json"},
 	})
 
-	identity, err := client.Identities().Create(context.Background(), &Identity{
+	identity, err := client.Identities().Create(context.Background(), &resource.Identity{
 		FirstName:    "John",
 		LastName:     "Doe",
 		PhoneNumber:  "123456789",
@@ -103,7 +104,7 @@ func TestIdentitiesUpdate(t *testing.T) {
 	personalTaxID := "983217654"
 	externalRefID := "112"
 	contactEmail := "jake.johnson@example.com"
-	identity, err := server.client.Identities().Update(context.Background(), &Identity{
+	identity, err := server.client.Identities().Update(context.Background(), &resource.Identity{
 		ID:                  "e96ae7d1-11d5-42bc-a5c5-211f3c3788ae",
 		FirstName:           "Jake",
 		LastName:            "Johnson",

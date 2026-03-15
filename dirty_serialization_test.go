@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/didww/didww-api-3-go-sdk/resource"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -21,7 +22,7 @@ func TestDirtyPatch_NewResourceOnlyDirtyFields(t *testing.T) {
 	})
 
 	desc := "updated"
-	_, err := server.client.DIDs().Update(context.Background(), &DID{
+	_, err := server.client.DIDs().Update(context.Background(), &resource.DID{
 		ID:          testDIDID,
 		Description: &desc,
 	})
@@ -98,7 +99,7 @@ func TestDirtyPatch_SetVoiceInTrunkNullifiesTrunkGroup(t *testing.T) {
 		"PATCH /v3/dids/" + testDIDID: {status: http.StatusOK, fixture: "dids/show_with_trunk.json"},
 	})
 
-	_, err := server.client.DIDs().Update(context.Background(), &DID{
+	_, err := server.client.DIDs().Update(context.Background(), &resource.DID{
 		ID:             testDIDID,
 		VoiceInTrunkID: "trunk-1",
 	})
@@ -122,7 +123,7 @@ func TestDirtyPatch_SetVoiceInTrunkGroupNullifiesTrunk(t *testing.T) {
 		"PATCH /v3/dids/" + testDIDID: {status: http.StatusOK, fixture: "dids/show_with_trunk_group.json"},
 	})
 
-	_, err := server.client.DIDs().Update(context.Background(), &DID{
+	_, err := server.client.DIDs().Update(context.Background(), &resource.DID{
 		ID:                  testDIDID,
 		VoiceInTrunkGroupID: "group-1",
 	})
@@ -147,7 +148,7 @@ func TestDirtyPatch_CreateUnchanged(t *testing.T) {
 
 	desc := "new"
 	cl := 5
-	_, err := server.client.DIDs().Create(context.Background(), &DID{
+	_, err := server.client.DIDs().Create(context.Background(), &resource.DID{
 		CapacityLimit:          &cl,
 		Description:            &desc,
 		DedicatedChannelsCount: 3,
@@ -183,7 +184,7 @@ func TestDirtyPatch_ResponseClearsState(t *testing.T) {
 	})
 
 	desc := "first"
-	did, err := server.client.DIDs().Update(context.Background(), &DID{
+	did, err := server.client.DIDs().Update(context.Background(), &resource.DID{
 		ID:          testDIDID,
 		Description: &desc,
 	})
@@ -207,7 +208,7 @@ func TestDirtyPatch_UpdateBuiltSingleAttr(t *testing.T) {
 	})
 
 	cl := 10
-	_, err := server.client.DIDs().Update(context.Background(), &DID{
+	_, err := server.client.DIDs().Update(context.Background(), &resource.DID{
 		ID:            testDIDID,
 		CapacityLimit: &cl,
 	})
@@ -242,7 +243,7 @@ func TestDirtyPatch_UpdateTerminated(t *testing.T) {
 		"PATCH /v3/dids/" + testDIDID: {status: http.StatusOK, fixture: "dids/show.json"},
 	})
 
-	_, err := server.client.DIDs().Update(context.Background(), &DID{
+	_, err := server.client.DIDs().Update(context.Background(), &resource.DID{
 		ID:         testDIDID,
 		Terminated: true,
 	})
@@ -379,7 +380,7 @@ func TestDirtyPatch_VoiceOutTrunk_BuiltSingleAttr(t *testing.T) {
 	})
 
 	cl := 50
-	_, err := server.client.VoiceOutTrunks().Update(context.Background(), &VoiceOutTrunk{
+	_, err := server.client.VoiceOutTrunks().Update(context.Background(), &resource.VoiceOutTrunk{
 		ID:            testVoiceOutTrunkID,
 		CapacityLimit: &cl,
 	})
@@ -414,7 +415,7 @@ func TestDirtyPatch_SetCapacityPoolNullifiesSharedCapacityGroup(t *testing.T) {
 		"PATCH /v3/dids/" + testDIDID: {status: http.StatusOK, fixture: "dids/show.json"},
 	})
 
-	_, err := server.client.DIDs().Update(context.Background(), &DID{
+	_, err := server.client.DIDs().Update(context.Background(), &resource.DID{
 		ID:             testDIDID,
 		CapacityPoolID: "pool-1",
 	})
@@ -430,7 +431,7 @@ func TestDirtyPatch_SetSharedCapacityGroupNullifiesCapacityPool(t *testing.T) {
 		"PATCH /v3/dids/" + testDIDID: {status: http.StatusOK, fixture: "dids/show.json"},
 	})
 
-	_, err := server.client.DIDs().Update(context.Background(), &DID{
+	_, err := server.client.DIDs().Update(context.Background(), &resource.DID{
 		ID:                    testDIDID,
 		SharedCapacityGroupID: "group-1",
 	})

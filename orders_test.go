@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/didww/didww-api-3-go-sdk/resource"
 	"github.com/didww/didww-api-3-go-sdk/resource/enums"
 
 	"github.com/stretchr/testify/assert"
@@ -16,19 +17,19 @@ func TestOrdersCreate(t *testing.T) {
 		"POST /v3/orders": {status: http.StatusCreated, fixture: "orders/create.json"},
 	})
 
-	order, err := server.client.Orders().Create(context.Background(), &Order{
+	order, err := server.client.Orders().Create(context.Background(), &resource.Order{
 		AllowBackOrdering: true,
-		Items: []OrderItem{
+		Items: []resource.OrderItem{
 			{
 				Type: "did_order_items",
-				Attributes: OrderItemAttributes{
+				Attributes: resource.OrderItemAttributes{
 					SkuID: "acc46374-0b34-4912-9f67-8340339db1e5",
 					Qty:   2,
 				},
 			},
 			{
 				Type: "did_order_items",
-				Attributes: OrderItemAttributes{
+				Attributes: resource.OrderItemAttributes{
 					SkuID: "f36d2812-2195-4385-85e8-e59c3484a8bc",
 					Qty:   1,
 				},
@@ -58,11 +59,11 @@ func TestOrdersCreateAvailableDid(t *testing.T) {
 		"POST /v3/orders": {status: http.StatusCreated, fixture: "orders/create_available_did.json"},
 	})
 
-	_, err := server.client.Orders().Create(context.Background(), &Order{
-		Items: []OrderItem{
+	_, err := server.client.Orders().Create(context.Background(), &resource.Order{
+		Items: []resource.OrderItem{
 			{
 				Type: "did_order_items",
-				Attributes: OrderItemAttributes{
+				Attributes: resource.OrderItemAttributes{
 					SkuID:          "acc46374-0b34-4912-9f67-8340339db1e5",
 					AvailableDidID: "c43441e3-82d4-4d84-93e2-80998576c1ce",
 				},
@@ -79,11 +80,11 @@ func TestOrdersCreateReservation(t *testing.T) {
 		"POST /v3/orders": {status: http.StatusCreated, fixture: "orders/create_reservation.json"},
 	})
 
-	_, err := server.client.Orders().Create(context.Background(), &Order{
-		Items: []OrderItem{
+	_, err := server.client.Orders().Create(context.Background(), &resource.Order{
+		Items: []resource.OrderItem{
 			{
 				Type: "did_order_items",
-				Attributes: OrderItemAttributes{
+				Attributes: resource.OrderItemAttributes{
 					SkuID:            "32840f64-5c3f-4278-8c8d-887fbe2f03f4",
 					DidReservationID: "e3ed9f97-1058-430c-9134-38f1c614ee9f",
 				},
@@ -100,11 +101,11 @@ func TestOrdersCreateCapacity(t *testing.T) {
 		"POST /v3/orders": {status: http.StatusCreated, fixture: "orders/create_capacity.json"},
 	})
 
-	_, err := server.client.Orders().Create(context.Background(), &Order{
-		Items: []OrderItem{
+	_, err := server.client.Orders().Create(context.Background(), &resource.Order{
+		Items: []resource.OrderItem{
 			{
 				Type: "capacity_order_items",
-				Attributes: OrderItemAttributes{
+				Attributes: resource.OrderItemAttributes{
 					CapacityPoolID: "b7522a31-4bf3-4c23-81e8-e7a14b23663f",
 					Qty:            1,
 				},
@@ -122,12 +123,12 @@ func TestOrdersCreateBillingCycles(t *testing.T) {
 	})
 
 	billingCycles := 5
-	_, err := server.client.Orders().Create(context.Background(), &Order{
+	_, err := server.client.Orders().Create(context.Background(), &resource.Order{
 		AllowBackOrdering: true,
-		Items: []OrderItem{
+		Items: []resource.OrderItem{
 			{
 				Type: "did_order_items",
-				Attributes: OrderItemAttributes{
+				Attributes: resource.OrderItemAttributes{
 					SkuID:              "f36d2812-2195-4385-85e8-e59c3484a8bc",
 					Qty:                1,
 					BillingCyclesCount: &billingCycles,
@@ -145,12 +146,12 @@ func TestOrdersCreateNanpa(t *testing.T) {
 		"POST /v3/orders": {status: http.StatusCreated, fixture: "orders/create_nanpa.json"},
 	})
 
-	_, err := server.client.Orders().Create(context.Background(), &Order{
+	_, err := server.client.Orders().Create(context.Background(), &resource.Order{
 		AllowBackOrdering: true,
-		Items: []OrderItem{
+		Items: []resource.OrderItem{
 			{
 				Type: "did_order_items",
-				Attributes: OrderItemAttributes{
+				Attributes: resource.OrderItemAttributes{
 					SkuID:         "fe77889c-f05a-40ad-a845-96aca3c28054",
 					Qty:           1,
 					NanpaPrefixID: "eeed293b-f3d8-4ef8-91ef-1b077d174b3b",
@@ -170,14 +171,14 @@ func TestOrdersCreateWithCallback(t *testing.T) {
 
 	cbURL := "https://example.com/callback"
 	cbMethod := "POST"
-	_, err := server.client.Orders().Create(context.Background(), &Order{
+	_, err := server.client.Orders().Create(context.Background(), &resource.Order{
 		AllowBackOrdering: true,
 		CallbackURL:       &cbURL,
 		CallbackMethod:    &cbMethod,
-		Items: []OrderItem{
+		Items: []resource.OrderItem{
 			{
 				Type: "did_order_items",
-				Attributes: OrderItemAttributes{
+				Attributes: resource.OrderItemAttributes{
 					SkuID: "f36d2812-2195-4385-85e8-e59c3484a8bc",
 					Qty:   1,
 				},

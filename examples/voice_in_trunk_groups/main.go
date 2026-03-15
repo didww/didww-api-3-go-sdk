@@ -10,6 +10,7 @@ import (
 
 	didww "github.com/didww/didww-api-3-go-sdk"
 	"github.com/didww/didww-api-3-go-sdk/examples"
+	"github.com/didww/didww-api-3-go-sdk/resource"
 	"github.com/didww/didww-api-3-go-sdk/resource/enums"
 )
 
@@ -18,8 +19,8 @@ func main() {
 	ctx := context.Background()
 
 	// Helper for SIP config with all required fields
-	sipConfig := func(host string) *didww.SIPConfiguration {
-		return &didww.SIPConfiguration{
+	sipConfig := func(host string) *resource.SIPConfiguration {
+		return &resource.SIPConfiguration{
 			Host:                host,
 			Port:                5060,
 			CodecIDs:            []enums.Codec{enums.CodecPCMU, enums.CodecPCMA},
@@ -41,7 +42,7 @@ func main() {
 	ts := time.Now().UnixMilli()
 
 	// Create two trunks
-	trunkA, err := client.VoiceInTrunks().Create(ctx, &didww.VoiceInTrunk{
+	trunkA, err := client.VoiceInTrunks().Create(ctx, &resource.VoiceInTrunk{
 		Name:          fmt.Sprintf("Group Trunk A %d", ts),
 		Configuration: sipConfig("sip-a.example.com"),
 	})
@@ -50,7 +51,7 @@ func main() {
 	}
 	fmt.Println("Created trunk A:", trunkA.ID)
 
-	trunkB, err := client.VoiceInTrunks().Create(ctx, &didww.VoiceInTrunk{
+	trunkB, err := client.VoiceInTrunks().Create(ctx, &resource.VoiceInTrunk{
 		Name:          fmt.Sprintf("Group Trunk B %d", ts),
 		Configuration: sipConfig("sip-b.example.com"),
 	})
@@ -60,7 +61,7 @@ func main() {
 	fmt.Println("Created trunk B:", trunkB.ID)
 
 	// Create a trunk group with both trunks
-	group, err := client.VoiceInTrunkGroups().Create(ctx, &didww.VoiceInTrunkGroup{
+	group, err := client.VoiceInTrunkGroups().Create(ctx, &resource.VoiceInTrunkGroup{
 		Name:            fmt.Sprintf("SDK Trunk Group %d", ts),
 		CapacityLimit:   examples.Ptr(10),
 		VoiceInTrunkIDs: []string{trunkA.ID, trunkB.ID},

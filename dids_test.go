@@ -6,10 +6,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/didww/didww-api-3-go-sdk/resource"
+	"github.com/didww/didww-api-3-go-sdk/resource/enums"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-
-	"github.com/didww/didww-api-3-go-sdk/resource/enums"
 )
 
 func TestDIDsFind(t *testing.T) {
@@ -73,7 +73,7 @@ func TestDIDsUpdate(t *testing.T) {
 	})
 
 	desc := "updated"
-	_, err := client.DIDs().Update(context.Background(), &DID{
+	_, err := client.DIDs().Update(context.Background(), &resource.DID{
 		ID:          "9df99644-f1a5-4a3c-99a4-559d758eb96b",
 		Description: &desc,
 	})
@@ -86,7 +86,7 @@ func TestDIDsUpdateDescription(t *testing.T) {
 	})
 
 	desc := "something"
-	did, err := client.DIDs().Update(context.Background(), &DID{
+	did, err := client.DIDs().Update(context.Background(), &resource.DID{
 		ID:          "9df99644-f1a5-4a3c-99a4-559d758eb96b",
 		Description: &desc,
 	})
@@ -117,7 +117,7 @@ func TestDIDsUpdateTerminated(t *testing.T) {
 		"PATCH /v3/dids/9df99644-f1a5-4a3c-99a4-559d758eb96b": {status: http.StatusOK, fixture: "dids/update_blocked_terminated.json"},
 	})
 
-	did, err := server.client.DIDs().Update(context.Background(), &DID{
+	did, err := server.client.DIDs().Update(context.Background(), &resource.DID{
 		ID:         "9df99644-f1a5-4a3c-99a4-559d758eb96b",
 		Terminated: true,
 	})
@@ -137,7 +137,7 @@ func TestDIDsUpdateInvalidParam(t *testing.T) {
 		"PATCH /v3/dids/9df99644-f1a5-4a3c-99a4-559d758eb96b": {status: http.StatusBadRequest, fixture: "dids/update_error_invalid_param.json"},
 	})
 
-	_, err := client.DIDs().Update(context.Background(), &DID{
+	_, err := client.DIDs().Update(context.Background(), &resource.DID{
 		ID: "9df99644-f1a5-4a3c-99a4-559d758eb96b",
 	})
 	require.Error(t, err)
@@ -154,7 +154,7 @@ func TestDIDsUpdateInvalidTrunkGroup(t *testing.T) {
 		"PATCH /v3/dids/9df99644-f1a5-4a3c-99a4-559d758eb96b": {status: http.StatusUnprocessableEntity, fixture: "dids/update_error_invalid_trunk_group.json"},
 	})
 
-	_, err := client.DIDs().Update(context.Background(), &DID{
+	_, err := client.DIDs().Update(context.Background(), &resource.DID{
 		ID:                  "9df99644-f1a5-4a3c-99a4-559d758eb96b",
 		VoiceInTrunkGroupID: "invalid-id",
 	})
@@ -170,7 +170,7 @@ func TestDIDsUpdateInvalidTrunkGroup(t *testing.T) {
 func TestDIDsUpdateRequiresID(t *testing.T) {
 	_, client := newTestServer(t, map[string]testRoute{})
 
-	_, err := client.DIDs().Update(context.Background(), &DID{})
+	_, err := client.DIDs().Update(context.Background(), &resource.DID{})
 	require.Error(t, err)
 }
 
@@ -179,7 +179,7 @@ func TestDIDsUpdateAssignTrunk(t *testing.T) {
 		"PATCH /v3/dids/9df99644-f1a5-4a3c-99a4-559d758eb96b": {status: http.StatusOK, fixture: "dids/show_with_trunk.json"},
 	})
 
-	did, err := server.client.DIDs().Update(context.Background(), &DID{
+	did, err := server.client.DIDs().Update(context.Background(), &resource.DID{
 		ID:             "9df99644-f1a5-4a3c-99a4-559d758eb96b",
 		VoiceInTrunkID: "41b94706-325e-4704-a433-d65105758836",
 	})
@@ -197,7 +197,7 @@ func TestDIDsUpdateAssignTrunkGroup(t *testing.T) {
 		"PATCH /v3/dids/9df99644-f1a5-4a3c-99a4-559d758eb96b": {status: http.StatusOK, fixture: "dids/show_with_trunk_group.json"},
 	})
 
-	did, err := server.client.DIDs().Update(context.Background(), &DID{
+	did, err := server.client.DIDs().Update(context.Background(), &resource.DID{
 		ID:                  "9df99644-f1a5-4a3c-99a4-559d758eb96b",
 		VoiceInTrunkGroupID: "b2319703-ce6c-480d-bb53-614e7abcfc96",
 	})

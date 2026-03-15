@@ -8,8 +8,8 @@ import (
 	"fmt"
 	"time"
 
-	didww "github.com/didww/didww-api-3-go-sdk"
 	"github.com/didww/didww-api-3-go-sdk/examples"
+	"github.com/didww/didww-api-3-go-sdk/resource"
 )
 
 func main() {
@@ -27,7 +27,7 @@ func main() {
 	pool := pools[0]
 
 	// Create a shared capacity group
-	group := &didww.SharedCapacityGroup{
+	group := &resource.SharedCapacityGroup{
 		Name:                 fmt.Sprintf("SDK Channel Group %d", time.Now().UnixMilli()),
 		MeteredChannelsCount: 10,
 		SharedChannelsCount:  1,

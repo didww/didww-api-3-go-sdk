@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/didww/didww-api-3-go-sdk/resource"
 	"github.com/didww/didww-api-3-go-sdk/resource/enums"
 
 	"github.com/stretchr/testify/assert"
@@ -29,7 +30,7 @@ func TestAddressVerificationsCreate(t *testing.T) {
 
 	cbURL := "http://example.com"
 	cbMethod := "GET"
-	av, err := server.client.AddressVerifications().Create(context.Background(), &AddressVerification{
+	av, err := server.client.AddressVerifications().Create(context.Background(), &resource.AddressVerification{
 		CallbackURL:    &cbURL,
 		CallbackMethod: &cbMethod,
 		AddressID:      "d3414687-40f4-4346-a267-c2c65117d28c",

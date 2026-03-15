@@ -9,6 +9,7 @@ import (
 
 	didww "github.com/didww/didww-api-3-go-sdk"
 	"github.com/didww/didww-api-3-go-sdk/examples"
+	"github.com/didww/didww-api-3-go-sdk/resource"
 )
 
 func main() {
@@ -26,11 +27,11 @@ func main() {
 		panic("No DID group with stock_keeping_units found")
 	}
 
-	order := &didww.Order{
-		Items: []didww.OrderItem{
+	order := &resource.Order{
+		Items: []resource.OrderItem{
 			{
 				Type: "did_order_items",
-				Attributes: didww.OrderItemAttributes{
+				Attributes: resource.OrderItemAttributes{
 					SkuID: didGroups[0].StockKeepingUnits[0].ID,
 					Qty:   2,
 				},

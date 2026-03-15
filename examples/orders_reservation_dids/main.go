@@ -9,6 +9,7 @@ import (
 
 	didww "github.com/didww/didww-api-3-go-sdk"
 	"github.com/didww/didww-api-3-go-sdk/examples"
+	"github.com/didww/didww-api-3-go-sdk/resource"
 )
 
 func main() {
@@ -35,7 +36,7 @@ func main() {
 	skuID := ad.DIDGroup.StockKeepingUnits[0].ID
 
 	// Create reservation
-	reservation := &didww.DIDReservation{
+	reservation := &resource.DIDReservation{
 		Description:    "SDK example reservation",
 		AvailableDIDID: ad.ID,
 	}
@@ -46,11 +47,11 @@ func main() {
 	fmt.Printf("Created reservation: %s (expires: %s)\n", created.ID, created.ExpireAt)
 
 	// Order reserved DID
-	order := &didww.Order{
-		Items: []didww.OrderItem{
+	order := &resource.Order{
+		Items: []resource.OrderItem{
 			{
 				Type: "did_order_items",
-				Attributes: didww.OrderItemAttributes{
+				Attributes: resource.OrderItemAttributes{
 					DidReservationID: created.ID,
 					SkuID:            skuID,
 				},
