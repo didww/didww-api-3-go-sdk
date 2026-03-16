@@ -6,4 +6,4 @@ type CapacityOrderItem struct {
 	Qty            int    `json:"qty,omitempty"`
 }
 
-func (i *CapacityOrderItem) orderItemType() string { return "capacity_order_items" }
+func (i *CapacityOrderItem) orderItemType() string { return typeCapacityOrderItems }

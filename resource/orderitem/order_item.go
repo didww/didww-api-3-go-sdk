@@ -2,6 +2,12 @@ package orderitem
 
 import "encoding/json"
 
+const (
+	typeDidOrderItems      = "did_order_items"
+	typeCapacityOrderItems = "capacity_order_items"
+	typeGenericOrderItems  = "generic_order_items"
+)
+
 // OrderItem is the interface for all order item types.
 type OrderItem interface {
 	orderItemType() string
@@ -17,19 +23,19 @@ func Parse(data []byte) (OrderItem, error) {
 		return nil, err
 	}
 	switch env.Type {
-	case "did_order_items":
+	case typeDidOrderItems:
 		var item DidOrderItem
 		if err := json.Unmarshal(env.Attributes, &item); err != nil {
 			return nil, err
 		}
 		return &item, nil
-	case "capacity_order_items":
+	case typeCapacityOrderItems:
 		var item CapacityOrderItem
 		if err := json.Unmarshal(env.Attributes, &item); err != nil {
 			return nil, err
 		}
 		return &item, nil
-	case "generic_order_items":
+	case typeGenericOrderItems:
 		var item GenericOrderItem
 		if err := json.Unmarshal(env.Attributes, &item); err != nil {
 			return nil, err

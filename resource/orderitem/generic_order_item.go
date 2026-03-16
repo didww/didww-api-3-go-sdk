@@ -5,4 +5,4 @@ type GenericOrderItem struct {
 	Qty int `json:"qty,omitempty"`
 }
 
-func (i *GenericOrderItem) orderItemType() string { return "generic_order_items" }
+func (i *GenericOrderItem) orderItemType() string { return typeGenericOrderItems }

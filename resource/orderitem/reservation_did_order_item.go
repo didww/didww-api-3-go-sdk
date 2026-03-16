@@ -6,4 +6,4 @@ type ReservationDidOrderItem struct {
 	DidReservationID string `json:"did_reservation_id,omitempty"`
 }
 
-func (i *ReservationDidOrderItem) orderItemType() string { return "did_order_items" }
+func (i *ReservationDidOrderItem) orderItemType() string { return typeDidOrderItems }

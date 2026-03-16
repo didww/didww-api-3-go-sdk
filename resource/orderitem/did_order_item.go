@@ -14,4 +14,4 @@ type DidOrderItem struct {
 	DIDGroupID         string  `json:"did_group_id,omitempty"`
 }
 
-func (i *DidOrderItem) orderItemType() string { return "did_order_items" }
+func (i *DidOrderItem) orderItemType() string { return typeDidOrderItems }
