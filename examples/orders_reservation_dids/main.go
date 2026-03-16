@@ -10,6 +10,7 @@ import (
 	didww "github.com/didww/didww-api-3-go-sdk"
 	"github.com/didww/didww-api-3-go-sdk/examples"
 	"github.com/didww/didww-api-3-go-sdk/resource"
+	"github.com/didww/didww-api-3-go-sdk/resource/orderitem"
 )
 
 func main() {
@@ -48,13 +49,12 @@ func main() {
 
 	// Order reserved DID
 	order := &resource.Order{
-		Items: []resource.OrderItem{
-			{
-				Type: "did_order_items",
-				Attributes: resource.OrderItemAttributes{
-					DidReservationID: created.ID,
-					SkuID:            skuID,
+		Items: []orderitem.OrderItem{
+			&orderitem.ReservationDidOrderItem{
+				DidOrderItem: orderitem.DidOrderItem{
+					SkuID: skuID,
 				},
+				DidReservationID: created.ID,
 			},
 		},
 	}

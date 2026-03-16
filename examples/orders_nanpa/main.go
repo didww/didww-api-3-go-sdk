@@ -10,6 +10,7 @@ import (
 	didww "github.com/didww/didww-api-3-go-sdk"
 	"github.com/didww/didww-api-3-go-sdk/examples"
 	"github.com/didww/didww-api-3-go-sdk/resource"
+	"github.com/didww/didww-api-3-go-sdk/resource/orderitem"
 )
 
 func main() {
@@ -48,14 +49,11 @@ func main() {
 	// Step 3: create the order
 	order := &resource.Order{
 		AllowBackOrdering: true,
-		Items: []resource.OrderItem{
-			{
-				Type: "did_order_items",
-				Attributes: resource.OrderItemAttributes{
-					SkuID:         sku.ID,
-					NanpaPrefixID: nanpaPrefix.ID,
-					Qty:           1,
-				},
+		Items: []orderitem.OrderItem{
+			&orderitem.DidOrderItem{
+				SkuID:         sku.ID,
+				NanpaPrefixID: nanpaPrefix.ID,
+				Qty:           1,
 			},
 		},
 	}

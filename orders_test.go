@@ -7,6 +7,7 @@ import (
 
 	"github.com/didww/didww-api-3-go-sdk/resource"
 	"github.com/didww/didww-api-3-go-sdk/resource/enums"
+	"github.com/didww/didww-api-3-go-sdk/resource/orderitem"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -19,20 +20,14 @@ func TestOrdersCreate(t *testing.T) {
 
 	order, err := server.client.Orders().Create(context.Background(), &resource.Order{
 		AllowBackOrdering: true,
-		Items: []resource.OrderItem{
-			{
-				Type: "did_order_items",
-				Attributes: resource.OrderItemAttributes{
-					SkuID: "acc46374-0b34-4912-9f67-8340339db1e5",
-					Qty:   2,
-				},
+		Items: []orderitem.OrderItem{
+			&orderitem.DidOrderItem{
+				SkuID: "acc46374-0b34-4912-9f67-8340339db1e5",
+				Qty:   2,
 			},
-			{
-				Type: "did_order_items",
-				Attributes: resource.OrderItemAttributes{
-					SkuID: "f36d2812-2195-4385-85e8-e59c3484a8bc",
-					Qty:   1,
-				},
+			&orderitem.DidOrderItem{
+				SkuID: "f36d2812-2195-4385-85e8-e59c3484a8bc",
+				Qty:   1,
 			},
 		},
 	})
@@ -45,11 +40,11 @@ func TestOrdersCreate(t *testing.T) {
 	assert.Equal(t, "JXK-923618", order.Reference)
 	require.Len(t, order.Items, 2)
 
-	item1 := order.Items[0]
-	assert.Equal(t, "did_order_items", item1.Type)
-	assert.Equal(t, 1, item1.Attributes.Qty)
-	assert.Equal(t, "0.0", item1.Attributes.Nrc)
-	assert.Equal(t, "5.6", item1.Attributes.Mrc)
+	item1, ok := order.Items[0].(*orderitem.DidOrderItem)
+	require.True(t, ok, "expected DidOrderItem")
+	assert.Equal(t, 1, item1.Qty)
+	assert.Equal(t, "0.0", item1.Nrc)
+	assert.Equal(t, "5.6", item1.Mrc)
 
 	assertRequestJSON(t, *capturedBodyPtr, "orders/create_request.json")
 }
@@ -60,13 +55,12 @@ func TestOrdersCreateAvailableDid(t *testing.T) {
 	})
 
 	_, err := server.client.Orders().Create(context.Background(), &resource.Order{
-		Items: []resource.OrderItem{
-			{
-				Type: "did_order_items",
-				Attributes: resource.OrderItemAttributes{
-					SkuID:          "acc46374-0b34-4912-9f67-8340339db1e5",
-					AvailableDidID: "c43441e3-82d4-4d84-93e2-80998576c1ce",
+		Items: []orderitem.OrderItem{
+			&orderitem.AvailableDidOrderItem{
+				DidOrderItem: orderitem.DidOrderItem{
+					SkuID: "acc46374-0b34-4912-9f67-8340339db1e5",
 				},
+				AvailableDidID: "c43441e3-82d4-4d84-93e2-80998576c1ce",
 			},
 		},
 	})
@@ -81,13 +75,12 @@ func TestOrdersCreateReservation(t *testing.T) {
 	})
 
 	_, err := server.client.Orders().Create(context.Background(), &resource.Order{
-		Items: []resource.OrderItem{
-			{
-				Type: "did_order_items",
-				Attributes: resource.OrderItemAttributes{
-					SkuID:            "32840f64-5c3f-4278-8c8d-887fbe2f03f4",
-					DidReservationID: "e3ed9f97-1058-430c-9134-38f1c614ee9f",
+		Items: []orderitem.OrderItem{
+			&orderitem.ReservationDidOrderItem{
+				DidOrderItem: orderitem.DidOrderItem{
+					SkuID: "32840f64-5c3f-4278-8c8d-887fbe2f03f4",
 				},
+				DidReservationID: "e3ed9f97-1058-430c-9134-38f1c614ee9f",
 			},
 		},
 	})
@@ -102,13 +95,10 @@ func TestOrdersCreateCapacity(t *testing.T) {
 	})
 
 	_, err := server.client.Orders().Create(context.Background(), &resource.Order{
-		Items: []resource.OrderItem{
-			{
-				Type: "capacity_order_items",
-				Attributes: resource.OrderItemAttributes{
-					CapacityPoolID: "b7522a31-4bf3-4c23-81e8-e7a14b23663f",
-					Qty:            1,
-				},
+		Items: []orderitem.OrderItem{
+			&orderitem.CapacityOrderItem{
+				CapacityPoolID: "b7522a31-4bf3-4c23-81e8-e7a14b23663f",
+				Qty:            1,
 			},
 		},
 	})
@@ -125,14 +115,11 @@ func TestOrdersCreateBillingCycles(t *testing.T) {
 	billingCycles := 5
 	_, err := server.client.Orders().Create(context.Background(), &resource.Order{
 		AllowBackOrdering: true,
-		Items: []resource.OrderItem{
-			{
-				Type: "did_order_items",
-				Attributes: resource.OrderItemAttributes{
-					SkuID:              "f36d2812-2195-4385-85e8-e59c3484a8bc",
-					Qty:                1,
-					BillingCyclesCount: &billingCycles,
-				},
+		Items: []orderitem.OrderItem{
+			&orderitem.DidOrderItem{
+				SkuID:              "f36d2812-2195-4385-85e8-e59c3484a8bc",
+				Qty:                1,
+				BillingCyclesCount: &billingCycles,
 			},
 		},
 	})
@@ -148,14 +135,11 @@ func TestOrdersCreateNanpa(t *testing.T) {
 
 	_, err := server.client.Orders().Create(context.Background(), &resource.Order{
 		AllowBackOrdering: true,
-		Items: []resource.OrderItem{
-			{
-				Type: "did_order_items",
-				Attributes: resource.OrderItemAttributes{
-					SkuID:         "fe77889c-f05a-40ad-a845-96aca3c28054",
-					Qty:           1,
-					NanpaPrefixID: "eeed293b-f3d8-4ef8-91ef-1b077d174b3b",
-				},
+		Items: []orderitem.OrderItem{
+			&orderitem.DidOrderItem{
+				SkuID:         "fe77889c-f05a-40ad-a845-96aca3c28054",
+				Qty:           1,
+				NanpaPrefixID: "eeed293b-f3d8-4ef8-91ef-1b077d174b3b",
 			},
 		},
 	})
@@ -175,13 +159,10 @@ func TestOrdersCreateWithCallback(t *testing.T) {
 		AllowBackOrdering: true,
 		CallbackURL:       &cbURL,
 		CallbackMethod:    &cbMethod,
-		Items: []resource.OrderItem{
-			{
-				Type: "did_order_items",
-				Attributes: resource.OrderItemAttributes{
-					SkuID: "f36d2812-2195-4385-85e8-e59c3484a8bc",
-					Qty:   1,
-				},
+		Items: []orderitem.OrderItem{
+			&orderitem.DidOrderItem{
+				SkuID: "f36d2812-2195-4385-85e8-e59c3484a8bc",
+				Qty:   1,
 			},
 		},
 	})
@@ -204,5 +185,6 @@ func TestOrdersFind(t *testing.T) {
 	assert.Equal(t, "Payment processing fee", order.Description)
 	assert.Equal(t, "SPT-474057", order.Reference)
 	require.Len(t, order.Items, 1)
-	assert.Equal(t, "generic_order_items", order.Items[0].Type)
+	_, ok := order.Items[0].(*orderitem.GenericOrderItem)
+	assert.True(t, ok, "expected GenericOrderItem")
 }
