@@ -10,6 +10,7 @@ import (
 	didww "github.com/didww/didww-api-3-go-sdk"
 	"github.com/didww/didww-api-3-go-sdk/examples"
 	"github.com/didww/didww-api-3-go-sdk/resource"
+	"github.com/didww/didww-api-3-go-sdk/resource/orderitem"
 )
 
 func main() {
@@ -28,13 +29,10 @@ func main() {
 	}
 
 	order := &resource.Order{
-		Items: []resource.OrderItem{
-			{
-				Type: "did_order_items",
-				Attributes: resource.OrderItemAttributes{
-					SkuID: didGroups[0].StockKeepingUnits[0].ID,
-					Qty:   2,
-				},
+		Items: []orderitem.OrderItem{
+			&orderitem.DidOrderItem{
+				SkuID: didGroups[0].StockKeepingUnits[0].ID,
+				Qty:   2,
 			},
 		},
 	}
@@ -47,6 +45,6 @@ func main() {
 		created.ID, created.Amount, created.Status, created.Reference)
 
 	if len(created.Items) > 0 {
-		fmt.Printf("Item type=%s\n", created.Items[0].Type)
+		fmt.Printf("Item type=%T\n", created.Items[0])
 	}
 }

@@ -10,6 +10,7 @@ import (
 	didww "github.com/didww/didww-api-3-go-sdk"
 	"github.com/didww/didww-api-3-go-sdk/examples"
 	"github.com/didww/didww-api-3-go-sdk/resource"
+	"github.com/didww/didww-api-3-go-sdk/resource/orderitem"
 )
 
 func main() {
@@ -24,7 +25,7 @@ func main() {
 	for _, order := range orders {
 		fmt.Printf("Order %s: %s ($%s)\n", order.ID, order.Status, order.Amount)
 		for _, item := range order.Items {
-			fmt.Printf("  - %s\n", item.Type)
+			fmt.Printf("  - %T\n", item)
 		}
 	}
 
@@ -42,13 +43,10 @@ func main() {
 	skuID := didGroups[0].StockKeepingUnits[0].ID
 
 	newOrder := &resource.Order{
-		Items: []resource.OrderItem{
-			{
-				Type: "did_order_items",
-				Attributes: resource.OrderItemAttributes{
-					SkuID: skuID,
-					Qty:   1,
-				},
+		Items: []orderitem.OrderItem{
+			&orderitem.DidOrderItem{
+				SkuID: skuID,
+				Qty:   1,
 			},
 		},
 	}

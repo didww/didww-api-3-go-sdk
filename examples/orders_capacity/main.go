@@ -9,6 +9,7 @@ import (
 
 	"github.com/didww/didww-api-3-go-sdk/examples"
 	"github.com/didww/didww-api-3-go-sdk/resource"
+	"github.com/didww/didww-api-3-go-sdk/resource/orderitem"
 )
 
 func main() {
@@ -28,13 +29,10 @@ func main() {
 
 	// Purchase capacity
 	order := &resource.Order{
-		Items: []resource.OrderItem{
-			{
-				Type: "capacity_order_items",
-				Attributes: resource.OrderItemAttributes{
-					CapacityPoolID: pool.ID,
-					Qty:            1,
-				},
+		Items: []orderitem.OrderItem{
+			&orderitem.CapacityOrderItem{
+				CapacityPoolID: pool.ID,
+				Qty:            1,
 			},
 		},
 	}

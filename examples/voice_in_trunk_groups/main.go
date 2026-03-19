@@ -12,6 +12,7 @@ import (
 	"github.com/didww/didww-api-3-go-sdk/examples"
 	"github.com/didww/didww-api-3-go-sdk/resource"
 	"github.com/didww/didww-api-3-go-sdk/resource/enums"
+	"github.com/didww/didww-api-3-go-sdk/resource/trunkconfiguration"
 )
 
 func main() {
@@ -19,8 +20,8 @@ func main() {
 	ctx := context.Background()
 
 	// Helper for SIP config with all required fields
-	sipConfig := func(host string) *resource.SIPConfiguration {
-		return &resource.SIPConfiguration{
+	sipConfig := func(host string) *trunkconfiguration.SIPConfiguration {
+		return &trunkconfiguration.SIPConfiguration{
 			Host:                host,
 			Port:                5060,
 			CodecIDs:            []enums.Codec{enums.CodecPCMU, enums.CodecPCMA},

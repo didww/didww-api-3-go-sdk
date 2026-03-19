@@ -1,53 +1,69 @@
 package resource
 
 import (
+	"encoding/json"
 	"time"
 
-	"github.com/didww/didww-api-3-go-sdk/jsonapi"
 	"github.com/didww/didww-api-3-go-sdk/resource/enums"
+	"github.com/didww/didww-api-3-go-sdk/resource/orderitem"
 )
-
-// OrderItemAttributes contains the attributes of an order item.
-type OrderItemAttributes struct {
-	Qty                int     `json:"qty,omitempty"`
-	Nrc                string  `json:"nrc,omitempty" api:"readonly"`
-	Mrc                string  `json:"mrc,omitempty" api:"readonly"`
-	ProratedMrc        bool    `json:"prorated_mrc" api:"readonly"`
-	BilledFrom         *string `json:"billed_from" api:"readonly"`
-	BilledTo           *string `json:"billed_to" api:"readonly"`
-	SetupPrice         string  `json:"setup_price,omitempty" api:"readonly"`
-	MonthlyPrice       string  `json:"monthly_price,omitempty" api:"readonly"`
-	DIDGroupID         string  `json:"did_group_id,omitempty"`
-	SkuID              string  `json:"sku_id,omitempty"`
-	AvailableDidID     string  `json:"available_did_id,omitempty"`
-	DidReservationID   string  `json:"did_reservation_id,omitempty"`
-	CapacityPoolID     string  `json:"capacity_pool_id,omitempty"`
-	BillingCyclesCount *int    `json:"billing_cycles_count,omitempty"`
-	NanpaPrefixID      string  `json:"nanpa_prefix_id,omitempty"`
-}
-
-// MarshalJSON implements custom marshaling for OrderItemAttributes to exclude read-only fields.
-func (a OrderItemAttributes) MarshalJSON() ([]byte, error) { //nolint:gocritic // value receiver required for json.Marshal
-	type Alias OrderItemAttributes
-	return jsonapi.MarshalWritableAttrs(Alias(a))
-}
-
-// OrderItem represents an item within an order.
-type OrderItem struct {
-	Type       string              `json:"type"`
-	Attributes OrderItemAttributes `json:"attributes"`
-}
 
 // Order represents a DIDWW order.
 type Order struct {
-	ID                string            `json:"-" jsonapi:"orders"`
-	Amount            string            `json:"amount" api:"readonly"`
-	Status            enums.OrderStatus `json:"status" api:"readonly"`
-	CreatedAt         time.Time         `json:"created_at" api:"readonly"`
-	Description       string            `json:"description" api:"readonly"`
-	Reference         string            `json:"reference" api:"readonly"`
-	Items             []OrderItem       `json:"items"`
-	AllowBackOrdering bool              `json:"allow_back_ordering,omitempty"`
-	CallbackURL       *string           `json:"callback_url,omitempty"`
-	CallbackMethod    *string           `json:"callback_method,omitempty"`
+	ID                string                `json:"-" jsonapi:"orders"`
+	Amount            string                `json:"amount" api:"readonly"`
+	Status            enums.OrderStatus     `json:"status" api:"readonly"`
+	CreatedAt         time.Time             `json:"created_at" api:"readonly"`
+	Description       string                `json:"description" api:"readonly"`
+	Reference         string                `json:"reference" api:"readonly"`
+	Items             []orderitem.OrderItem `json:"items"`
+	AllowBackOrdering bool                  `json:"allow_back_ordering,omitempty"`
+	CallbackURL       *string               `json:"callback_url,omitempty"`
+	CallbackMethod    *string               `json:"callback_method,omitempty"`
+}
+
+// UnmarshalJSON implements custom unmarshaling for Order.
+func (o *Order) UnmarshalJSON(data []byte) error {
+	type Alias Order
+	aux := &struct {
+		*Alias
+		RawItems []json.RawMessage `json:"items"`
+	}{
+		Alias: (*Alias)(o),
+	}
+	if err := json.Unmarshal(data, aux); err != nil {
+		return err
+	}
+	o.Items = make([]orderitem.OrderItem, 0, len(aux.RawItems))
+	for _, raw := range aux.RawItems {
+		item, err := orderitem.Parse(raw)
+		if err != nil {
+			return err
+		}
+		if item != nil {
+			o.Items = append(o.Items, item)
+		}
+	}
+	return nil
+}
+
+// MarshalJSON implements custom marshaling for Order.
+func (o Order) MarshalJSON() ([]byte, error) { //nolint:gocritic // value receiver required for json.Marshal
+	type Alias Order
+	rawItems := make([]json.RawMessage, 0, len(o.Items))
+	for _, item := range o.Items {
+		raw, err := orderitem.MarshalItem(item)
+		if err != nil {
+			return nil, err
+		}
+		rawItems = append(rawItems, raw)
+	}
+	aux := &struct {
+		Alias
+		RawItems []json.RawMessage `json:"items,omitempty"`
+	}{
+		Alias:    Alias(o),
+		RawItems: rawItems,
+	}
+	return json.Marshal(aux)
 }
