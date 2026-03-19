@@ -1,6 +1,10 @@
 package orderitem
 
-import "encoding/json"
+import (
+	"encoding/json"
+
+	"github.com/didww/didww-api-3-go-sdk/jsonapi"
+)
 
 const (
 	typeDidOrderItems      = "did_order_items"
@@ -47,8 +51,9 @@ func Parse(data []byte) (OrderItem, error) {
 }
 
 // MarshalItem serializes an OrderItem to its JSON:API {type, attributes} envelope.
+// Read-only fields (tagged `api:"readonly"`) are excluded from the output.
 func MarshalItem(item OrderItem) ([]byte, error) {
-	attrs, err := json.Marshal(item)
+	attrs, err := jsonapi.MarshalWritableAttrs(item)
 	if err != nil {
 		return nil, err
 	}

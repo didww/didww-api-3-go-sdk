@@ -2,6 +2,7 @@ package didww
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"testing"
 
@@ -45,6 +46,12 @@ func TestOrdersCreate(t *testing.T) {
 	assert.Equal(t, 1, item1.Qty)
 	assert.Equal(t, "0.0", item1.Nrc)
 	assert.Equal(t, "5.6", item1.Mrc)
+	assert.Equal(t, false, item1.ProratedMrc)
+	assert.Nil(t, item1.BilledFrom)
+	assert.Nil(t, item1.BilledTo)
+	assert.Equal(t, "0.0", item1.SetupPrice)
+	assert.Equal(t, "5.6", item1.MonthlyPrice)
+	assert.Equal(t, "899f0119-b4e9-47d0-9b2c-8a9f282fcbe2", item1.DIDGroupID)
 
 	assertRequestJSON(t, *capturedBodyPtr, "orders/create_request.json")
 }
@@ -94,7 +101,7 @@ func TestOrdersCreateCapacity(t *testing.T) {
 		"POST /v3/orders": {status: http.StatusCreated, fixture: "orders/create_capacity.json"},
 	})
 
-	_, err := server.client.Orders().Create(context.Background(), &resource.Order{
+	order, err := server.client.Orders().Create(context.Background(), &resource.Order{
 		Items: []orderitem.OrderItem{
 			&orderitem.CapacityOrderItem{
 				CapacityPoolID: "b7522a31-4bf3-4c23-81e8-e7a14b23663f",
@@ -103,6 +110,18 @@ func TestOrdersCreateCapacity(t *testing.T) {
 		},
 	})
 	require.NoError(t, err)
+
+	require.Len(t, order.Items, 1)
+	capItem, ok := order.Items[0].(*orderitem.CapacityOrderItem)
+	require.True(t, ok, "expected CapacityOrderItem")
+	assert.Equal(t, 1, capItem.Qty)
+	assert.Equal(t, "25.0", capItem.Nrc)
+	assert.Equal(t, "19.35", capItem.Mrc)
+	assert.Equal(t, true, capItem.ProratedMrc)
+	capBilledFrom := "2018-12-28"
+	capBilledTo := "2019-01-20"
+	assert.Equal(t, &capBilledFrom, capItem.BilledFrom)
+	assert.Equal(t, &capBilledTo, capItem.BilledTo)
 
 	assertRequestJSON(t, *capturedBodyPtr, "orders/create_request_capacity.json")
 }
@@ -185,6 +204,52 @@ func TestOrdersFind(t *testing.T) {
 	assert.Equal(t, "Payment processing fee", order.Description)
 	assert.Equal(t, "SPT-474057", order.Reference)
 	require.Len(t, order.Items, 1)
-	_, ok := order.Items[0].(*orderitem.GenericOrderItem)
-	assert.True(t, ok, "expected GenericOrderItem")
+	genItem, ok := order.Items[0].(*orderitem.GenericOrderItem)
+	require.True(t, ok, "expected GenericOrderItem")
+	assert.Equal(t, 1, genItem.Qty)
+	assert.Equal(t, "25.07", genItem.Nrc)
+	assert.Equal(t, "0.0", genItem.Mrc)
+	assert.Equal(t, false, genItem.ProratedMrc)
+	billedFrom := "2018-08-17"
+	billedTo := "2018-09-16"
+	assert.Equal(t, &billedFrom, genItem.BilledFrom)
+	assert.Equal(t, &billedTo, genItem.BilledTo)
+}
+
+func TestOrderItemMarshalExcludesReadonlyFields(t *testing.T) {
+	// Simulate reusing a DidOrderItem populated from a response (with readonly fields set).
+	item := &orderitem.DidOrderItem{
+		BaseOrderItem: orderitem.BaseOrderItem{
+			Nrc:          "0.0",
+			Mrc:          "5.6",
+			SetupPrice:   "0.0",
+			MonthlyPrice: "5.6",
+			ProratedMrc:  false,
+		},
+		SkuID: "acc46374-0b34-4912-9f67-8340339db1e5",
+		Qty:   2,
+	}
+	raw, err := orderitem.MarshalItem(item)
+	require.NoError(t, err)
+
+	var envelope struct {
+		Attrs json.RawMessage `json:"attributes"`
+	}
+	require.NoError(t, json.Unmarshal(raw, &envelope))
+
+	var attrs map[string]any
+	require.NoError(t, json.Unmarshal(envelope.Attrs, &attrs))
+
+	// Readonly fields must not appear in the marshaled output.
+	assert.NotContains(t, attrs, "nrc", "readonly field nrc should not be marshaled")
+	assert.NotContains(t, attrs, "mrc", "readonly field mrc should not be marshaled")
+	assert.NotContains(t, attrs, "setup_price", "readonly field setup_price should not be marshaled")
+	assert.NotContains(t, attrs, "monthly_price", "readonly field monthly_price should not be marshaled")
+	assert.NotContains(t, attrs, "prorated_mrc", "readonly field prorated_mrc should not be marshaled")
+	assert.NotContains(t, attrs, "billed_from", "readonly field billed_from should not be marshaled")
+	assert.NotContains(t, attrs, "billed_to", "readonly field billed_to should not be marshaled")
+
+	// Writable fields must be present.
+	assert.Contains(t, attrs, "sku_id")
+	assert.Contains(t, attrs, "qty")
 }

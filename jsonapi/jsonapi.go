@@ -487,6 +487,7 @@ func MarshalWritableAttrs(resource any) ([]byte, error) {
 }
 
 // readOnlyKeys returns the JSON key names of fields tagged `api:"readonly"`.
+// It recurses into anonymous (embedded) struct fields.
 func readOnlyKeys(resource any) []string {
 	v := reflect.ValueOf(resource)
 	if v.Kind() == reflect.Ptr {
@@ -496,9 +497,24 @@ func readOnlyKeys(resource any) []string {
 	if t.Kind() != reflect.Struct {
 		return nil
 	}
+	return collectReadOnlyKeys(t)
+}
+
+func collectReadOnlyKeys(t reflect.Type) []string {
 	var keys []string
 	for i := 0; i < t.NumField(); i++ {
 		f := t.Field(i)
+		// Recurse into anonymous (embedded) structs.
+		if f.Anonymous {
+			ft := f.Type
+			if ft.Kind() == reflect.Ptr {
+				ft = ft.Elem()
+			}
+			if ft.Kind() == reflect.Struct {
+				keys = append(keys, collectReadOnlyKeys(ft)...)
+			}
+			continue
+		}
 		if f.Tag.Get("api") == "readonly" {
 			jsonTag := f.Tag.Get("json")
 			if jsonTag == "" || jsonTag == "-" {
