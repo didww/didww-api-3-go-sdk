@@ -35,6 +35,7 @@ type SIPConfiguration struct {
 	MediaEncryptionMode        enums.MediaEncryptionMode       `json:"media_encryption_mode,omitempty"`
 	StirShakenMode             enums.StirShakenMode            `json:"stir_shaken_mode,omitempty"`
 	AllowedRtpIPs              []string                        `json:"allowed_rtp_ips,omitempty"`
+	DiversionRelayPolicy       enums.DiversionRelayPolicy      `json:"diversion_relay_policy,omitempty"`
 }
 
 func (c *SIPConfiguration) ConfigurationType() string { return "sip_configurations" }

@@ -122,6 +122,7 @@ func TestVoiceInTrunksCreateSip(t *testing.T) {
 	require.True(t, ok, "expected SIP configuration")
 	assert.Equal(t, "username", sipCfg.Username)
 	assert.Equal(t, "216.58.215.110", sipCfg.Host)
+	assert.Equal(t, enums.DiversionRelayPolicyAsIs, sipCfg.DiversionRelayPolicy)
 }
 
 func TestVoiceInTrunksUpdatePstn(t *testing.T) {
