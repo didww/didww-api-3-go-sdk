@@ -77,10 +77,11 @@ func (v VoiceInTrunk) MarshalJSON() ([]byte, error) { //nolint:gocritic // value
 
 // VoiceInTrunkGroup represents a group of voice inbound trunks.
 type VoiceInTrunkGroup struct {
-	ID            string    `json:"-" jsonapi:"voice_in_trunk_groups"`
-	Name          string    `json:"name,omitempty"`
-	CapacityLimit *int      `json:"capacity_limit,omitempty"`
-	CreatedAt     time.Time `json:"created_at" api:"readonly"`
+	ID                  string    `json:"-" jsonapi:"voice_in_trunk_groups"`
+	Name                string    `json:"name,omitempty"`
+	CapacityLimit       *int      `json:"capacity_limit,omitempty"`
+	CreatedAt           time.Time `json:"created_at" api:"readonly"`
+	ExternalReferenceID *string   `json:"external_reference_id,omitempty"`
 	// Relationship IDs for create/update
 	VoiceInTrunkIDs []string `json:"-" rel:"voice_in_trunks,voice_in_trunks"`
 	// Resolved relationships
