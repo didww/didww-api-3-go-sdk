@@ -14,7 +14,7 @@ type AvailableDID struct {
 // DIDReservation represents a reserved DID.
 type DIDReservation struct {
 	ID          string    `json:"-" jsonapi:"did_reservations"`
-	ExpireAt    time.Time `json:"expire_at" api:"readonly"`
+	ExpiresAt   time.Time `json:"expires_at" api:"readonly"`
 	CreatedAt   time.Time `json:"created_at" api:"readonly"`
 	Description string    `json:"description"`
 	// Relationship IDs for create/update

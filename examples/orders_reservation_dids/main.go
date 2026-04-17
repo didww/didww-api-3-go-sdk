@@ -45,7 +45,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	fmt.Printf("Created reservation: %s (expires: %s)\n", created.ID, created.ExpireAt)
+	fmt.Printf("Created reservation: %s (expires: %s)\n", created.ID, created.ExpiresAt)
 
 	// Order reserved DID
 	order := &resource.Order{
