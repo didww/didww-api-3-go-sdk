@@ -15,9 +15,12 @@ This SDK implements JSON:API serialization and deserialization without external 
 Read more https://doc.didww.com/api
 
 This SDK targets DIDWW API v3 documentation version:
-[https://doc.didww.com/api3/2022-05-10/index.html](https://doc.didww.com/api3/2022-05-10/index.html)
+[https://doc.didww.com/api3/2026-04-16/index.html](https://doc.didww.com/api3/2026-04-16/index.html)
 
-The client sends the `X-DIDWW-API-Version: 2022-05-10` header with each request.
+The client sends the `X-DIDWW-API-Version: 2026-04-16` header with each request.
+
+Version **3.x** targets API version `2026-04-16`.
+Version **2.x** (branch `release-2`) targets API version `2022-05-10`.
 
 ## Requirements
 
@@ -161,8 +164,14 @@ proofTypes, _ := client.ProofTypes().List(ctx, nil)
 // Public Keys
 publicKeys, _ := client.PublicKeys().List(ctx, nil)
 
-// Requirements
-requirements, _ := client.Requirements().List(ctx, nil)
+// Address Requirements
+requirements, _ := client.AddressRequirements().List(ctx, nil)
+
+// Emergency Requirements (2026-04-16)
+emergReqs, _ := client.EmergencyRequirements().List(ctx, nil)
+
+// DID History (2026-04-16)
+history, _ := client.DIDHistory().List(ctx, nil)
 
 // Supporting Document Templates
 templates, _ := client.SupportingDocumentTemplates().List(ctx, nil)
@@ -233,12 +242,17 @@ created, _ := client.VoiceInTrunkGroups().Create(ctx, group)
 > The `replace_cli` and `randomize_cli` values of `OnCliMismatchAction` also require account configuration.
 
 ```go
-import "github.com/didww/didww-api-3-go-sdk/resource/enums"
+import (
+    "github.com/didww/didww-api-3-go-sdk/resource/authenticationmethod"
+    "github.com/didww/didww-api-3-go-sdk/resource/enums"
+)
 
 trunk := &didww.VoiceOutTrunk{
-    Name:                "My Outbound Trunk",
-    AllowedSipIPs:       []string{"0.0.0.0/0"},
-    AllowedRtpIPs:       []string{"0.0.0.0/0"},
+    Name: "My Outbound Trunk",
+    AuthenticationMethod: &authenticationmethod.IpOnly{
+        AllowedSipIPs: []string{"203.0.113.0/24"},
+    },
+    AllowedRtpIPs:       []string{"203.0.113.1"},
     DstPrefixes:         []string{},
     DefaultDstAction:    enums.DefaultDstActionAllowAll,
     OnCliMismatchAction: enums.OnCliMismatchActionRejectCall,
@@ -342,7 +356,7 @@ import "github.com/didww/didww-api-3-go-sdk/resource/enums"
 
 export := &didww.Export{
     ExportType: enums.ExportTypeCdrIn,
-    Filters:    map[string]interface{}{"year": 2025, "month": 1},
+    Filters:    map[string]interface{}{"from": "2026-04-01 00:00:00", "to": "2026-04-16 00:00:00"},
 }
 created, _ := client.Exports().Create(ctx, export)
 ```
@@ -439,6 +453,7 @@ updated, _ := client.VoiceInTrunks().Update(ctx, trunk)
 | Available DID | `available_did_order_items` |
 | Reservation DID | `reservation_did_order_items` |
 | Capacity | `capacity_order_items` |
+| Emergency | `emergency_order_items` |
 | Generic (response only) | `generic_order_items` |
 
 ## Error Handling
@@ -478,7 +493,9 @@ if err != nil {
 | AvailableDID | `client.AvailableDIDs()` | list, find |
 | ProofType | `client.ProofTypes()` | list, find |
 | PublicKey | `client.PublicKeys()` | list |
-| Requirement | `client.Requirements()` | list, find |
+| AddressRequirement | `client.AddressRequirements()` | list, find |
+| EmergencyRequirement | `client.EmergencyRequirements()` | list, find |
+| DIDHistory | `client.DIDHistory()` | list |
 | SupportingDocumentTemplate | `client.SupportingDocumentTemplates()` | list, find |
 | Balance | `client.Balance()` | find |
 | DID | `client.DIDs()` | list, find, update, delete |
@@ -490,14 +507,17 @@ if err != nil {
 | CapacityPool | `client.CapacityPools()` | list, find, update |
 | SharedCapacityGroup | `client.SharedCapacityGroups()` | list, find, create, update, delete |
 | Order | `client.Orders()` | list, find, create, delete |
-| Export | `client.Exports()` | list, find, create |
+| Export | `client.Exports()` | list, find, create, update |
 | Address | `client.Addresses()` | list, find, create, update, delete |
-| AddressVerification | `client.AddressVerifications()` | list, find, create |
+| AddressVerification | `client.AddressVerifications()` | list, find, create, update |
+| EmergencyCallingService | `client.EmergencyCallingServices()` | list, find, delete |
+| EmergencyVerification | `client.EmergencyVerifications()` | list, find, create, update |
+| EmergencyRequirementValidation | `client.EmergencyRequirementValidations()` | create |
 | Identity | `client.Identities()` | list, find, create, update, delete |
 | EncryptedFile | `client.EncryptedFiles()` | list, find, delete |
 | PermanentSupportingDocument | `client.PermanentSupportingDocuments()` | create |
 | Proof | `client.Proofs()` | create |
-| RequirementValidation | `client.RequirementValidations()` | create |
+| AddressRequirementValidation | `client.AddressRequirementValidations()` | create |
 | StockKeepingUnit | include on `DIDGroups` | — |
 | QtyBasedPricing | include on `CapacityPools` | — |
 
@@ -510,7 +530,7 @@ The SDK distinguishes between date-only and datetime fields:
 
 - **Datetime fields** are deserialized as `time.Time` (UTC) when always present, or `*time.Time` when optional (nil if the API omits the value):
   - All `CreatedAt` fields — `time.Time`, present on most resources
-  - Expiry fields — `*time.Time`: `DID.ExpiresAt`, `Proof.ExpiresAt`, `EncryptedFile.ExpireAt`; `DIDReservation.ExpireAt` is `time.Time` (always present)
+  - Expiry fields — `*time.Time`: `DID.ExpiresAt`, `Proof.ExpiresAt`, `EncryptedFile.ExpiresAt`; `DIDReservation.ExpiresAt` is `time.Time` (always present)
 - **Date-only fields** (`Identity.BirthDate`, `CapacityPool.RenewDate`, order item `BilledFrom`/`BilledTo`) remain as `string` in `"YYYY-MM-DD"` format — Go has no separate date-only type, so the raw string avoids timezone ambiguity.
 
 ```go
@@ -529,7 +549,8 @@ The SDK provides enum types in `github.com/didww/didww-api-3-go-sdk/resource/enu
 `CallbackMethod`, `IdentityType`, `OrderStatus`, `ExportType`, `ExportStatus`, `CliFormat`,
 `OnCliMismatchAction`\*, `MediaEncryptionMode`, `DefaultDstAction`, `VoiceOutTrunkStatus`,
 `TransportProtocol`, `Codec`, `RxDtmfFormat`, `TxDtmfFormat`, `SstRefreshMethod`,
-`ReroutingDisconnectCode`, `Feature`, `AreaLevel`, `AddressVerificationStatus`, `StirShakenMode`
+`ReroutingDisconnectCode`, `Feature`, `AreaLevel`, `AddressVerificationStatus`, `StirShakenMode`,
+`DiversionRelayPolicy`
 
 \* `replace_cli` and `randomize_cli` require account configuration.
 
