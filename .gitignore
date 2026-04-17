@@ -3,3 +3,20 @@
 
 # Coverage
 coverage.out
+
+# Compiled example binaries (go build artifacts)
+address_verifications
+did_groups
+did_history
+dids
+emergency_calling_services
+emergency_requirement_validations
+emergency_requirements
+emergency_verifications
+exports
+identities
+orders
+orders_emergency
+shared_capacity_groups
+voice_in_trunk_groups
+voice_out_trunks
