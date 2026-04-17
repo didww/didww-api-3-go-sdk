@@ -1,0 +1,5 @@
+# Claude AI
+.claude/
+
+# Coverage
+coverage.out
