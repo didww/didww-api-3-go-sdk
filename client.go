@@ -171,8 +171,8 @@ func (c *Client) Proofs() *Repository[resource.Proof] { return NewRepository[res
 func (c *Client) ProofTypes() *Repository[resource.ProofType] {
 	return NewRepository[resource.ProofType](c)
 }
-func (c *Client) Requirements() *Repository[resource.Requirement] {
-	return NewRepository[resource.Requirement](c)
+func (c *Client) AddressRequirements() *Repository[resource.AddressRequirement] {
+	return NewRepository[resource.AddressRequirement](c)
 }
 func (c *Client) AddressRequirementValidations() *Repository[resource.AddressRequirementValidation] {
 	return NewRepository[resource.AddressRequirementValidation](c)

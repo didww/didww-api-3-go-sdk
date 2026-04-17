@@ -16,7 +16,7 @@ type DIDGroup struct {
 	Region            *Region             `json:"-" rel:"region"`
 	DIDGroupType      *DIDGroupType       `json:"-" rel:"did_group_type"`
 	StockKeepingUnits []*StockKeepingUnit `json:"-" rel:"stock_keeping_units"`
-	Requirement       *Requirement        `json:"-" rel:"requirement"`
+	Requirement       *AddressRequirement  `json:"-" rel:"requirement"`
 }
 
 // DIDGroupType represents a type of DID group.

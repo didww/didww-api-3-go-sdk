@@ -1,8 +1,8 @@
 package resource
 
-// Requirement represents a regulatory requirement.
-type Requirement struct {
-	ID                         string   `json:"-" jsonapi:"requirements"`
+// AddressRequirement represents a regulatory address requirement.
+type AddressRequirement struct {
+	ID                         string   `json:"-" jsonapi:"address_requirements"`
 	IdentityType               string   `json:"identity_type"`
 	PersonalAreaLevel          string   `json:"personal_area_level"`
 	BusinessAreaLevel          string   `json:"business_area_level"`
@@ -32,5 +32,5 @@ type AddressRequirementValidation struct {
 	// Relationship IDs for create
 	AddressID     string `json:"-" rel:"address,addresses"`
 	IdentityID    string `json:"-" rel:"identity,identities"`
-	RequirementID string `json:"-" rel:"requirement,requirements"`
+	RequirementID string `json:"-" rel:"requirement,address_requirements"`
 }
