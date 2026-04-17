@@ -11,7 +11,11 @@ type AuthenticationMethod interface {
 	AuthenticationType() string
 }
 
-// IpOnly uses IP-based authentication only.
+// IpOnly is a read-only authentication method.
+// It can only be configured manually by DIDWW staff upon request
+// and cannot be set via the API on create or update.
+// Trunks with ip_only authentication can still be read and their
+// non-auth attributes updated via the API.
 type IpOnly struct {
 	AllowedSipIPs []string `json:"allowed_sip_ips,omitempty"`
 	TechPrefix    string   `json:"tech_prefix,omitempty"`
