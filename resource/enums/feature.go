@@ -8,5 +8,4 @@ const (
 	FeatureVoiceOut Feature = "voice_out"
 	FeatureT38      Feature = "t38"
 	FeatureSmsIn    Feature = "sms_in"
-	FeatureSmsOut   Feature = "sms_out"
 )
