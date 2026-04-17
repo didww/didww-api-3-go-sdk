@@ -10,7 +10,7 @@ type EmergencyCallingService struct {
 	Name string `json:"name" api:"readonly"`
 	// Reference is the server-assigned reference code (e.g. "ECS-0042").
 	Reference string `json:"reference" api:"readonly"`
-	// Status is the current lifecycle status ("pending", "active", "canceled", etc.).
+	// Status is the current lifecycle status ("active", "canceled", "new", etc.).
 	Status string `json:"status" api:"readonly"`
 	// ActivatedAt is when the service became active (nil if not yet activated).
 	ActivatedAt *time.Time `json:"activated_at" api:"readonly"`
@@ -29,3 +29,33 @@ type EmergencyCallingService struct {
 	EmergencyVerification *EmergencyVerification  `json:"-" rel:"emergency_verification"`
 	DIDs                  []*DID                  `json:"-" rel:"dids"`
 }
+
+// EmergencyCallingService status constants.
+const (
+	ECSStatusActive          = "active"
+	ECSStatusCanceled        = "canceled"
+	ECSStatusChangesRequired = "changes required"
+	ECSStatusInProcess       = "in process"
+	ECSStatusNew             = "new"
+	ECSStatusPendingUpdate   = "pending update"
+)
+
+// IsActive returns true when the service status is "active".
+func (e *EmergencyCallingService) IsActive() bool { return e.Status == ECSStatusActive }
+
+// IsCanceled returns true when the service status is "canceled".
+func (e *EmergencyCallingService) IsCanceled() bool { return e.Status == ECSStatusCanceled }
+
+// IsChangesRequired returns true when the service status is "changes required".
+func (e *EmergencyCallingService) IsChangesRequired() bool {
+	return e.Status == ECSStatusChangesRequired
+}
+
+// IsInProcess returns true when the service status is "in process".
+func (e *EmergencyCallingService) IsInProcess() bool { return e.Status == ECSStatusInProcess }
+
+// IsNew returns true when the service status is "new".
+func (e *EmergencyCallingService) IsNew() bool { return e.Status == ECSStatusNew }
+
+// IsPendingUpdate returns true when the service status is "pending update".
+func (e *EmergencyCallingService) IsPendingUpdate() bool { return e.Status == ECSStatusPendingUpdate }
