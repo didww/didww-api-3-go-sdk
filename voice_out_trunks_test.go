@@ -34,7 +34,7 @@ func TestVoiceOutTrunksList(t *testing.T) {
 	require.True(t, ok, "expected CredentialsAndIp authentication method")
 	assert.Equal(t, "dpjgwbbac9", credAM.Username)
 	assert.Equal(t, "z0hshvbcy7", credAM.Password)
-	assert.Equal(t, []string{"10.11.12.13/32"}, credAM.AllowedSipIPs)
+	assert.Equal(t, []string{"203.0.113.1/32"}, credAM.AllowedSipIPs)
 }
 
 func TestVoiceOutTrunksFindWithIncludedDids(t *testing.T) {

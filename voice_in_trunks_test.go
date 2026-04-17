@@ -37,7 +37,7 @@ func TestVoiceInTrunksList(t *testing.T) {
 	assert.Equal(t, "Sip trunk sample", sip.Name)
 	sipCfg, ok := sip.Configuration.(*trunkconfiguration.SIPConfiguration)
 	require.True(t, ok, "expected SIP configuration")
-	assert.Equal(t, "216.58.215.78", sipCfg.Host)
+	assert.Equal(t, "203.0.113.78", sipCfg.Host)
 }
 
 func TestVoiceInTrunksCreate(t *testing.T) {
@@ -67,7 +67,7 @@ func TestVoiceInTrunksCreateSipWithReroutingCodes(t *testing.T) {
 		Name: "hello, test sip trunk",
 		Configuration: &trunkconfiguration.SIPConfiguration{
 			Username:           "username",
-			Host:               "216.58.215.110",
+			Host:               "203.0.113.110",
 			SstRefreshMethodID: enums.SstRefreshMethodInvite,
 			Port:               5060,
 			CodecIDs: []enums.Codec{
@@ -93,7 +93,7 @@ func TestVoiceInTrunksCreateSipWithReroutingCodes(t *testing.T) {
 			},
 			MediaEncryptionMode: enums.MediaEncryptionModeZrtp,
 			StirShakenMode:      enums.StirShakenModePai,
-			AllowedRtpIPs:       []string{"127.0.0.1"},
+			AllowedRtpIPs:       []string{"203.0.113.1"},
 		},
 	})
 	require.NoError(t, err)
@@ -110,7 +110,7 @@ func TestVoiceInTrunksCreateSip(t *testing.T) {
 		Name: "hello, test sip trunk",
 		Configuration: &trunkconfiguration.SIPConfiguration{
 			Username: "username",
-			Host:     "216.58.215.110",
+			Host:     "203.0.113.110",
 			Port:     5060,
 		},
 	})
@@ -121,7 +121,7 @@ func TestVoiceInTrunksCreateSip(t *testing.T) {
 	sipCfg, ok := trunk.Configuration.(*trunkconfiguration.SIPConfiguration)
 	require.True(t, ok, "expected SIP configuration")
 	assert.Equal(t, "username", sipCfg.Username)
-	assert.Equal(t, "216.58.215.110", sipCfg.Host)
+	assert.Equal(t, "203.0.113.110", sipCfg.Host)
 	assert.Equal(t, enums.DiversionRelayPolicyAsIs, sipCfg.DiversionRelayPolicy)
 }
 
@@ -158,7 +158,7 @@ func TestVoiceInTrunksUpdateSip(t *testing.T) {
 		Description: &desc,
 		Configuration: &trunkconfiguration.SIPConfiguration{
 			Username:     "new-username",
-			Host:         "216.58.215.110",
+			Host:         "203.0.113.110",
 			MaxTransfers: 5,
 		},
 	})
