@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/didww/didww-api-3-go-sdk/resource"
+	"github.com/didww/didww-api-3-go-sdk/resource/authenticationmethod"
 	"github.com/didww/didww-api-3-go-sdk/resource/enums"
 
 	"github.com/stretchr/testify/assert"
@@ -26,6 +27,14 @@ func TestVoiceOutTrunksList(t *testing.T) {
 	assert.Equal(t, "425ce763-a3a9-49b4-af5b-ada1a65c8864", trunk.ID)
 	assert.Equal(t, "test", trunk.Name)
 	assert.Equal(t, enums.VoiceOutTrunkStatusBlocked, trunk.Status)
+
+	// Verify authentication_method is parsed as credentials_and_ip
+	require.NotNil(t, trunk.AuthenticationMethod)
+	credAM, ok := trunk.AuthenticationMethod.(*authenticationmethod.CredentialsAndIp)
+	require.True(t, ok, "expected CredentialsAndIp authentication method")
+	assert.Equal(t, "dpjgwbbac9", credAM.Username)
+	assert.Equal(t, "z0hshvbcy7", credAM.Password)
+	assert.Equal(t, []string{"10.11.12.13/32"}, credAM.AllowedSipIPs)
 }
 
 func TestVoiceOutTrunksFindWithIncludedDids(t *testing.T) {
@@ -39,11 +48,16 @@ func TestVoiceOutTrunksFindWithIncludedDids(t *testing.T) {
 
 	assert.Equal(t, "425ce763-a3a9-49b4-af5b-ada1a65c8864", trunk.ID)
 	assert.Equal(t, "test", trunk.Name)
-	assert.Equal(t, "dpjgwbbac9", trunk.Username)
-	assert.Equal(t, "z0hshvbcy7", trunk.Password)
 	assert.Equal(t, enums.MediaEncryptionModeSrtpSdes, trunk.MediaEncryptionMode)
 	assert.True(t, trunk.ForceSymmetricRtp)
 	assert.True(t, trunk.RtpPing)
+
+	// Verify authentication_method
+	require.NotNil(t, trunk.AuthenticationMethod)
+	credAM, ok := trunk.AuthenticationMethod.(*authenticationmethod.CredentialsAndIp)
+	require.True(t, ok, "expected CredentialsAndIp authentication method")
+	assert.Equal(t, "dpjgwbbac9", credAM.Username)
+	assert.Equal(t, "z0hshvbcy7", credAM.Password)
 
 	// Verify included default_did
 	require.NotNil(t, trunk.DefaultDID)
@@ -61,14 +75,22 @@ func TestVoiceOutTrunksCreate(t *testing.T) {
 
 	trunk, err := server.client.VoiceOutTrunks().Create(context.Background(), &resource.VoiceOutTrunk{
 		Name:                "java-test",
-		AllowedSipIPs:       []string{"0.0.0.0/0"},
 		OnCliMismatchAction: enums.OnCliMismatchActionReplaceCli,
-		DefaultDIDID:        "7a028c32-e6b6-4c86-bf01-90f901b37012",
-		DIDIDs:              []string{"7a028c32-e6b6-4c86-bf01-90f901b37012"},
+		AuthenticationMethod: &authenticationmethod.IpOnly{
+			AllowedSipIPs: []string{"203.0.113.0/24"},
+		},
+		DefaultDIDID: "7a028c32-e6b6-4c86-bf01-90f901b37012",
+		DIDIDs:       []string{"7a028c32-e6b6-4c86-bf01-90f901b37012"},
 	})
 	require.NoError(t, err)
 
 	assert.Equal(t, "b60201c1-21f0-4d9a-aafa-0e6d1e12f22e", trunk.ID)
+
+	// Verify authentication_method in response
+	require.NotNil(t, trunk.AuthenticationMethod)
+	ipAM, ok := trunk.AuthenticationMethod.(*authenticationmethod.IpOnly)
+	require.True(t, ok, "expected IpOnly authentication method")
+	assert.Equal(t, []string{"203.0.113.0/24"}, ipAM.AllowedSipIPs)
 
 	assertRequestJSON(t, *capturedBodyPtr, "voice_out_trunks/create_request.json")
 }
@@ -80,7 +102,6 @@ func TestVoiceOutTrunksUpdate(t *testing.T) {
 
 	trunk, err := client.VoiceOutTrunks().Update(context.Background(), &resource.VoiceOutTrunk{
 		ID:            "425ce763-a3a9-49b4-af5b-ada1a65c8864",
-		AllowedSipIPs: []string{"10.11.12.13/32"},
 		CapacityLimit: intPtr(123),
 	})
 	require.NoError(t, err)
@@ -89,7 +110,6 @@ func TestVoiceOutTrunksUpdate(t *testing.T) {
 	assert.Equal(t, "test", trunk.Name)
 	require.NotNil(t, trunk.CapacityLimit)
 	assert.Equal(t, 123, *trunk.CapacityLimit)
-	assert.Equal(t, []string{"10.11.12.13/32"}, trunk.AllowedSipIPs)
 	assert.True(t, trunk.ForceSymmetricRtp)
 	assert.True(t, trunk.RtpPing)
 }

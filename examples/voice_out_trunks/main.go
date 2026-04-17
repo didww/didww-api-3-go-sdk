@@ -13,6 +13,7 @@ import (
 
 	"github.com/didww/didww-api-3-go-sdk/examples"
 	"github.com/didww/didww-api-3-go-sdk/resource"
+	"github.com/didww/didww-api-3-go-sdk/resource/authenticationmethod"
 	"github.com/didww/didww-api-3-go-sdk/resource/enums"
 )
 
@@ -20,11 +21,13 @@ func main() {
 	client := examples.ClientFromEnv()
 	ctx := context.Background()
 
-	// Create a voice out trunk
+	// Create a voice out trunk with ip_only authentication
 	trunk := &resource.VoiceOutTrunk{
-		Name:                fmt.Sprintf("SDK Outbound Trunk %d", time.Now().UnixMilli()),
-		AllowedSipIPs:       []string{"192.168.1.1"},
-		AllowedRtpIPs:       []string{"192.168.1.1"},
+		Name: fmt.Sprintf("SDK Outbound Trunk %d", time.Now().UnixMilli()),
+		AuthenticationMethod: &authenticationmethod.IpOnly{
+			AllowedSipIPs: []string{"203.0.113.1"},
+		},
+		AllowedRtpIPs:       []string{"203.0.113.1"},
 		DstPrefixes:         []string{},
 		DefaultDstAction:    enums.DefaultDstActionAllowAll,
 		OnCliMismatchAction: enums.OnCliMismatchActionRejectCall,
@@ -37,8 +40,7 @@ func main() {
 	}
 	fmt.Println("Created voice out trunk:", created.ID)
 	fmt.Println("  name:", created.Name)
-	fmt.Println("  username:", created.Username)
-	fmt.Println("  password:", created.Password)
+	fmt.Println("  auth type:", created.AuthenticationMethod.AuthenticationType())
 	fmt.Println("  status:", created.Status)
 
 	// List voice out trunks
@@ -53,7 +55,6 @@ func main() {
 
 	// Update
 	created.Name = "Updated Outbound Trunk"
-	created.AllowedSipIPs = []string{"10.0.0.0/8"}
 	updated, err := client.VoiceOutTrunks().Update(ctx, created)
 	if err != nil {
 		panic(err)
