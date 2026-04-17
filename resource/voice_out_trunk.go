@@ -81,6 +81,12 @@ func (v *VoiceOutTrunk) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+// IsActive returns true when the trunk status is "active".
+func (v *VoiceOutTrunk) IsActive() bool { return v.Status == enums.VoiceOutTrunkStatusActive }
+
+// IsBlocked returns true when the trunk status is "blocked".
+func (v *VoiceOutTrunk) IsBlocked() bool { return v.Status == enums.VoiceOutTrunkStatusBlocked }
+
 // VoiceOutTrunkRegenerateCredential represents a credential regeneration for voice out trunks.
 type VoiceOutTrunkRegenerateCredential struct {
 	ID string `json:"-" jsonapi:"voice_out_trunk_regenerate_credentials"`
