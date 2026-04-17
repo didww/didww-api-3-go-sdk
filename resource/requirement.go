@@ -26,9 +26,9 @@ type Requirement struct {
 	AddressProofTypes         []*ProofType                `json:"-" rel:"address_proof_types"`
 }
 
-// RequirementValidation represents a requirement validation result.
-type RequirementValidation struct {
-	ID string `json:"-" jsonapi:"requirement_validations"`
+// AddressRequirementValidation represents an address requirement validation result.
+type AddressRequirementValidation struct {
+	ID string `json:"-" jsonapi:"address_requirement_validations"`
 	// Relationship IDs for create
 	AddressID     string `json:"-" rel:"address,addresses"`
 	IdentityID    string `json:"-" rel:"identity,identities"`

@@ -11,12 +11,12 @@ import (
 	"github.com/didww/didww-api-3-go-sdk/resource"
 )
 
-func TestRequirementValidationsCreate(t *testing.T) {
+func TestAddressRequirementValidationsCreate(t *testing.T) {
 	server, capturedBodyPtr := captureRequestBody(t, map[string]testRoute{
-		"POST /v3/requirement_validations": {status: http.StatusCreated, fixture: "requirement_validations/create.json"},
+		"POST /v3/address_requirement_validations": {status: http.StatusCreated, fixture: "address_requirement_validations/create.json"},
 	})
 
-	rv, err := server.client.RequirementValidations().Create(context.Background(), &resource.RequirementValidation{
+	rv, err := server.client.AddressRequirementValidations().Create(context.Background(), &resource.AddressRequirementValidation{
 		AddressID:     "d3414687-40f4-4346-a267-c2c65117d28c",
 		RequirementID: "aea92b24-a044-4864-9740-89d3e15b65c7",
 	})
@@ -24,15 +24,15 @@ func TestRequirementValidationsCreate(t *testing.T) {
 
 	assert.NotEmpty(t, rv.ID)
 
-	assertRequestJSON(t, *capturedBodyPtr, "requirement_validations/create_request.json")
+	assertRequestJSON(t, *capturedBodyPtr, "address_requirement_validations/create_request.json")
 }
 
-func TestRequirementValidationsCreateError(t *testing.T) {
+func TestAddressRequirementValidationsCreateError(t *testing.T) {
 	server, capturedBodyPtr := captureRequestBody(t, map[string]testRoute{
-		"POST /v3/requirement_validations": {status: http.StatusUnprocessableEntity, fixture: "requirement_validations/create_error_validation.json"},
+		"POST /v3/address_requirement_validations": {status: http.StatusUnprocessableEntity, fixture: "address_requirement_validations/create_error_validation.json"},
 	})
 
-	_, err := server.client.RequirementValidations().Create(context.Background(), &resource.RequirementValidation{
+	_, err := server.client.AddressRequirementValidations().Create(context.Background(), &resource.AddressRequirementValidation{
 		IdentityID:    "5e9df058-50d2-4e34-b0d4-d1746b86f41a",
 		AddressID:     "d3414687-40f4-4346-a267-c2c65117d28c",
 		RequirementID: "2efc3427-8ba6-4d50-875d-f2de4a068de8",
@@ -43,5 +43,5 @@ func TestRequirementValidationsCreateError(t *testing.T) {
 	require.True(t, ok, "expected *APIError")
 	require.Len(t, apiErr.Errors, 3)
 
-	assertRequestJSON(t, *capturedBodyPtr, "requirement_validations/create_request_failed.json")
+	assertRequestJSON(t, *capturedBodyPtr, "address_requirement_validations/create_request_failed.json")
 }

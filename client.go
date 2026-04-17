@@ -174,8 +174,8 @@ func (c *Client) ProofTypes() *Repository[resource.ProofType] {
 func (c *Client) Requirements() *Repository[resource.Requirement] {
 	return NewRepository[resource.Requirement](c)
 }
-func (c *Client) RequirementValidations() *Repository[resource.RequirementValidation] {
-	return NewRepository[resource.RequirementValidation](c)
+func (c *Client) AddressRequirementValidations() *Repository[resource.AddressRequirementValidation] {
+	return NewRepository[resource.AddressRequirementValidation](c)
 }
 func (c *Client) Exports() *Repository[resource.Export] { return NewRepository[resource.Export](c) }
 func (c *Client) CapacityPools() *Repository[resource.CapacityPool] {
