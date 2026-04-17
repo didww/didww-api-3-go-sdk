@@ -199,6 +199,9 @@ func (c *Client) PermanentSupportingDocuments() *Repository[resource.PermanentSu
 func (c *Client) NanpaPrefixes() *Repository[resource.NanpaPrefix] {
 	return NewRepository[resource.NanpaPrefix](c)
 }
+func (c *Client) DIDHistory() *Repository[resource.DIDHistory] {
+	return NewRepository[resource.DIDHistory](c)
+}
 func (c *Client) VoiceOutTrunkRegenerateCredentials() *Repository[resource.VoiceOutTrunkRegenerateCredential] {
 	return NewRepository[resource.VoiceOutTrunkRegenerateCredential](c)
 }
