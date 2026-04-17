@@ -199,6 +199,9 @@ func (c *Client) PermanentSupportingDocuments() *Repository[resource.PermanentSu
 func (c *Client) NanpaPrefixes() *Repository[resource.NanpaPrefix] {
 	return NewRepository[resource.NanpaPrefix](c)
 }
+func (c *Client) EmergencyRequirements() *Repository[resource.EmergencyRequirement] {
+	return NewRepository[resource.EmergencyRequirement](c)
+}
 func (c *Client) DIDHistory() *Repository[resource.DIDHistory] {
 	return NewRepository[resource.DIDHistory](c)
 }

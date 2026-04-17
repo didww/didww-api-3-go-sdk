@@ -1,0 +1,30 @@
+{
+  "data": [
+    {
+      "id": "c1d2e3f4-a5b6-7890-1234-567890abcdef",
+      "type": "emergency_requirements",
+      "attributes": {
+        "identity_type": "Any",
+        "address_area_level": "City",
+        "personal_area_level": "WorldWide",
+        "business_area_level": "Country",
+        "address_mandatory_fields": ["city", "postal_code"],
+        "personal_mandatory_fields": ["first_name", "last_name"],
+        "business_mandatory_fields": ["company_name"],
+        "estimate_setup_time": "7-14 days",
+        "requirement_restriction_message": null
+      },
+      "relationships": {
+        "country": {
+          "data": { "type": "countries", "id": "abc-country" }
+        },
+        "did_group_type": {
+          "data": { "type": "did_group_types", "id": "abc-dgt" }
+        }
+      }
+    }
+  ],
+  "meta": {
+    "api_version": "2026-04-16"
+  }
+}
