@@ -28,6 +28,7 @@ type VoiceOutTrunk struct {
 	CallbackURL          *string                                    `json:"callback_url,omitempty"`
 	ExternalReferenceID  *string                                    `json:"external_reference_id,omitempty"`
 	EmergencyEnableAll   bool                                       `json:"emergency_enable_all,omitempty"`
+	RtpTimeout           *int                                       `json:"rtp_timeout,omitempty"`
 	AuthenticationMethod authenticationmethod.AuthenticationMethod   `json:"-"`
 	// Relationship IDs for create/update
 	DefaultDIDID string   `json:"-" rel:"default_did,dids"`
