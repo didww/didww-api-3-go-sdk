@@ -114,6 +114,25 @@ func TestVoiceOutTrunksUpdate(t *testing.T) {
 	assert.True(t, trunk.RtpPing)
 }
 
+func TestVoiceOutTrunksUpdateAuthenticationMethod(t *testing.T) {
+	server, capturedBodyPtr := captureRequestBody(t, map[string]testRoute{
+		"PATCH /v3/voice_out_trunks/425ce763-a3a9-49b4-af5b-ada1a65c8864": {status: http.StatusOK, fixture: "voice_out_trunks/update.json"},
+	})
+
+	trunk, err := server.client.VoiceOutTrunks().Update(context.Background(), &resource.VoiceOutTrunk{
+		ID: "425ce763-a3a9-49b4-af5b-ada1a65c8864",
+		AuthenticationMethod: &authenticationmethod.CredentialsAndIp{
+			AllowedSipIPs: []string{"192.0.2.10/32"},
+			TechPrefix:    "99",
+		},
+	})
+	require.NoError(t, err)
+
+	assert.Equal(t, "425ce763-a3a9-49b4-af5b-ada1a65c8864", trunk.ID)
+
+	assertRequestJSON(t, *capturedBodyPtr, "voice_out_trunks/update_auth_method_request.json")
+}
+
 func TestVoiceOutTrunksDelete(t *testing.T) {
 	_, client := newTestServer(t, map[string]testRoute{
 		"DELETE /v3/voice_out_trunks/425ce763-a3a9-49b4-af5b-ada1a65c8864": {status: http.StatusNoContent},

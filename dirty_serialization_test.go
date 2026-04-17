@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/didww/didww-api-3-go-sdk/resource"
+	"github.com/didww/didww-api-3-go-sdk/resource/authenticationmethod"
 )
 
 const testDIDID = "9df99644-f1a5-4a3c-99a4-559d758eb96b"
@@ -493,6 +494,37 @@ func TestDirtyPatch_LoadedSetSharedCapacityGroupOnlyRelChange(t *testing.T) {
 	assertRelSet(t, doc.Rels, "shared_capacity_group", "shared_capacity_groups", "group-1")
 	// capacity_pool should be null
 	assertRelNull(t, doc.Rels, "capacity_pool")
+}
+
+// TestDirtyPatch_VoiceOutTrunk_ReassignAuthenticationMethod verifies that after loading
+// a VoiceOutTrunk from the API, reassigning authentication_method to a different
+// polymorphic variant sends only that attribute.
+func TestDirtyPatch_VoiceOutTrunk_ReassignAuthenticationMethod(t *testing.T) {
+	server, capturedBodyPtr := captureRequestBody(t, map[string]testRoute{
+		"GET /v3/voice_out_trunks/" + testVoiceOutTrunkID:   {status: http.StatusOK, fixture: "voice_out_trunks/show.json"},
+		"PATCH /v3/voice_out_trunks/" + testVoiceOutTrunkID: {status: http.StatusOK, fixture: "voice_out_trunks/update.json"},
+	})
+
+	trunk, err := server.client.VoiceOutTrunks().Find(context.Background(), testVoiceOutTrunkID)
+	require.NoError(t, err)
+
+	// Reassign to a different polymorphic variant
+	trunk.AuthenticationMethod = &authenticationmethod.CredentialsAndIp{
+		AllowedSipIPs: []string{"192.0.2.10/32"},
+		TechPrefix:    "99",
+	}
+
+	_, err = server.client.VoiceOutTrunks().Update(context.Background(), trunk)
+	require.NoError(t, err)
+
+	doc := parsePatchBody(t, *capturedBodyPtr)
+
+	// Only authentication_method should be in attributes
+	require.Len(t, doc.Attrs, 1)
+	assert.Contains(t, doc.Attrs, "authentication_method")
+
+	// No relationships should be present
+	assert.Empty(t, doc.Rels)
 }
 
 // --- test helpers ---
