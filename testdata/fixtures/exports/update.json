@@ -3,7 +3,7 @@
     "id": "da15f006-5da4-45ca-b0df-735baeadf423",
     "type": "exports",
     "attributes": {
-      "status": "Completed",
+      "status": "completed",
       "created_at": "2019-09-03T14:42:22.000Z",
       "url": "https://sandbox-api.didww.com/v3/exports/02bf6df4.csv.gz",
       "callback_url": null,

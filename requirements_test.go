@@ -30,7 +30,7 @@ func TestAddressRequirementsFindWithIncludes(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.Equal(t, "25d12afe-1ec6-4fe3-9621-b250dd1fb959", req.ID)
-	assert.Equal(t, "Any", req.IdentityType)
+	assert.Equal(t, "any", req.IdentityType)
 	assert.Equal(t, 1, req.PersonalProofQty)
 	assert.True(t, req.ServiceDescriptionRequired)
 

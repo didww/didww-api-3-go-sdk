@@ -73,7 +73,7 @@ func TestDIDGroupsFindWithIncludedRequirement(t *testing.T) {
 	// Verify included address_requirement
 	require.NotNil(t, group.AddressRequirement)
 	assert.Equal(t, "8da1e0b2-047c-4baf-9c57-57143f09b9ce", group.AddressRequirement.ID)
-	assert.Equal(t, "Any", group.AddressRequirement.IdentityType)
+	assert.Equal(t, "any", group.AddressRequirement.IdentityType)
 	assert.Equal(t, "WorldWide", group.AddressRequirement.PersonalAreaLevel)
 	assert.Equal(t, "Country", group.AddressRequirement.BusinessAreaLevel)
 	assert.Equal(t, "City", group.AddressRequirement.AddressAreaLevel)

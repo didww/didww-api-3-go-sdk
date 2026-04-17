@@ -4,7 +4,7 @@ package resource
 // an emergency calling service. Introduced in API 2026-04-16.
 type EmergencyRequirement struct {
 	ID string `json:"-" jsonapi:"emergency_requirements"`
-	// IdentityType is the required identity type ("Personal", "Business", or "Any").
+	// IdentityType is the required identity type ("personal", "business", or "any").
 	IdentityType string `json:"identity_type" api:"readonly"`
 	// AddressAreaLevel is the minimum geographic precision for the address ("country", "city", "street", etc.).
 	AddressAreaLevel string `json:"address_area_level" api:"readonly"`

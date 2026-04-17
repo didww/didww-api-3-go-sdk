@@ -29,7 +29,7 @@ func TestAddressVerificationsCreate(t *testing.T) {
 	})
 
 	cbURL := "http://example.com"
-	cbMethod := "GET"
+	cbMethod := "get"
 	av, err := server.client.AddressVerifications().Create(context.Background(), &resource.AddressVerification{
 		CallbackURL:    &cbURL,
 		CallbackMethod: &cbMethod,

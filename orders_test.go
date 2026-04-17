@@ -206,7 +206,7 @@ func TestOrdersCreateWithCallback(t *testing.T) {
 	})
 
 	cbURL := "https://example.com/callback"
-	cbMethod := "POST"
+	cbMethod := "post"
 	_, err := server.client.Orders().Create(context.Background(), &resource.Order{
 		AllowBackOrdering: true,
 		CallbackURL:       &cbURL,

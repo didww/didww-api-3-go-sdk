@@ -8,9 +8,9 @@ func TestIdentityType(t *testing.T) {
 		value    IdentityType
 		expected string
 	}{
-		{"Personal", IdentityTypePersonal, "Personal"},
-		{"Business", IdentityTypeBusiness, "Business"},
-		{"Any", IdentityTypeAny, "Any"},
+		{"Personal", IdentityTypePersonal, "personal"},
+		{"Business", IdentityTypeBusiness, "business"},
+		{"Any", IdentityTypeAny, "any"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

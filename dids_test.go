@@ -60,7 +60,7 @@ func TestDIDsFindWithAddressVerificationAndDIDGroup(t *testing.T) {
 	// Verify address verification
 	require.NotNil(t, did.AddressVerification)
 	assert.Equal(t, "75dc8d39-5e17-4470-a6f3-df42642c975f", did.AddressVerification.ID)
-	assert.Equal(t, enums.AddressVerificationStatus("Approved"), did.AddressVerification.Status)
+	assert.Equal(t, enums.AddressVerificationStatusApproved, did.AddressVerification.Status)
 
 	// Verify DID group
 	require.NotNil(t, did.DIDGroup)

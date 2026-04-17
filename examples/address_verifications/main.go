@@ -54,7 +54,7 @@ func main() {
 
 	// Filter: only rejected verifications
 	fmt.Println("\n=== Rejected verifications ===")
-	params = didww.NewQueryParams().Filter("status", "Rejected")
+	params = didww.NewQueryParams().Filter("status", "rejected")
 	rejected, err := client.AddressVerifications().List(ctx, params)
 	if err != nil {
 		_ = rejected // silence unused

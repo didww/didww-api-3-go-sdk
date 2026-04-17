@@ -10,7 +10,7 @@ type EmergencyCallingService struct {
 	Name string `json:"name" api:"readonly"`
 	// Reference is the server-assigned reference code (e.g. "ECS-0042").
 	Reference string `json:"reference" api:"readonly"`
-	// Status is the current lifecycle status ("active", "canceled", "new", etc.).
+	// Status is the current lifecycle status ("active", "canceled", "new", "changes_required", "in_process", "pending_update").
 	Status string `json:"status" api:"readonly"`
 	// ActivatedAt is when the service became active (nil if not yet activated).
 	ActivatedAt *time.Time `json:"activated_at" api:"readonly"`
@@ -34,10 +34,10 @@ type EmergencyCallingService struct {
 const (
 	ECSStatusActive          = "active"
 	ECSStatusCanceled        = "canceled"
-	ECSStatusChangesRequired = "changes required"
-	ECSStatusInProcess       = "in process"
+	ECSStatusChangesRequired = "changes_required"
+	ECSStatusInProcess       = "in_process"
 	ECSStatusNew             = "new"
-	ECSStatusPendingUpdate   = "pending update"
+	ECSStatusPendingUpdate   = "pending_update"
 )
 
 // IsActive returns true when the service status is "active".
@@ -46,16 +46,16 @@ func (e *EmergencyCallingService) IsActive() bool { return e.Status == ECSStatus
 // IsCanceled returns true when the service status is "canceled".
 func (e *EmergencyCallingService) IsCanceled() bool { return e.Status == ECSStatusCanceled }
 
-// IsChangesRequired returns true when the service status is "changes required".
+// IsChangesRequired returns true when the service status is "changes_required".
 func (e *EmergencyCallingService) IsChangesRequired() bool {
 	return e.Status == ECSStatusChangesRequired
 }
 
-// IsInProcess returns true when the service status is "in process".
+// IsInProcess returns true when the service status is "in_process".
 func (e *EmergencyCallingService) IsInProcess() bool { return e.Status == ECSStatusInProcess }
 
 // IsNew returns true when the service status is "new".
 func (e *EmergencyCallingService) IsNew() bool { return e.Status == ECSStatusNew }
 
-// IsPendingUpdate returns true when the service status is "pending update".
+// IsPendingUpdate returns true when the service status is "pending_update".
 func (e *EmergencyCallingService) IsPendingUpdate() bool { return e.Status == ECSStatusPendingUpdate }

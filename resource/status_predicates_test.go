@@ -52,6 +52,41 @@ func TestEmergencyVerificationStatusPredicates(t *testing.T) {
 	}
 }
 
+func TestEmergencyCallingServiceStatusPredicates(t *testing.T) {
+	tests := []struct {
+		status         string
+		active, canceled, changesRequired, inProcess, newStatus, pendingUpdate bool
+	}{
+		{ECSStatusActive, true, false, false, false, false, false},
+		{ECSStatusCanceled, false, true, false, false, false, false},
+		{ECSStatusChangesRequired, false, false, true, false, false, false},
+		{ECSStatusInProcess, false, false, false, true, false, false},
+		{ECSStatusNew, false, false, false, false, true, false},
+		{ECSStatusPendingUpdate, false, false, false, false, false, true},
+	}
+	for _, tt := range tests {
+		ecs := &EmergencyCallingService{Status: tt.status}
+		if got := ecs.IsActive(); got != tt.active {
+			t.Errorf("IsActive() for %q = %v, want %v", tt.status, got, tt.active)
+		}
+		if got := ecs.IsCanceled(); got != tt.canceled {
+			t.Errorf("IsCanceled() for %q = %v, want %v", tt.status, got, tt.canceled)
+		}
+		if got := ecs.IsChangesRequired(); got != tt.changesRequired {
+			t.Errorf("IsChangesRequired() for %q = %v, want %v", tt.status, got, tt.changesRequired)
+		}
+		if got := ecs.IsInProcess(); got != tt.inProcess {
+			t.Errorf("IsInProcess() for %q = %v, want %v", tt.status, got, tt.inProcess)
+		}
+		if got := ecs.IsNew(); got != tt.newStatus {
+			t.Errorf("IsNew() for %q = %v, want %v", tt.status, got, tt.newStatus)
+		}
+		if got := ecs.IsPendingUpdate(); got != tt.pendingUpdate {
+			t.Errorf("IsPendingUpdate() for %q = %v, want %v", tt.status, got, tt.pendingUpdate)
+		}
+	}
+}
+
 func TestOrderStatusPredicates(t *testing.T) {
 	tests := []struct {
 		status                                           enums.OrderStatus

@@ -25,17 +25,17 @@ type AddressVerification struct {
 	AddressRel *Address `json:"-" rel:"address"`
 }
 
-// IsPending returns true when the verification status is "Pending".
+// IsPending returns true when the verification status is "pending".
 func (a *AddressVerification) IsPending() bool {
 	return a.Status == enums.AddressVerificationStatusPending
 }
 
-// IsApproved returns true when the verification status is "Approved".
+// IsApproved returns true when the verification status is "approved".
 func (a *AddressVerification) IsApproved() bool {
 	return a.Status == enums.AddressVerificationStatusApproved
 }
 
-// IsRejected returns true when the verification status is "Rejected".
+// IsRejected returns true when the verification status is "rejected".
 func (a *AddressVerification) IsRejected() bool {
 	return a.Status == enums.AddressVerificationStatusRejected
 }

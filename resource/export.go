@@ -26,11 +26,11 @@ type Export struct {
 	ExternalReferenceID *string                `json:"external_reference_id,omitempty"`
 }
 
-// IsPending returns true when the export status is "Pending".
+// IsPending returns true when the export status is "pending".
 func (e *Export) IsPending() bool { return e.Status == enums.ExportStatusPending }
 
-// IsProcessing returns true when the export status is "Processing".
+// IsProcessing returns true when the export status is "processing".
 func (e *Export) IsProcessing() bool { return e.Status == enums.ExportStatusProcessing }
 
-// IsCompleted returns true when the export status is "Completed".
+// IsCompleted returns true when the export status is "completed".
 func (e *Export) IsCompleted() bool { return e.Status == enums.ExportStatusCompleted }

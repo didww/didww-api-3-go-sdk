@@ -6,7 +6,7 @@
       "service_description": null,
       "callback_url": null,
       "callback_method": null,
-      "status": "Approved",
+      "status": "approved",
       "reject_reasons": null,
       "reference": "SHB-485120",
       "reject_comment": null,
