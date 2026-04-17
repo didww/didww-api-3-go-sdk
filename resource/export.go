@@ -25,3 +25,12 @@ type Export struct {
 	Filters             map[string]interface{} `json:"filters,omitempty"`
 	ExternalReferenceID *string                `json:"external_reference_id,omitempty"`
 }
+
+// IsPending returns true when the export status is "Pending".
+func (e *Export) IsPending() bool { return e.Status == enums.ExportStatusPending }
+
+// IsProcessing returns true when the export status is "Processing".
+func (e *Export) IsProcessing() bool { return e.Status == enums.ExportStatusProcessing }
+
+// IsCompleted returns true when the export status is "Completed".
+func (e *Export) IsCompleted() bool { return e.Status == enums.ExportStatusCompleted }
