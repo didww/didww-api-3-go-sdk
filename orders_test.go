@@ -167,6 +167,39 @@ func TestOrdersCreateNanpa(t *testing.T) {
 	assertRequestJSON(t, *capturedBodyPtr, "orders/create_request_nanpa.json")
 }
 
+func TestOrdersCreateEmergency(t *testing.T) {
+	server, capturedBodyPtr := captureRequestBody(t, map[string]testRoute{
+		"POST /v3/orders": {status: http.StatusCreated, fixture: "orders/create_emergency.json"},
+	})
+
+	order, err := server.client.Orders().Create(context.Background(), &resource.Order{
+		Items: []orderitem.OrderItem{
+			&orderitem.EmergencyOrderItem{
+				EmergencyCallingServiceID: "b6d9d793-578d-42d3-bc33-73dd8155e615",
+				Qty:                       1,
+			},
+		},
+	})
+	require.NoError(t, err)
+
+	assert.Equal(t, "a1b2c3d4-e5f6-7890-abcd-ef1234567890", order.ID)
+	assert.Equal(t, "30.0", order.Amount)
+	assert.Equal(t, enums.OrderStatusPending, order.Status)
+	assert.Equal(t, "Emergency", order.Description)
+	assert.Equal(t, "EMG-100001", order.Reference)
+	require.Len(t, order.Items, 1)
+
+	emItem, ok := order.Items[0].(*orderitem.EmergencyOrderItem)
+	require.True(t, ok, "expected EmergencyOrderItem")
+	assert.Equal(t, 1, emItem.Qty)
+	assert.Equal(t, "5.0", emItem.Nrc)
+	assert.Equal(t, "25.0", emItem.Mrc)
+	assert.Equal(t, false, emItem.ProratedMrc)
+	assert.Equal(t, "b6d9d793-578d-42d3-bc33-73dd8155e615", emItem.EmergencyCallingServiceID)
+
+	assertRequestJSON(t, *capturedBodyPtr, "orders/create_request_emergency.json")
+}
+
 func TestOrdersCreateWithCallback(t *testing.T) {
 	server, capturedBodyPtr := captureRequestBody(t, map[string]testRoute{
 		"POST /v3/orders": {status: http.StatusCreated, fixture: "orders_with_callback/create.json"},

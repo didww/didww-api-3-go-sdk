@@ -7,9 +7,10 @@ import (
 )
 
 const (
-	typeDidOrderItems      = "did_order_items"
-	typeCapacityOrderItems = "capacity_order_items"
-	typeGenericOrderItems  = "generic_order_items"
+	typeDidOrderItems       = "did_order_items"
+	typeCapacityOrderItems  = "capacity_order_items"
+	typeGenericOrderItems   = "generic_order_items"
+	typeEmergencyOrderItems = "emergency_order_items"
 )
 
 // OrderItem is the interface for all order item types.
@@ -41,6 +42,12 @@ func Parse(data []byte) (OrderItem, error) {
 		return &item, nil
 	case typeGenericOrderItems:
 		var item GenericOrderItem
+		if err := json.Unmarshal(env.Attributes, &item); err != nil {
+			return nil, err
+		}
+		return &item, nil
+	case typeEmergencyOrderItems:
+		var item EmergencyOrderItem
 		if err := json.Unmarshal(env.Attributes, &item); err != nil {
 			return nil, err
 		}
