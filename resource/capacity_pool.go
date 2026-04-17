@@ -27,6 +27,7 @@ type SharedCapacityGroup struct {
 	SharedChannelsCount  int       `json:"shared_channels_count"`
 	CreatedAt            time.Time `json:"created_at" api:"readonly"`
 	MeteredChannelsCount int       `json:"metered_channels_count"`
+	ExternalReferenceID  *string   `json:"external_reference_id,omitempty"`
 	// Relationship IDs for create/update
 	CapacityPoolID string `json:"-" rel:"capacity_pool,capacity_pools"`
 	// Resolved relationships
