@@ -19,7 +19,8 @@ type Order struct {
 	Items             []orderitem.OrderItem `json:"items"`
 	AllowBackOrdering bool                  `json:"allow_back_ordering,omitempty"`
 	CallbackURL       *string               `json:"callback_url,omitempty"`
-	CallbackMethod    *string               `json:"callback_method,omitempty"`
+	CallbackMethod      *string               `json:"callback_method,omitempty"`
+	ExternalReferenceID *string               `json:"external_reference_id,omitempty"`
 }
 
 // UnmarshalJSON implements custom unmarshaling for Order.
