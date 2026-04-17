@@ -23,3 +23,25 @@ type EmergencyVerification struct {
 	EmergencyCallingService *EmergencyCallingService  `json:"-" rel:"emergency_calling_service"`
 	DIDs                    []*DID                   `json:"-" rel:"dids"`
 }
+
+// Emergency verification status constants (lowercase, per API).
+const (
+	EmergencyVerificationStatusPending  = "pending"
+	EmergencyVerificationStatusApproved = "approved"
+	EmergencyVerificationStatusRejected = "rejected"
+)
+
+// IsPending returns true when the verification status is "pending".
+func (e *EmergencyVerification) IsPending() bool {
+	return e.Status == EmergencyVerificationStatusPending
+}
+
+// IsApproved returns true when the verification status is "approved".
+func (e *EmergencyVerification) IsApproved() bool {
+	return e.Status == EmergencyVerificationStatusApproved
+}
+
+// IsRejected returns true when the verification status is "rejected".
+func (e *EmergencyVerification) IsRejected() bool {
+	return e.Status == EmergencyVerificationStatusRejected
+}

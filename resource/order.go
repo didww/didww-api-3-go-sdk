@@ -23,6 +23,15 @@ type Order struct {
 	ExternalReferenceID *string               `json:"external_reference_id,omitempty"`
 }
 
+// IsPending returns true when the order status is "Pending".
+func (o *Order) IsPending() bool { return o.Status == enums.OrderStatusPending }
+
+// IsCompleted returns true when the order status is "Completed".
+func (o *Order) IsCompleted() bool { return o.Status == enums.OrderStatusCompleted }
+
+// IsCancelled returns true when the order status is "Canceled".
+func (o *Order) IsCancelled() bool { return o.Status == enums.OrderStatusCanceled }
+
 // UnmarshalJSON implements custom unmarshaling for Order.
 func (o *Order) UnmarshalJSON(data []byte) error {
 	type Alias Order

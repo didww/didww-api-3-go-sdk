@@ -24,3 +24,18 @@ type AddressVerification struct {
 	// Resolved relationships
 	AddressRel *Address `json:"-" rel:"address"`
 }
+
+// IsPending returns true when the verification status is "Pending".
+func (a *AddressVerification) IsPending() bool {
+	return a.Status == enums.AddressVerificationStatusPending
+}
+
+// IsApproved returns true when the verification status is "Approved".
+func (a *AddressVerification) IsApproved() bool {
+	return a.Status == enums.AddressVerificationStatusApproved
+}
+
+// IsRejected returns true when the verification status is "Rejected".
+func (a *AddressVerification) IsRejected() bool {
+	return a.Status == enums.AddressVerificationStatusRejected
+}
