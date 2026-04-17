@@ -28,6 +28,7 @@ type DID struct {
 	SharedCapacityGroupID     string `json:"-" rel:"shared_capacity_group,shared_capacity_groups"`
 	EmergencyCallingServiceID string `json:"-" rel:"emergency_calling_service,emergency_calling_services"`
 	EmergencyVerificationID   string `json:"-" rel:"emergency_verification,emergency_verifications"`
+	IdentityID                string `json:"-" rel:"identity,identities"`
 	// Resolved relationships
 	Order               *Order               `json:"-" rel:"order"`
 	AddressVerification *AddressVerification `json:"-" rel:"address_verification"`
@@ -38,6 +39,7 @@ type DID struct {
 	SharedCapacityGroup     *SharedCapacityGroup     `json:"-" rel:"shared_capacity_group"`
 	EmergencyCallingService *EmergencyCallingService `json:"-" rel:"emergency_calling_service"`
 	EmergencyVerification   *EmergencyVerification   `json:"-" rel:"emergency_verification"`
+	Identity                *Identity                `json:"-" rel:"identity"`
 }
 
 // MarshalRelationships implements RelationshipMarshaler for DID.
