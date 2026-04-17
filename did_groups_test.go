@@ -60,7 +60,7 @@ func TestDIDGroupsFindWithIncludedRequirement(t *testing.T) {
 		"GET /v3/did_groups/2187c36d-28fb-436f-8861-5a0f5b5a3ee1": {status: http.StatusOK, fixture: "did_groups/show_with_requirement.json"},
 	})
 
-	params := NewQueryParams().Include("requirement")
+	params := NewQueryParams().Include("address_requirement")
 	group, err := client.DIDGroups().Find(context.Background(), "2187c36d-28fb-436f-8861-5a0f5b5a3ee1", params)
 	require.NoError(t, err)
 
@@ -70,15 +70,15 @@ func TestDIDGroupsFindWithIncludedRequirement(t *testing.T) {
 	assert.False(t, group.IsMetered)
 	assert.True(t, group.AllowAdditionalChannels)
 
-	// Verify included requirement
-	require.NotNil(t, group.Requirement)
-	assert.Equal(t, "8da1e0b2-047c-4baf-9c57-57143f09b9ce", group.Requirement.ID)
-	assert.Equal(t, "Any", group.Requirement.IdentityType)
-	assert.Equal(t, "WorldWide", group.Requirement.PersonalAreaLevel)
-	assert.Equal(t, "Country", group.Requirement.BusinessAreaLevel)
-	assert.Equal(t, "City", group.Requirement.AddressAreaLevel)
-	assert.Equal(t, 1, group.Requirement.PersonalProofQty)
-	assert.Equal(t, 1, group.Requirement.BusinessProofQty)
-	assert.Equal(t, 1, group.Requirement.AddressProofQty)
-	assert.False(t, group.Requirement.ServiceDescriptionRequired)
+	// Verify included address_requirement
+	require.NotNil(t, group.AddressRequirement)
+	assert.Equal(t, "8da1e0b2-047c-4baf-9c57-57143f09b9ce", group.AddressRequirement.ID)
+	assert.Equal(t, "Any", group.AddressRequirement.IdentityType)
+	assert.Equal(t, "WorldWide", group.AddressRequirement.PersonalAreaLevel)
+	assert.Equal(t, "Country", group.AddressRequirement.BusinessAreaLevel)
+	assert.Equal(t, "City", group.AddressRequirement.AddressAreaLevel)
+	assert.Equal(t, 1, group.AddressRequirement.PersonalProofQty)
+	assert.Equal(t, 1, group.AddressRequirement.BusinessProofQty)
+	assert.Equal(t, 1, group.AddressRequirement.AddressProofQty)
+	assert.False(t, group.AddressRequirement.ServiceDescriptionRequired)
 }
