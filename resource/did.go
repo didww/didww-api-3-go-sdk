@@ -20,6 +20,7 @@ type DID struct {
 	ExpiresAt              *time.Time `json:"expires_at" api:"readonly"`
 	ChannelsIncludedCount  int        `json:"channels_included_count" api:"readonly"`
 	DedicatedChannelsCount int        `json:"dedicated_channels_count"`
+	EmergencyEnabled       bool       `json:"emergency_enabled" api:"readonly"`
 	// Relationship IDs for create/update
 	VoiceInTrunkID        string `json:"-" rel:"voice_in_trunk,voice_in_trunks"`
 	VoiceInTrunkGroupID   string `json:"-" rel:"voice_in_trunk_group,voice_in_trunk_groups"`
