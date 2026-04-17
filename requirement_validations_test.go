@@ -18,7 +18,7 @@ func TestAddressRequirementValidationsCreate(t *testing.T) {
 
 	rv, err := server.client.AddressRequirementValidations().Create(context.Background(), &resource.AddressRequirementValidation{
 		AddressID:     "d3414687-40f4-4346-a267-c2c65117d28c",
-		RequirementID: "aea92b24-a044-4864-9740-89d3e15b65c7",
+		AddressRequirementID: "aea92b24-a044-4864-9740-89d3e15b65c7",
 	})
 	require.NoError(t, err)
 
@@ -35,7 +35,7 @@ func TestAddressRequirementValidationsCreateError(t *testing.T) {
 	_, err := server.client.AddressRequirementValidations().Create(context.Background(), &resource.AddressRequirementValidation{
 		IdentityID:    "5e9df058-50d2-4e34-b0d4-d1746b86f41a",
 		AddressID:     "d3414687-40f4-4346-a267-c2c65117d28c",
-		RequirementID: "2efc3427-8ba6-4d50-875d-f2de4a068de8",
+		AddressRequirementID: "2efc3427-8ba6-4d50-875d-f2de4a068de8",
 	})
 	require.Error(t, err)
 
