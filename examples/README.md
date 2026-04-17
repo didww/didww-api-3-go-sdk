@@ -35,10 +35,18 @@ DIDWW_API_KEY=your_api_key go run ./examples/balance/
 | [`orders_available_dids`](orders_available_dids/) | Orders an available DID using included DID group SKU. |
 | [`orders_reservation_dids`](orders_reservation_dids/) | Reserves a DID and then places an order from that reservation. |
 | [`voice_in_trunk_groups`](voice_in_trunk_groups/) | CRUD for trunk groups with trunk relationships. |
-| [`voice_out_trunks`](voice_out_trunks/) | CRUD for voice out trunks (requires account config). |
+| [`voice_out_trunks`](voice_out_trunks/) | CRUD for voice out trunks using 2026-04-16 polymorphic authentication_method. |
 | [`did_reservations`](did_reservations/) | Creates, lists, finds and deletes DID reservations. |
-| [`exports`](exports/) | Creates and lists CDR exports. |
+| [`exports`](exports/) | Creates and lists CDR exports with 2026-04-16 external_reference_id. |
 | [`capacity_pools`](capacity_pools/) | Lists capacity pools with included shared capacity groups. |
+| [`did_history`](did_history/) | Lists DID ownership history (2026-04-16). |
+| [`identities`](identities/) | Lists identities with country and birth_country (2026-04-16). |
+| [`emergency_requirements`](emergency_requirements/) | Lists emergency service requirements (2026-04-16). |
+| [`emergency_calling_services`](emergency_calling_services/) | Lists emergency calling services (2026-04-16). |
+| [`emergency_verifications`](emergency_verifications/) | Lists emergency verifications (2026-04-16). |
+| [`emergency_requirement_validations`](emergency_requirement_validations/) | Validates emergency requirement data (2026-04-16). |
+| [`address_verifications`](address_verifications/) | Lists address verifications with reject_comment / external_reference_id (2026-04-16). |
+| [`orders_emergency`](orders_emergency/) | Creates an emergency order with EmergencyOrderItem (2026-04-16). |
 
 ## Troubleshooting
 
