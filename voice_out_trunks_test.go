@@ -133,6 +133,57 @@ func TestVoiceOutTrunksUpdateAuthenticationMethod(t *testing.T) {
 	assertRequestJSON(t, *capturedBodyPtr, "voice_out_trunks/update_auth_method_request.json")
 }
 
+func TestVoiceOutTrunksUpdateEmergencyEnableAll(t *testing.T) {
+	server, capturedBodyPtr := captureRequestBody(t, map[string]testRoute{
+		"PATCH /v3/voice_out_trunks/01234567-89ab-cdef-0123-456789abcdef": {status: http.StatusOK, fixture: "voice_out_trunks/update_emergency_dids.json"},
+	})
+
+	trunk, err := server.client.VoiceOutTrunks().Update(context.Background(), &resource.VoiceOutTrunk{
+		ID:               "01234567-89ab-cdef-0123-456789abcdef",
+		EmergencyEnableAll: true,
+	})
+	require.NoError(t, err)
+
+	assertRequestJSON(t, *capturedBodyPtr, "voice_out_trunks/update_emergency_enable_all_request.json")
+
+	assert.Equal(t, "01234567-89ab-cdef-0123-456789abcdef", trunk.ID)
+}
+
+func TestVoiceOutTrunksUpdateEmergencyDIDs(t *testing.T) {
+	server, capturedBodyPtr := captureRequestBody(t, map[string]testRoute{
+		"PATCH /v3/voice_out_trunks/01234567-89ab-cdef-0123-456789abcdef": {status: http.StatusOK, fixture: "voice_out_trunks/update_emergency_dids.json"},
+	})
+
+	trunk, err := server.client.VoiceOutTrunks().Update(context.Background(), &resource.VoiceOutTrunk{
+		ID: "01234567-89ab-cdef-0123-456789abcdef",
+		EmergencyDIDIDs: []string{
+			"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+			"bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
+		},
+	})
+	require.NoError(t, err)
+
+	assertRequestJSON(t, *capturedBodyPtr, "voice_out_trunks/update_emergency_dids_request.json")
+
+	assert.Equal(t, "01234567-89ab-cdef-0123-456789abcdef", trunk.ID)
+}
+
+func TestVoiceOutTrunksUpdateClearEmergencyDIDs(t *testing.T) {
+	server, capturedBodyPtr := captureRequestBody(t, map[string]testRoute{
+		"PATCH /v3/voice_out_trunks/01234567-89ab-cdef-0123-456789abcdef": {status: http.StatusOK, fixture: "voice_out_trunks/update_emergency_dids.json"},
+	})
+
+	trunk, err := server.client.VoiceOutTrunks().Update(context.Background(), &resource.VoiceOutTrunk{
+		ID:               "01234567-89ab-cdef-0123-456789abcdef",
+		ClearEmergencyDIDs: true,
+	})
+	require.NoError(t, err)
+
+	assertRequestJSON(t, *capturedBodyPtr, "voice_out_trunks/update_emergency_dids_clear_request.json")
+
+	assert.Equal(t, "01234567-89ab-cdef-0123-456789abcdef", trunk.ID)
+}
+
 func TestVoiceOutTrunksDelete(t *testing.T) {
 	_, client := newTestServer(t, map[string]testRoute{
 		"DELETE /v3/voice_out_trunks/425ce763-a3a9-49b4-af5b-ada1a65c8864": {status: http.StatusNoContent},

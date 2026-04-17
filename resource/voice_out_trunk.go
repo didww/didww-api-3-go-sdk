@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"time"
 
+	"github.com/didww/didww-api-3-go-sdk/jsonapi"
 	"github.com/didww/didww-api-3-go-sdk/resource/authenticationmethod"
 	"github.com/didww/didww-api-3-go-sdk/resource/enums"
 )
@@ -34,6 +35,9 @@ type VoiceOutTrunk struct {
 	DefaultDIDID   string   `json:"-" rel:"default_did,dids"`
 	DIDIDs         []string `json:"-" rel:"dids,dids"`
 	EmergencyDIDIDs []string `json:"-" rel:"emergency_dids,dids"`
+	// ClearEmergencyDIDs, when true, sends {"data": []} for the
+	// emergency_dids relationship (remove all emergency DIDs from this trunk).
+	ClearEmergencyDIDs bool `json:"-"`
 	// Resolved relationships
 	DefaultDID    *DID   `json:"-" rel:"default_did"`
 	DIDs          []*DID `json:"-" rel:"dids"`
@@ -79,6 +83,16 @@ func (v *VoiceOutTrunk) UnmarshalJSON(data []byte) error {
 		v.AuthenticationMethod = am
 	}
 	return nil
+}
+
+// MarshalRelationships implements RelationshipMarshaler for VoiceOutTrunk.
+// When ClearEmergencyDIDs is true, emits {"data": []} for emergency_dids.
+func (v *VoiceOutTrunk) MarshalRelationships() (map[string]any, error) {
+	rels := make(map[string]any)
+	if v.ClearEmergencyDIDs {
+		rels["emergency_dids"] = jsonapi.ToManyRelationship([]jsonapi.RelationshipRef{})
+	}
+	return rels, nil
 }
 
 // IsActive returns true when the trunk status is "active".
