@@ -26,6 +26,7 @@ type VoiceOutTrunk struct {
 	ForceSymmetricRtp    bool                                       `json:"force_symmetric_rtp,omitempty"`
 	RtpPing              bool                                       `json:"rtp_ping,omitempty"`
 	CallbackURL          *string                                    `json:"callback_url,omitempty"`
+	ExternalReferenceID  *string                                    `json:"external_reference_id,omitempty"`
 	AuthenticationMethod authenticationmethod.AuthenticationMethod   `json:"-"`
 	// Relationship IDs for create/update
 	DefaultDIDID string   `json:"-" rel:"default_did,dids"`
