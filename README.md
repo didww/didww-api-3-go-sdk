@@ -32,6 +32,11 @@ Version **2.x** (branch `release-2`) targets API version `2022-05-10`.
 go get github.com/didww/didww-api-3-go-sdk
 ```
 
+**Note on module path:** This module intentionally does not use a `/v3` suffix,
+following the same convention established in v2. The major version is bumped in
+`go.mod` and tagged releases, but the import path stays
+`github.com/didww/didww-api-3-go-sdk` for backward compatibility.
+
 ## Usage
 
 ```go
