@@ -41,8 +41,8 @@ func TestExportsCreate(t *testing.T) {
 		ExportType: enums.ExportTypeCdrIn,
 		Filters: map[string]interface{}{
 			"did_number": "1234556789",
-			"year":       "2019",
-			"month":      "01",
+			"from":       "2026-04-01 00:00:00",
+			"to":         "2026-04-15 23:59:59",
 		},
 	})
 	require.NoError(t, err)
@@ -62,8 +62,8 @@ func TestExportsCreateCdrOut(t *testing.T) {
 	export, err := client.Exports().Create(context.Background(), &resource.Export{
 		ExportType: enums.ExportTypeCdrOut,
 		Filters: map[string]interface{}{
-			"year":  "2019",
-			"month": "01",
+			"from": "2026-04-01 00:00:00",
+			"to":   "2026-04-30 23:59:59",
 		},
 	})
 	require.NoError(t, err)

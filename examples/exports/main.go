@@ -19,7 +19,7 @@ func main() {
 	// Create an export
 	export := &resource.Export{
 		ExportType: enums.ExportTypeCdrIn,
-		Filters:    map[string]interface{}{"year": 2025, "month": 1},
+		Filters:    map[string]interface{}{"from": "2026-04-01 00:00:00", "to": "2026-04-15 23:59:59"},
 	}
 	created, err := client.Exports().Create(ctx, export)
 	if err != nil {
