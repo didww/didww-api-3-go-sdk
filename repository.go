@@ -120,7 +120,7 @@ func (r *SingletonRepository[T]) Find(ctx context.Context) (*T, error) {
 
 const (
 	jsonapiMediaType = "application/vnd.api+json"
-	apiVersion       = "2022-05-10"
+	apiVersion       = "2026-04-16"
 	sdkVersion       = "3.0.0-dev"
 )
 
