@@ -1,0 +1,19 @@
+{
+  "data": {
+    "id": "ev-new-id",
+    "type": "emergency_verifications",
+    "attributes": {
+      "reference": "EV-NEW",
+      "status": "pending",
+      "reject_reasons": null,
+      "reject_comment": null,
+      "callback_url": null,
+      "callback_method": null,
+      "external_reference_id": null,
+      "created_at": "2026-04-16T10:00:00.000Z"
+    }
+  },
+  "meta": {
+    "api_version": "2026-04-16"
+  }
+}

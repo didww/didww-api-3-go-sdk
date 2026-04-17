@@ -1,0 +1,20 @@
+{
+  "data": {
+    "type": "emergency_verifications",
+    "attributes": {},
+    "relationships": {
+      "address": {
+        "data": {
+          "type": "addresses",
+          "id": "d3414687-40f4-4346-a267-c2c65117d28c"
+        }
+      },
+      "emergency_calling_service": {
+        "data": {
+          "type": "emergency_calling_services",
+          "id": "ecs-001-id"
+        }
+      }
+    }
+  }
+}
