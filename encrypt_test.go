@@ -131,7 +131,7 @@ func TestUploadEncryptedFile(t *testing.T) {
 		capturedBody, _ = io.ReadAll(r.Body)
 	})
 
-	ids, err := server.client.UploadEncryptedFile(
+	id, err := server.client.UploadEncryptedFile(
 		context.Background(),
 		[]byte("encrypted-content"),
 		"sample.pdf.enc",
@@ -140,9 +140,7 @@ func TestUploadEncryptedFile(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	require.Len(t, ids, 2)
-	assert.Equal(t, "6eed102c-66a9-4a9b-a95f-4312d70ec12a", ids[0])
-	assert.Equal(t, "371eafbd-ac6a-485c-aadf-9e3c5da37eb4", ids[1])
+	assert.Equal(t, "6eed102c-66a9-4a9b-a95f-4312d70ec12a", id)
 
 	// Verify multipart content type
 	assert.Contains(t, capturedContentType, "multipart/form-data")

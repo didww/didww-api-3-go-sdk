@@ -62,7 +62,7 @@ func main() {
 	fmt.Printf("Encrypted size: %d bytes\n", len(encryptedData))
 
 	// Upload encrypted file
-	ids, err := client.UploadEncryptedFile(
+	id, err := client.UploadEncryptedFile(
 		ctx,
 		encryptedData,
 		originalName+".enc",
@@ -73,5 +73,5 @@ func main() {
 		fmt.Fprintf(os.Stderr, "failed to upload: %v\n", err)
 		os.Exit(1)
 	}
-	fmt.Printf("Uploaded encrypted file IDs: %v\n", ids)
+	fmt.Printf("Uploaded encrypted file ID: %s\n", id)
 }
