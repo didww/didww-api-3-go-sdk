@@ -15,5 +15,6 @@ type Export struct {
 	CallbackURL    *string                `json:"callback_url,omitempty"`
 	CallbackMethod *string                `json:"callback_method,omitempty"`
 	ExportType     enums.ExportType       `json:"export_type"`
-	Filters        map[string]interface{} `json:"filters,omitempty"`
+	Filters             map[string]interface{} `json:"filters,omitempty"`
+	ExternalReferenceID *string                `json:"external_reference_id,omitempty"`
 }
