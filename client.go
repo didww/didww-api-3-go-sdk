@@ -199,6 +199,12 @@ func (c *Client) PermanentSupportingDocuments() *Repository[resource.PermanentSu
 func (c *Client) NanpaPrefixes() *Repository[resource.NanpaPrefix] {
 	return NewRepository[resource.NanpaPrefix](c)
 }
+func (c *Client) EmergencyCallingServices() *Repository[resource.EmergencyCallingService] {
+	return NewRepository[resource.EmergencyCallingService](c)
+}
+func (c *Client) EmergencyVerifications() *Repository[resource.EmergencyVerification] {
+	return NewRepository[resource.EmergencyVerification](c)
+}
 func (c *Client) EmergencyRequirementValidations() *Repository[resource.EmergencyRequirementValidation] {
 	return NewRepository[resource.EmergencyRequirementValidation](c)
 }

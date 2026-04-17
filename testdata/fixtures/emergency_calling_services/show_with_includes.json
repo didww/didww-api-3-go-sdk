@@ -1,0 +1,77 @@
+{
+  "data": {
+    "id": "ecs-001-id",
+    "type": "emergency_calling_services",
+    "attributes": {
+      "name": "E911 Service US",
+      "reference": "ECS-12345",
+      "status": "active",
+      "activated_at": "2026-04-01T10:00:00.000Z",
+      "canceled_at": null,
+      "created_at": "2026-03-15T08:00:00.000Z",
+      "renew_date": "2026-05-01"
+    },
+    "relationships": {
+      "country": {
+        "data": { "type": "countries", "id": "us-country" }
+      },
+      "did_group_type": {
+        "data": { "type": "did_group_types", "id": "local-dgt" }
+      },
+      "emergency_requirement": {
+        "data": { "type": "emergency_requirements", "id": "ereq-001-id" }
+      },
+      "emergency_verification": {
+        "data": { "type": "emergency_verifications", "id": "ever-001-id" }
+      }
+    }
+  },
+  "included": [
+    {
+      "id": "ereq-001-id",
+      "type": "emergency_requirements",
+      "attributes": {
+        "identity_type": "personal",
+        "address_area_level": "city",
+        "personal_area_level": "city",
+        "business_area_level": "country",
+        "address_mandatory_fields": ["city", "postal_code"],
+        "personal_mandatory_fields": ["first_name", "last_name"],
+        "business_mandatory_fields": ["company_name"]
+      },
+      "relationships": {
+        "country": {
+          "data": { "type": "countries", "id": "us-country" }
+        },
+        "did_group_type": {
+          "data": { "type": "did_group_types", "id": "local-dgt" }
+        }
+      }
+    },
+    {
+      "id": "ever-001-id",
+      "type": "emergency_verifications",
+      "attributes": {
+        "reference": "EVR-54321",
+        "status": "approved",
+        "reject_reasons": null,
+        "reject_comment": "",
+        "callback_url": null,
+        "callback_method": null,
+        "external_reference_id": null,
+        "created_at": "2026-03-20T14:00:00.000Z"
+      },
+      "relationships": {
+        "address": {
+          "data": { "type": "addresses", "id": "addr-001-id" }
+        },
+        "emergency_calling_service": {
+          "data": { "type": "emergency_calling_services", "id": "ecs-001-id" }
+        }
+      }
+    }
+  ],
+  "meta": {
+    "api_version": "2026-04-16"
+  }
+}
