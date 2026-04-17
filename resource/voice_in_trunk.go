@@ -19,8 +19,9 @@ type VoiceInTrunk struct {
 	CliPrefix      *string                               `json:"cli_prefix,omitempty"`
 	Description    *string                               `json:"description,omitempty"`
 	RingingTimeout *int                                  `json:"ringing_timeout,omitempty"`
-	Configuration  trunkconfiguration.TrunkConfiguration `json:"-"`
-	CreatedAt      time.Time                             `json:"created_at" api:"readonly"`
+	Configuration       trunkconfiguration.TrunkConfiguration `json:"-"`
+	CreatedAt           time.Time                             `json:"created_at" api:"readonly"`
+	ExternalReferenceID *string                               `json:"external_reference_id,omitempty"`
 	// Resolved relationships
 	Pop               *Pop               `json:"-" rel:"pop"`
 	VoiceInTrunkGroup *VoiceInTrunkGroup `json:"-" rel:"voice_in_trunk_group"`
