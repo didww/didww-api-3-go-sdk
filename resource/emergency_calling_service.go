@@ -17,6 +17,7 @@ type EmergencyCallingService struct {
 	Country               *Country               `json:"-" rel:"country"`
 	DIDGroupType          *DIDGroupType           `json:"-" rel:"did_group_type"`
 	Order                 *Order                  `json:"-" rel:"order"`
+	Address               *Address                `json:"-" rel:"address"`
 	EmergencyRequirement  *EmergencyRequirement   `json:"-" rel:"emergency_requirement"`
 	EmergencyVerification *EmergencyVerification  `json:"-" rel:"emergency_verification"`
 	DIDs                  []*DID                  `json:"-" rel:"dids"`
