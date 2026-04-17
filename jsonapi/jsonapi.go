@@ -24,6 +24,12 @@ type jsonapiResource struct {
 	Type          string                     `json:"type"`
 	Attributes    json.RawMessage            `json:"attributes"`
 	Relationships map[string]json.RawMessage `json:"relationships,omitempty"`
+	Meta          json.RawMessage            `json:"meta,omitempty"`
+}
+
+// MetaUnmarshaler is implemented by resources that parse resource-level JSON:API meta.
+type MetaUnmarshaler interface {
+	UnmarshalMeta(raw json.RawMessage) error
 }
 
 // IncludedResources maps "type:id" to the raw JSON:API resource object.
@@ -277,6 +283,15 @@ func unmarshalResourceWithIncluded[T any](data []byte, included IncludedResource
 		if rr, ok := any(&result).(RelationshipResolver); ok {
 			if err := rr.ResolveRelationships(included, res.Relationships); err != nil {
 				return nil, fmt.Errorf("failed to resolve relationships: %w", err)
+			}
+		}
+	}
+
+	// Parse resource-level meta if the resource supports it
+	if len(res.Meta) > 0 && string(res.Meta) != jsonNull {
+		if mu, ok := any(&result).(MetaUnmarshaler); ok {
+			if err := mu.UnmarshalMeta(res.Meta); err != nil {
+				return nil, fmt.Errorf("failed to parse resource meta: %w", err)
 			}
 		}
 	}

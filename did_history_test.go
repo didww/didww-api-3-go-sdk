@@ -39,4 +39,25 @@ func TestDIDHistoryFind(t *testing.T) {
 	assert.Equal(t, "assigned", record.Action)
 	assert.Equal(t, "api3", record.Method)
 	assert.False(t, record.CreatedAt.IsZero())
+	// No meta for non-billing_cycles_count_changed actions
+	assert.Nil(t, record.Meta)
+}
+
+func TestDIDHistoryFindBillingCyclesCountChanged(t *testing.T) {
+	_, client := newTestServer(t, map[string]testRoute{
+		"GET /v3/did_history/c3d4e5f6-a7b8-9012-cdef-123456789012": {status: http.StatusOK, fixture: "did_history/show_billing_cycles_count_changed.json"},
+	})
+
+	record, err := client.DIDHistory().Find(context.Background(), "c3d4e5f6-a7b8-9012-cdef-123456789012")
+	require.NoError(t, err)
+
+	assert.Equal(t, "c3d4e5f6-a7b8-9012-cdef-123456789012", record.ID)
+	assert.Equal(t, "12025551234", record.DIDNumber)
+	assert.Equal(t, "billing_cycles_count_changed", record.Action)
+	assert.Equal(t, "system", record.Method)
+	assert.False(t, record.CreatedAt.IsZero())
+	// Meta fields present for billing_cycles_count_changed
+	require.NotNil(t, record.Meta)
+	assert.Equal(t, "2", record.Meta["from"])
+	assert.Equal(t, "1", record.Meta["to"])
 }
