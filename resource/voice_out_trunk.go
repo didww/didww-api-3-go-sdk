@@ -31,11 +31,13 @@ type VoiceOutTrunk struct {
 	RtpTimeout           *int                                       `json:"rtp_timeout,omitempty"`
 	AuthenticationMethod authenticationmethod.AuthenticationMethod   `json:"-"`
 	// Relationship IDs for create/update
-	DefaultDIDID string   `json:"-" rel:"default_did,dids"`
-	DIDIDs       []string `json:"-" rel:"dids,dids"`
+	DefaultDIDID   string   `json:"-" rel:"default_did,dids"`
+	DIDIDs         []string `json:"-" rel:"dids,dids"`
+	EmergencyDIDIDs []string `json:"-" rel:"emergency_dids,dids"`
 	// Resolved relationships
-	DefaultDID *DID   `json:"-" rel:"default_did"`
-	DIDs       []*DID `json:"-" rel:"dids"`
+	DefaultDID    *DID   `json:"-" rel:"default_did"`
+	DIDs          []*DID `json:"-" rel:"dids"`
+	EmergencyDIDs []*DID `json:"-" rel:"emergency_dids"`
 }
 
 // MarshalJSON handles custom serialization for VoiceOutTrunk.
