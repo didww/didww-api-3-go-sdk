@@ -10,6 +10,7 @@ type DIDGroup struct {
 	IsMetered               bool            `json:"is_metered"`
 	AreaName                string          `json:"area_name"`
 	AllowAdditionalChannels bool            `json:"allow_additional_channels"`
+	ServiceRestrictions     *string         `json:"service_restrictions"`
 	// Resolved relationships
 	Country           *Country            `json:"-" rel:"country"`
 	City              *City               `json:"-" rel:"city"`
