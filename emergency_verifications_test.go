@@ -26,6 +26,25 @@ func TestEmergencyVerificationsList(t *testing.T) {
 	assert.False(t, evs[0].CreatedAt.IsZero())
 }
 
+func TestEmergencyVerificationsUpdateExternalReferenceID(t *testing.T) {
+	server, capturedBodyPtr := captureRequestBody(t, map[string]testRoute{
+		"PATCH /v3/emergency_verifications/ev-001-id": {status: http.StatusOK, fixture: "emergency_verifications/update.json"},
+	})
+
+	extRef := "ev-ext-ref"
+	ev, err := server.client.EmergencyVerifications().Update(context.Background(), &resource.EmergencyVerification{
+		ID:                  "ev-001-id",
+		ExternalReferenceID: &extRef,
+	})
+	require.NoError(t, err)
+
+	assert.Equal(t, "ev-001-id", ev.ID)
+	require.NotNil(t, ev.ExternalReferenceID)
+	assert.Equal(t, "ev-ext-ref", *ev.ExternalReferenceID)
+
+	assertRequestJSON(t, *capturedBodyPtr, "emergency_verifications/update_request.json")
+}
+
 func TestEmergencyVerificationsCreate(t *testing.T) {
 	server, capturedBodyPtr := captureRequestBody(t, map[string]testRoute{
 		"POST /v3/emergency_verifications": {status: http.StatusCreated, fixture: "emergency_verifications/create.json"},
