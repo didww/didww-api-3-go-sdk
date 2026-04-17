@@ -15,7 +15,9 @@ type AddressVerification struct {
 	Status             enums.AddressVerificationStatus `json:"status" api:"readonly"`
 	RejectReasons      []string                        `json:"reject_reasons" api:"readonly"`
 	CreatedAt          time.Time                       `json:"created_at" api:"readonly"`
-	Reference          string                          `json:"reference" api:"readonly"`
+	Reference           string                          `json:"reference" api:"readonly"`
+	RejectComment       string                          `json:"reject_comment" api:"readonly"`
+	ExternalReferenceID *string                         `json:"external_reference_id,omitempty"`
 	// Relationship IDs for create/update
 	AddressID string   `json:"-" rel:"address,addresses"`
 	DIDIDs    []string `json:"-" rel:"dids,dids"`
