@@ -29,6 +29,9 @@ type DID struct {
 	EmergencyCallingServiceID string `json:"-" rel:"emergency_calling_service,emergency_calling_services"`
 	EmergencyVerificationID   string `json:"-" rel:"emergency_verification,emergency_verifications"`
 	IdentityID                string `json:"-" rel:"identity,identities"`
+	// NullifyEmergencyCallingService, when true, sends {"data": null} for the
+	// emergency_calling_service relationship (unassign the service from this DID).
+	NullifyEmergencyCallingService bool `json:"-"`
 	// Resolved relationships
 	Order               *Order               `json:"-" rel:"order"`
 	AddressVerification *AddressVerification `json:"-" rel:"address_verification"`
@@ -57,6 +60,9 @@ func (d *DID) MarshalRelationships() (map[string]any, error) {
 	}
 	if d.SharedCapacityGroupID != "" {
 		rels["capacity_pool"] = jsonapi.NullRelationship()
+	}
+	if d.NullifyEmergencyCallingService {
+		rels["emergency_calling_service"] = jsonapi.NullRelationship()
 	}
 	return rels, nil
 }

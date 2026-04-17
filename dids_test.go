@@ -211,6 +211,24 @@ func TestDIDsUpdateAssignTrunkGroup(t *testing.T) {
 	assert.Equal(t, "trunk group sample with 2 trunks", did.VoiceInTrunkGroup.Name)
 }
 
+func TestDIDsUpdateUnassignEmergencyCallingService(t *testing.T) {
+	server, capturedBodyPtr := captureRequestBody(t, map[string]testRoute{
+		"PATCH /v3/dids/44957076-778a-4802-b60c-d22db0cda284": {status: http.StatusOK, fixture: "dids/unassign_emergency_calling_service.json"},
+	})
+
+	did, err := server.client.DIDs().Update(context.Background(), &resource.DID{
+		ID:                              "44957076-778a-4802-b60c-d22db0cda284",
+		NullifyEmergencyCallingService: true,
+	})
+	require.NoError(t, err)
+
+	assertRequestJSON(t, *capturedBodyPtr, "dids/unassign_emergency_calling_service_request.json")
+
+	assert.Equal(t, "44957076-778a-4802-b60c-d22db0cda284", did.ID)
+	assert.False(t, did.EmergencyEnabled)
+	assert.Nil(t, did.EmergencyCallingService)
+}
+
 func TestDIDsFindWithTrunkResolved(t *testing.T) {
 	_, client := newTestServer(t, map[string]testRoute{
 		"GET /v3/dids/9df99644-f1a5-4a3c-99a4-559d758eb96b": {status: http.StatusOK, fixture: "dids/show_with_trunk.json"},
