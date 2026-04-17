@@ -147,6 +147,30 @@ func TestIdentitiesFindWithContactEmail(t *testing.T) {
 	assert.Equal(t, "john.doe@example.com", *identity.ContactEmail)
 }
 
+func TestIdentitiesFindWithBirthCountry(t *testing.T) {
+	_, client := newTestServer(t, map[string]testRoute{
+		"GET /v3/identities/e96ae7d1-11d5-42bc-a5c5-211f3c3788ae": {status: http.StatusOK, fixture: "identities/show_with_birth_country.json"},
+	})
+
+	identity, err := client.Identities().Find(context.Background(), "e96ae7d1-11d5-42bc-a5c5-211f3c3788ae")
+	require.NoError(t, err)
+
+	assert.Equal(t, "e96ae7d1-11d5-42bc-a5c5-211f3c3788ae", identity.ID)
+	assert.Equal(t, "John", identity.FirstName)
+	assert.Equal(t, enums.IdentityTypePersonal, identity.IdentityType)
+
+	// Verify included country
+	require.NotNil(t, identity.Country)
+	assert.Equal(t, "United States", identity.Country.Name)
+	assert.Equal(t, "US", identity.Country.ISO)
+
+	// Verify included birth_country
+	require.NotNil(t, identity.BirthCountry)
+	assert.Equal(t, "a2b3c4d5-e6f7-8901-abcd-ef1234567890", identity.BirthCountry.ID)
+	assert.Equal(t, "Canada", identity.BirthCountry.Name)
+	assert.Equal(t, "CA", identity.BirthCountry.ISO)
+}
+
 func TestIdentitiesDelete(t *testing.T) {
 	_, client := newTestServer(t, map[string]testRoute{
 		"DELETE /v3/identities/e96ae7d1-11d5-42bc-a5c5-211f3c3788ae": {status: http.StatusNoContent},
