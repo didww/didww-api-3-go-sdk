@@ -7,6 +7,13 @@ import (
 )
 
 // Export represents a CDR export.
+//
+// Filters map keys for cdr_in / cdr_out exports:
+//
+//   - "from": ISO 8601 / "YYYY-MM-DD HH:MM:SS" lower bound, INCLUSIVE (time_start >= from).
+//   - "to":   ISO 8601 / "YYYY-MM-DD HH:MM:SS" upper bound, EXCLUSIVE (time_start < to).
+//   - "did_number": only for cdr_in exports.
+//   - "voice_out_trunk_id": only for cdr_out exports.
 type Export struct {
 	ID             string                 `json:"-" jsonapi:"exports"`
 	Status         enums.ExportStatus     `json:"status" api:"readonly"`
