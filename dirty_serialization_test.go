@@ -527,6 +527,43 @@ func TestDirtyPatch_VoiceOutTrunk_ReassignAuthenticationMethod(t *testing.T) {
 	assert.Empty(t, doc.Rels)
 }
 
+// TestDirtyPatch_VoiceOutTrunk_ReplaceEmergencyDIDs verifies that setting
+// EmergencyDIDIDs sends the relationship with the specified DID IDs.
+func TestDirtyPatch_VoiceOutTrunk_ReplaceEmergencyDIDs(t *testing.T) {
+	const trunkID = "01234567-89ab-cdef-0123-456789abcdef"
+	server, capturedBodyPtr := captureRequestBody(t, map[string]testRoute{
+		"PATCH /v3/voice_out_trunks/" + trunkID: {status: http.StatusOK, fixture: "voice_out_trunks/update_emergency_dids.json"},
+	})
+
+	_, err := server.client.VoiceOutTrunks().Update(context.Background(), &resource.VoiceOutTrunk{
+		ID: trunkID,
+		EmergencyDIDIDs: []string{
+			"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+			"bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
+		},
+	})
+	require.NoError(t, err)
+
+	assertRequestJSON(t, *capturedBodyPtr, "voice_out_trunks/update_emergency_dids_request.json")
+}
+
+// TestDirtyPatch_VoiceOutTrunk_ClearEmergencyDIDs verifies that clearing
+// emergency_dids sends an empty data array in the relationship.
+func TestDirtyPatch_VoiceOutTrunk_ClearEmergencyDIDs(t *testing.T) {
+	const trunkID = "01234567-89ab-cdef-0123-456789abcdef"
+	server, capturedBodyPtr := captureRequestBody(t, map[string]testRoute{
+		"PATCH /v3/voice_out_trunks/" + trunkID: {status: http.StatusOK, fixture: "voice_out_trunks/update_emergency_dids.json"},
+	})
+
+	_, err := server.client.VoiceOutTrunks().Update(context.Background(), &resource.VoiceOutTrunk{
+		ID:                 trunkID,
+		ClearEmergencyDIDs: true,
+	})
+	require.NoError(t, err)
+
+	assertRequestJSON(t, *capturedBodyPtr, "voice_out_trunks/update_emergency_dids_clear_request.json")
+}
+
 // --- test helpers ---
 
 type patchBodyDoc struct {

@@ -8,13 +8,13 @@ import (
 
 // AddressVerification represents an address verification request.
 type AddressVerification struct {
-	ID                 string                          `json:"-" jsonapi:"address_verifications"`
-	ServiceDescription *string                         `json:"service_description,omitempty"`
-	CallbackURL        *string                         `json:"callback_url,omitempty"`
-	CallbackMethod     *string                         `json:"callback_method,omitempty"`
-	Status             enums.AddressVerificationStatus `json:"status" api:"readonly"`
-	RejectReasons      []string                        `json:"reject_reasons" api:"readonly"`
-	CreatedAt          time.Time                       `json:"created_at" api:"readonly"`
+	ID                  string                          `json:"-" jsonapi:"address_verifications"`
+	ServiceDescription  *string                         `json:"service_description,omitempty"`
+	CallbackURL         *string                         `json:"callback_url,omitempty"`
+	CallbackMethod      *string                         `json:"callback_method,omitempty"`
+	Status              enums.AddressVerificationStatus `json:"status" api:"readonly"`
+	RejectReasons       []string                        `json:"reject_reasons" api:"readonly"`
+	CreatedAt           time.Time                       `json:"created_at" api:"readonly"`
 	Reference           string                          `json:"reference" api:"readonly"`
 	RejectComment       string                          `json:"reject_comment" api:"readonly"`
 	ExternalReferenceID *string                         `json:"external_reference_id,omitempty"`

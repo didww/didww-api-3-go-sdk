@@ -217,7 +217,7 @@ func TestDIDsUpdateUnassignEmergencyCallingService(t *testing.T) {
 	})
 
 	did, err := server.client.DIDs().Update(context.Background(), &resource.DID{
-		ID:                              "44957076-778a-4802-b60c-d22db0cda284",
+		ID:                             "44957076-778a-4802-b60c-d22db0cda284",
 		NullifyEmergencyCallingService: true,
 	})
 	require.NoError(t, err)

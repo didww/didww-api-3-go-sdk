@@ -30,7 +30,7 @@ type AddressRequirement struct {
 type AddressRequirementValidation struct {
 	ID string `json:"-" jsonapi:"address_requirement_validations"`
 	// Relationship IDs for create
-	AddressID     string `json:"-" rel:"address,addresses"`
-	IdentityID    string `json:"-" rel:"identity,identities"`
+	AddressID            string `json:"-" rel:"address,addresses"`
+	IdentityID           string `json:"-" rel:"identity,identities"`
 	AddressRequirementID string `json:"-" rel:"address_requirement,address_requirements"`
 }

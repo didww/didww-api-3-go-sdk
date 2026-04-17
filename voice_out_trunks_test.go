@@ -139,7 +139,7 @@ func TestVoiceOutTrunksUpdateEmergencyEnableAll(t *testing.T) {
 	})
 
 	trunk, err := server.client.VoiceOutTrunks().Update(context.Background(), &resource.VoiceOutTrunk{
-		ID:               "01234567-89ab-cdef-0123-456789abcdef",
+		ID:                 "01234567-89ab-cdef-0123-456789abcdef",
 		EmergencyEnableAll: true,
 	})
 	require.NoError(t, err)
@@ -174,7 +174,7 @@ func TestVoiceOutTrunksUpdateClearEmergencyDIDs(t *testing.T) {
 	})
 
 	trunk, err := server.client.VoiceOutTrunks().Update(context.Background(), &resource.VoiceOutTrunk{
-		ID:               "01234567-89ab-cdef-0123-456789abcdef",
+		ID:                 "01234567-89ab-cdef-0123-456789abcdef",
 		ClearEmergencyDIDs: true,
 	})
 	require.NoError(t, err)

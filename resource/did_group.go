@@ -12,12 +12,12 @@ type DIDGroup struct {
 	AllowAdditionalChannels bool            `json:"allow_additional_channels"`
 	ServiceRestrictions     *string         `json:"service_restrictions"`
 	// Resolved relationships
-	Country           *Country            `json:"-" rel:"country"`
-	City              *City               `json:"-" rel:"city"`
-	Region            *Region             `json:"-" rel:"region"`
-	DIDGroupType      *DIDGroupType       `json:"-" rel:"did_group_type"`
-	StockKeepingUnits []*StockKeepingUnit `json:"-" rel:"stock_keeping_units"`
-	AddressRequirement *AddressRequirement  `json:"-" rel:"address_requirement"`
+	Country            *Country            `json:"-" rel:"country"`
+	City               *City               `json:"-" rel:"city"`
+	Region             *Region             `json:"-" rel:"region"`
+	DIDGroupType       *DIDGroupType       `json:"-" rel:"did_group_type"`
+	StockKeepingUnits  []*StockKeepingUnit `json:"-" rel:"stock_keeping_units"`
+	AddressRequirement *AddressRequirement `json:"-" rel:"address_requirement"`
 }
 
 // DIDGroupType represents a type of DID group.

@@ -11,29 +11,29 @@ import (
 
 // VoiceOutTrunk represents a voice outbound trunk.
 type VoiceOutTrunk struct {
-	ID                   string                                     `json:"-" jsonapi:"voice_out_trunks"`
-	AllowedRtpIPs        []string                                   `json:"allowed_rtp_ips,omitempty"`
-	AllowAnyDidAsCli     bool                                       `json:"allow_any_did_as_cli,omitempty"`
-	Status               enums.VoiceOutTrunkStatus                  `json:"status" api:"readonly"`
-	OnCliMismatchAction  enums.OnCliMismatchAction                  `json:"on_cli_mismatch_action,omitempty"`
-	Name                 string                                     `json:"name,omitempty"`
-	CapacityLimit        *int                                       `json:"capacity_limit,omitempty"`
-	CreatedAt            time.Time                                  `json:"created_at" api:"readonly"`
-	ThresholdReached     bool                                       `json:"threshold_reached" api:"readonly"`
-	ThresholdAmount      *string                                    `json:"threshold_amount,omitempty"`
-	MediaEncryptionMode  enums.MediaEncryptionMode                  `json:"media_encryption_mode,omitempty"`
-	DefaultDstAction     enums.DefaultDstAction                     `json:"default_dst_action,omitempty"`
-	DstPrefixes          []string                                   `json:"dst_prefixes,omitempty"`
-	ForceSymmetricRtp    bool                                       `json:"force_symmetric_rtp,omitempty"`
-	RtpPing              bool                                       `json:"rtp_ping,omitempty"`
-	CallbackURL          *string                                    `json:"callback_url,omitempty"`
-	ExternalReferenceID  *string                                    `json:"external_reference_id,omitempty"`
-	EmergencyEnableAll   bool                                       `json:"emergency_enable_all,omitempty"`
-	RtpTimeout           *int                                       `json:"rtp_timeout,omitempty"`
-	AuthenticationMethod authenticationmethod.AuthenticationMethod   `json:"-"`
+	ID                   string                                    `json:"-" jsonapi:"voice_out_trunks"`
+	AllowedRtpIPs        []string                                  `json:"allowed_rtp_ips,omitempty"`
+	AllowAnyDidAsCli     bool                                      `json:"allow_any_did_as_cli,omitempty"`
+	Status               enums.VoiceOutTrunkStatus                 `json:"status" api:"readonly"`
+	OnCliMismatchAction  enums.OnCliMismatchAction                 `json:"on_cli_mismatch_action,omitempty"`
+	Name                 string                                    `json:"name,omitempty"`
+	CapacityLimit        *int                                      `json:"capacity_limit,omitempty"`
+	CreatedAt            time.Time                                 `json:"created_at" api:"readonly"`
+	ThresholdReached     bool                                      `json:"threshold_reached" api:"readonly"`
+	ThresholdAmount      *string                                   `json:"threshold_amount,omitempty"`
+	MediaEncryptionMode  enums.MediaEncryptionMode                 `json:"media_encryption_mode,omitempty"`
+	DefaultDstAction     enums.DefaultDstAction                    `json:"default_dst_action,omitempty"`
+	DstPrefixes          []string                                  `json:"dst_prefixes,omitempty"`
+	ForceSymmetricRtp    bool                                      `json:"force_symmetric_rtp,omitempty"`
+	RtpPing              bool                                      `json:"rtp_ping,omitempty"`
+	CallbackURL          *string                                   `json:"callback_url,omitempty"`
+	ExternalReferenceID  *string                                   `json:"external_reference_id,omitempty"`
+	EmergencyEnableAll   bool                                      `json:"emergency_enable_all,omitempty"`
+	RtpTimeout           *int                                      `json:"rtp_timeout,omitempty"`
+	AuthenticationMethod authenticationmethod.AuthenticationMethod `json:"-"`
 	// Relationship IDs for create/update
-	DefaultDIDID   string   `json:"-" rel:"default_did,dids"`
-	DIDIDs         []string `json:"-" rel:"dids,dids"`
+	DefaultDIDID    string   `json:"-" rel:"default_did,dids"`
+	DIDIDs          []string `json:"-" rel:"dids,dids"`
 	EmergencyDIDIDs []string `json:"-" rel:"emergency_dids,dids"`
 	// ClearEmergencyDIDs, when true, sends {"data": []} for the
 	// emergency_dids relationship (remove all emergency DIDs from this trunk).
@@ -45,13 +45,13 @@ type VoiceOutTrunk struct {
 }
 
 // MarshalJSON handles custom serialization for VoiceOutTrunk.
-func (v VoiceOutTrunk) MarshalJSON() ([]byte, error) {
+func (v *VoiceOutTrunk) MarshalJSON() ([]byte, error) {
 	type Alias VoiceOutTrunk
 	aux := struct {
 		Alias
 		AuthenticationMethod json.RawMessage `json:"authentication_method,omitempty"`
 	}{
-		Alias: Alias(v),
+		Alias: Alias(*v),
 	}
 	if v.AuthenticationMethod != nil {
 		am, err := authenticationmethod.MarshalJSON(v.AuthenticationMethod)

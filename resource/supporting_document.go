@@ -12,7 +12,7 @@ type SupportingDocumentTemplate struct {
 
 // PermanentSupportingDocument represents a permanent supporting document.
 type PermanentSupportingDocument struct {
-	ID        string    `json:"-" jsonapi:"permanent_supporting_documents"`
+	ID                  string    `json:"-" jsonapi:"permanent_supporting_documents"`
 	CreatedAt           time.Time `json:"created_at" api:"readonly"`
 	ExternalReferenceID *string   `json:"external_reference_id,omitempty"`
 	// Relationship IDs for create/update

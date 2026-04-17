@@ -22,8 +22,8 @@ type DID struct {
 	DedicatedChannelsCount int        `json:"dedicated_channels_count"`
 	EmergencyEnabled       bool       `json:"emergency_enabled" api:"readonly"`
 	// Relationship IDs for create/update
-	VoiceInTrunkID        string `json:"-" rel:"voice_in_trunk,voice_in_trunks"`
-	VoiceInTrunkGroupID   string `json:"-" rel:"voice_in_trunk_group,voice_in_trunk_groups"`
+	VoiceInTrunkID            string `json:"-" rel:"voice_in_trunk,voice_in_trunks"`
+	VoiceInTrunkGroupID       string `json:"-" rel:"voice_in_trunk_group,voice_in_trunk_groups"`
 	CapacityPoolID            string `json:"-" rel:"capacity_pool,capacity_pools"`
 	SharedCapacityGroupID     string `json:"-" rel:"shared_capacity_group,shared_capacity_groups"`
 	EmergencyCallingServiceID string `json:"-" rel:"emergency_calling_service,emergency_calling_services"`
@@ -33,11 +33,11 @@ type DID struct {
 	// emergency_calling_service relationship (unassign the service from this DID).
 	NullifyEmergencyCallingService bool `json:"-"`
 	// Resolved relationships
-	Order               *Order               `json:"-" rel:"order"`
-	AddressVerification *AddressVerification `json:"-" rel:"address_verification"`
-	DIDGroup            *DIDGroup            `json:"-" rel:"did_group"`
-	VoiceInTrunk        *VoiceInTrunk        `json:"-" rel:"voice_in_trunk"`
-	VoiceInTrunkGroup   *VoiceInTrunkGroup   `json:"-" rel:"voice_in_trunk_group"`
+	Order                   *Order                   `json:"-" rel:"order"`
+	AddressVerification     *AddressVerification     `json:"-" rel:"address_verification"`
+	DIDGroup                *DIDGroup                `json:"-" rel:"did_group"`
+	VoiceInTrunk            *VoiceInTrunk            `json:"-" rel:"voice_in_trunk"`
+	VoiceInTrunkGroup       *VoiceInTrunkGroup       `json:"-" rel:"voice_in_trunk_group"`
 	CapacityPool            *CapacityPool            `json:"-" rel:"capacity_pool"`
 	SharedCapacityGroup     *SharedCapacityGroup     `json:"-" rel:"shared_capacity_group"`
 	EmergencyCallingService *EmergencyCallingService `json:"-" rel:"emergency_calling_service"`

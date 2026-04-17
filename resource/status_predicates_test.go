@@ -8,7 +8,7 @@ import (
 
 func TestAddressVerificationStatusPredicates(t *testing.T) {
 	tests := []struct {
-		status                          enums.AddressVerificationStatus
+		status                                        enums.AddressVerificationStatus
 		expectPending, expectApproved, expectRejected bool
 	}{
 		{enums.AddressVerificationStatusPending, true, false, false},
@@ -54,7 +54,7 @@ func TestEmergencyVerificationStatusPredicates(t *testing.T) {
 
 func TestEmergencyCallingServiceStatusPredicates(t *testing.T) {
 	tests := []struct {
-		status         string
+		status                                                                 string
 		active, canceled, changesRequired, inProcess, newStatus, pendingUpdate bool
 	}{
 		{ECSStatusActive, true, false, false, false, false, false},
@@ -89,7 +89,7 @@ func TestEmergencyCallingServiceStatusPredicates(t *testing.T) {
 
 func TestOrderStatusPredicates(t *testing.T) {
 	tests := []struct {
-		status                                           enums.OrderStatus
+		status                                          enums.OrderStatus
 		expectPending, expectCompleted, expectCancelled bool
 	}{
 		{enums.OrderStatusPending, true, false, false},

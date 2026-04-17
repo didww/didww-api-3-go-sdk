@@ -15,13 +15,13 @@ import (
 //   - "did_number": only for cdr_in exports.
 //   - "voice_out_trunk_id": only for cdr_out exports.
 type Export struct {
-	ID             string                 `json:"-" jsonapi:"exports"`
-	Status         enums.ExportStatus     `json:"status" api:"readonly"`
-	CreatedAt      time.Time              `json:"created_at" api:"readonly"`
-	URL            *string                `json:"url" api:"readonly"`
-	CallbackURL    *string                `json:"callback_url,omitempty"`
-	CallbackMethod *string                `json:"callback_method,omitempty"`
-	ExportType     enums.ExportType       `json:"export_type"`
+	ID                  string                 `json:"-" jsonapi:"exports"`
+	Status              enums.ExportStatus     `json:"status" api:"readonly"`
+	CreatedAt           time.Time              `json:"created_at" api:"readonly"`
+	URL                 *string                `json:"url" api:"readonly"`
+	CallbackURL         *string                `json:"callback_url,omitempty"`
+	CallbackMethod      *string                `json:"callback_method,omitempty"`
+	ExportType          enums.ExportType       `json:"export_type"`
 	Filters             map[string]interface{} `json:"filters,omitempty"`
 	ExternalReferenceID *string                `json:"external_reference_id,omitempty"`
 }

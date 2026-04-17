@@ -9,8 +9,8 @@ import (
 
 // Proof represents a proof document.
 type Proof struct {
-	ID        string     `json:"-" jsonapi:"proofs"`
-	CreatedAt time.Time  `json:"created_at" api:"readonly"`
+	ID                  string     `json:"-" jsonapi:"proofs"`
+	CreatedAt           time.Time  `json:"created_at" api:"readonly"`
 	ExpiresAt           *time.Time `json:"expires_at" api:"readonly"`
 	ExternalReferenceID *string    `json:"external_reference_id,omitempty"`
 	// Polymorphic entity relationship (type: "identities" or "addresses")
