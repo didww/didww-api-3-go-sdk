@@ -354,6 +354,33 @@ verification := &didww.AddressVerification{
 created, _ := client.AddressVerifications().Create(ctx, verification)
 ```
 
+### Emergency Services (2026-04-16)
+
+```go
+// List emergency requirements filtered by country
+params := didww.NewQueryParams().Filter("country.id", "country-uuid")
+reqs, _ := client.EmergencyRequirements().List(ctx, params)
+
+// Create emergency verification
+verification := &didww.EmergencyVerification{
+    AddressID:  "address-uuid",
+    IdentityID: "identity-uuid",
+    DIDIDs:     []string{"did-uuid"},
+}
+created, _ := client.EmergencyVerifications().Create(ctx, verification)
+
+// List emergency calling services
+services, _ := client.EmergencyCallingServices().List(ctx, nil)
+```
+
+### DID History (2026-04-16)
+
+```go
+// List DID history entries
+params := didww.NewQueryParams().Filter("did.id", "did-uuid")
+history, _ := client.DIDHistory().List(ctx, params)
+```
+
 ### Exports
 
 ```go
