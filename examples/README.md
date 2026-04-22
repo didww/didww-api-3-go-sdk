@@ -25,6 +25,7 @@ DIDWW_API_KEY=your_api_key go run ./examples/balance/
 | [`countries`](countries/) | Lists countries, demonstrates filtering, and fetches one country by ID. |
 | [`regions`](regions/) | Lists regions with filters/includes and fetches a specific region. |
 | [`did_groups`](did_groups/) | Fetches DID groups with included SKUs and shows group details. |
+| [`did_trunk_assignment`](did_trunk_assignment/) | Demonstrates exclusive trunk/trunk group assignment on DIDs. |
 | [`dids`](dids/) | Updates DID routing/capacity by assigning trunk and capacity pool. |
 | [`trunks`](trunks/) | Lists trunks, creates SIP and PSTN trunks, updates and deletes them. |
 | [`shared_capacity_groups`](shared_capacity_groups/) | Creates a shared capacity group in a capacity pool. |
