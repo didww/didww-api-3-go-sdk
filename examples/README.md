@@ -45,6 +45,7 @@ DIDWW_API_KEY=your_api_key go run ./examples/balance/
 | [`emergency_calling_services`](emergency_calling_services/) | Lists emergency calling services (2026-04-16). |
 | [`emergency_verifications`](emergency_verifications/) | Lists emergency verifications (2026-04-16). |
 | [`emergency_requirement_validations`](emergency_requirement_validations/) | Validates emergency requirement data (2026-04-16). |
+| [`emergency_scenario`](emergency_scenario/) | End-to-end: find DID → check requirements → validate → create verification → get service. |
 | [`address_verifications`](address_verifications/) | Lists address verifications with reject_comment / external_reference_id (2026-04-16). |
 | [`orders_emergency`](orders_emergency/) | Creates an emergency order with EmergencyOrderItem (2026-04-16). |
 

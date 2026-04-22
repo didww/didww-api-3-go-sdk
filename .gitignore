@@ -20,3 +20,5 @@ orders_emergency
 shared_capacity_groups
 voice_in_trunk_groups
 voice_out_trunks
+/emergency_scenario
+/did_trunk_assignment
