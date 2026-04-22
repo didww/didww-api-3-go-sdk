@@ -534,9 +534,22 @@ if err != nil {
 The SDK distinguishes between date-only and datetime fields:
 
 - **Datetime fields** are deserialized as `time.Time` (UTC) when always present, or `*time.Time` when optional (nil if the API omits the value):
-  - All `CreatedAt` fields — `time.Time`, present on most resources
-  - Expiry fields — `*time.Time`: `DID.ExpiresAt`, `Proof.ExpiresAt`, `EncryptedFile.ExpiresAt`; `DIDReservation.ExpiresAt` is `time.Time` (always present)
-- **Date-only fields** (`Identity.BirthDate`, `CapacityPool.RenewDate`, order item `BilledFrom`/`BilledTo`) remain as `string` in `"YYYY-MM-DD"` format — Go has no separate date-only type, so the raw string avoids timezone ambiguity.
+  - `CreatedAt` — `time.Time`, present on most resources
+  - `ExpiresAt` — `*time.Time`: `DID`, `DIDReservation`, `Proof`, `EncryptedFile`
+  - `ActivatedAt` — `*time.Time`: `EmergencyCallingService` (nullable)
+  - `CanceledAt` — `*time.Time`: `EmergencyCallingService` (nullable)
+- **Date-only fields** remain as `string` in `"YYYY-MM-DD"` format — Go has no separate date-only type, so the raw string avoids timezone ambiguity:
+  - `Identity.BirthDate`
+  - `CapacityPool.RenewDate`, `EmergencyCallingService.RenewDate` (nullable)
+  - Order item `BilledFrom` / `BilledTo`
+- **String fields** (not numeric):
+  - `EmergencyRequirement.EstimateSetupTime` — e.g. `"7-14 days"`, `"1"`
+  - `EmergencyRequirement.RequirementRestrictionMessage` — nullable
+
+**Important changes from previous API versions:**
+- `ExpiresAt` replaces `ExpireAt` on `DIDReservation` and `EncryptedFile`
+- `RenewDate` is a date-only string, NOT a `time.Time`
+- `EstimateSetupTime` is a string, NOT an integer
 
 ```go
 did, _ := client.DIDs().Find(ctx, "uuid")
