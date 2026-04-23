@@ -45,5 +45,9 @@ func main() {
 		if len(req.AddressMandatoryFields) > 0 {
 			fmt.Printf("  Address mandatory fields: %s\n", strings.Join(req.AddressMandatoryFields, ", "))
 		}
+		if req.Meta != nil {
+			fmt.Printf("  Setup Price: %s\n", req.Meta["setup_price"])
+			fmt.Printf("  Monthly Price: %s\n", req.Meta["monthly_price"])
+		}
 	}
 }

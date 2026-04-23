@@ -1,6 +1,9 @@
 package resource
 
-import "time"
+import (
+	"encoding/json"
+	"time"
+)
 
 // EmergencyCallingService represents a customer-owned subscription to emergency calling.
 // Supported operations: index, show, destroy. Introduced in API 2026-04-16.
@@ -20,6 +23,8 @@ type EmergencyCallingService struct {
 	CreatedAt time.Time `json:"created_at" api:"readonly"`
 	// RenewDate is the next renewal date for the service subscription (date-only, e.g. "2026-05-22").
 	RenewDate string `json:"renew_date" api:"readonly"`
+	// Meta holds resource-level JSON:API meta (e.g. setup_price, monthly_price).
+	Meta map[string]string `json:"-"`
 	// Resolved relationships
 	Country               *Country               `json:"-" rel:"country"`
 	DIDGroupType          *DIDGroupType          `json:"-" rel:"did_group_type"`
@@ -28,6 +33,16 @@ type EmergencyCallingService struct {
 	EmergencyRequirement  *EmergencyRequirement  `json:"-" rel:"emergency_requirement"`
 	EmergencyVerification *EmergencyVerification `json:"-" rel:"emergency_verification"`
 	DIDs                  []*DID                 `json:"-" rel:"dids"`
+}
+
+// UnmarshalMeta parses the resource-level JSON:API meta block into a generic map.
+func (e *EmergencyCallingService) UnmarshalMeta(raw json.RawMessage) error {
+	var m map[string]string
+	if err := json.Unmarshal(raw, &m); err != nil {
+		return err
+	}
+	e.Meta = m
+	return nil
 }
 
 // EmergencyCallingService status constants.

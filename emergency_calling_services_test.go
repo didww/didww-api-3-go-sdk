@@ -26,6 +26,11 @@ func TestEmergencyCallingServicesList(t *testing.T) {
 	require.NotNil(t, services[0].ActivatedAt)
 	assert.Nil(t, services[0].CanceledAt)
 	assert.Equal(t, "2026-05-01", services[0].RenewDate)
+
+	// Meta fields
+	require.NotNil(t, services[0].Meta)
+	assert.Equal(t, "0.0", services[0].Meta["setup_price"])
+	assert.Equal(t, "1.5", services[0].Meta["monthly_price"])
 }
 
 func TestEmergencyCallingServicesFindWithIncludes(t *testing.T) {
@@ -40,6 +45,11 @@ func TestEmergencyCallingServicesFindWithIncludes(t *testing.T) {
 	assert.Equal(t, "ecs-001-id", svc.ID)
 	assert.Equal(t, "E911 Service US", svc.Name)
 	assert.Equal(t, "active", svc.Status)
+
+	// Meta fields
+	require.NotNil(t, svc.Meta)
+	assert.Equal(t, "0.0", svc.Meta["setup_price"])
+	assert.Equal(t, "1.5", svc.Meta["monthly_price"])
 
 	// Verify included emergency_requirement
 	require.NotNil(t, svc.EmergencyRequirement)

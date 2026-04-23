@@ -1,5 +1,7 @@
 package resource
 
+import "encoding/json"
+
 // EmergencyRequirement represents the regulatory requirements for ordering
 // an emergency calling service. Introduced in API 2026-04-16.
 type EmergencyRequirement struct {
@@ -22,7 +24,19 @@ type EmergencyRequirement struct {
 	EstimateSetupTime string `json:"estimate_setup_time" api:"readonly"`
 	// RequirementRestrictionMessage is a human-readable restriction message. May be empty.
 	RequirementRestrictionMessage string `json:"requirement_restriction_message" api:"readonly"`
+	// Meta holds resource-level JSON:API meta (e.g. setup_price, monthly_price).
+	Meta map[string]string `json:"-"`
 	// Resolved relationships
 	Country      *Country      `json:"-" rel:"country"`
 	DIDGroupType *DIDGroupType `json:"-" rel:"did_group_type"`
+}
+
+// UnmarshalMeta parses the resource-level JSON:API meta block into a generic map.
+func (e *EmergencyRequirement) UnmarshalMeta(raw json.RawMessage) error {
+	var m map[string]string
+	if err := json.Unmarshal(raw, &m); err != nil {
+		return err
+	}
+	e.Meta = m
+	return nil
 }

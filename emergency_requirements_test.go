@@ -24,4 +24,9 @@ func TestEmergencyRequirementsList(t *testing.T) {
 	assert.Equal(t, []string{"city", "postal_code"}, reqs[0].AddressMandatoryFields)
 	assert.Equal(t, []string{"first_name", "last_name"}, reqs[0].PersonalMandatoryFields)
 	assert.Equal(t, "7-14 days", reqs[0].EstimateSetupTime)
+
+	// Meta fields
+	require.NotNil(t, reqs[0].Meta)
+	assert.Equal(t, "0.0", reqs[0].Meta["setup_price"])
+	assert.Equal(t, "1.5", reqs[0].Meta["monthly_price"])
 }

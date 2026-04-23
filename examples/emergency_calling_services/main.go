@@ -42,6 +42,10 @@ func main() {
 		if svc.DIDGroupType != nil {
 			fmt.Printf("  DID Group Type: %s\n", svc.DIDGroupType.Name)
 		}
+		if svc.Meta != nil {
+			fmt.Printf("  Setup Price: %s\n", svc.Meta["setup_price"])
+			fmt.Printf("  Monthly Price: %s\n", svc.Meta["monthly_price"])
+		}
 	}
 
 	// Find a specific service
