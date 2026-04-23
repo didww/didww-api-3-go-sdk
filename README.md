@@ -246,24 +246,32 @@ created, _ := client.VoiceInTrunkGroups().Create(ctx, group)
 > **Note:** Voice Out Trunks require additional account configuration. Contact DIDWW support to enable.
 > The `replace_cli` and `randomize_cli` values of `OnCliMismatchAction` also require account configuration.
 
+Voice Out Trunks use a polymorphic `AuthenticationMethod` (2026-04-16). Three types are supported:
+
+- **`credentials_and_ip`** -- default method; `Username` and `Password` are server-generated and returned in the response.
+- **`twilio`** -- requires a `TwilioAccountSid`.
+- **`ip_only`** -- read-only; can only be configured by DIDWW staff upon request. Cannot be set via the API.
+
 ```go
 import (
     "github.com/didww/didww-api-3-go-sdk/resource/authenticationmethod"
     "github.com/didww/didww-api-3-go-sdk/resource/enums"
 )
 
+// NOTE: 203.0.113.0/24 is RFC 5737 TEST-NET-3 documentation space.
+// Replace with the real CIDR of your SIP infrastructure.
 trunk := &didww.VoiceOutTrunk{
     Name: "My Outbound Trunk",
-    AuthenticationMethod: &authenticationmethod.IpOnly{
+    AuthenticationMethod: &authenticationmethod.CredentialsAndIp{
         AllowedSipIPs: []string{"203.0.113.0/24"},
     },
-    AllowedRtpIPs:       []string{"203.0.113.1"},
-    DstPrefixes:         []string{},
     DefaultDstAction:    enums.DefaultDstActionAllowAll,
     OnCliMismatchAction: enums.OnCliMismatchActionRejectCall,
     MediaEncryptionMode: enums.MediaEncryptionModeDisabled,
 }
 created, _ := client.VoiceOutTrunks().Create(ctx, trunk)
+// created.AuthenticationMethod.(*authenticationmethod.CredentialsAndIp).Username -- server-generated
+// created.AuthenticationMethod.(*authenticationmethod.CredentialsAndIp).Password -- server-generated
 ```
 
 ### Orders

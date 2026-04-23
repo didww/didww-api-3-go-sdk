@@ -91,6 +91,51 @@ func TestVoiceOutTrunksFindIpOnly(t *testing.T) {
 	assert.False(t, notCred, "authentication_method should not be CredentialsAndIp")
 }
 
+func TestVoiceOutTrunksFindTwilio(t *testing.T) {
+	_, client := newTestServer(t, map[string]testRoute{
+		"GET /v3/voice_out_trunks/b5e701f4-ea15-4f9d-8f35-6a0bdce04385": {status: http.StatusOK, fixture: "voice_out_trunks/show_twilio.json"},
+	})
+
+	trunk, err := client.VoiceOutTrunks().Find(context.Background(), "b5e701f4-ea15-4f9d-8f35-6a0bdce04385", nil)
+	require.NoError(t, err)
+
+	assert.Equal(t, "b5e701f4-ea15-4f9d-8f35-6a0bdce04385", trunk.ID)
+	assert.Equal(t, "SDK Test twilio", trunk.Name)
+	assert.Equal(t, enums.VoiceOutTrunkStatusActive, trunk.Status)
+
+	// Verify authentication_method is parsed as Twilio
+	require.NotNil(t, trunk.AuthenticationMethod)
+	twilioAM, ok := trunk.AuthenticationMethod.(*authenticationmethod.Twilio)
+	require.True(t, ok, "expected Twilio authentication method, got %T", trunk.AuthenticationMethod)
+	assert.Equal(t, "AC22222222222222222222222222222222", twilioAM.TwilioAccountSid)
+}
+
+func TestVoiceOutTrunksCreateTwilio(t *testing.T) {
+	server, capturedBodyPtr := captureRequestBody(t, map[string]testRoute{
+		"POST /v3/voice_out_trunks": {status: http.StatusCreated, fixture: "voice_out_trunks/create_twilio.json"},
+	})
+
+	trunk, err := server.client.VoiceOutTrunks().Create(context.Background(), &resource.VoiceOutTrunk{
+		Name:                "SDK Test twilio create",
+		OnCliMismatchAction: enums.OnCliMismatchActionRejectCall,
+		AuthenticationMethod: &authenticationmethod.Twilio{
+			TwilioAccountSid: "AC33333333333333333333333333333333",
+		},
+	})
+	require.NoError(t, err)
+
+	assert.Equal(t, "507fa5a2-fd58-4c4d-a231-efba27f67c3a", trunk.ID)
+	assert.Equal(t, "SDK Test twilio create", trunk.Name)
+
+	// Verify authentication_method in response
+	require.NotNil(t, trunk.AuthenticationMethod)
+	twilioAM, ok := trunk.AuthenticationMethod.(*authenticationmethod.Twilio)
+	require.True(t, ok, "expected Twilio authentication method")
+	assert.Equal(t, "AC33333333333333333333333333333333", twilioAM.TwilioAccountSid)
+
+	assertRequestJSON(t, *capturedBodyPtr, "voice_out_trunks/create_twilio_request.json")
+}
+
 func TestVoiceOutTrunksCreate(t *testing.T) {
 	server, capturedBodyPtr := captureRequestBody(t, map[string]testRoute{
 		"POST /v3/voice_out_trunks": {status: http.StatusCreated, fixture: "voice_out_trunks/create.json"},
