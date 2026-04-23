@@ -76,7 +76,7 @@ func TestVoiceOutTrunksCreate(t *testing.T) {
 	trunk, err := server.client.VoiceOutTrunks().Create(context.Background(), &resource.VoiceOutTrunk{
 		Name:                "java-test",
 		OnCliMismatchAction: enums.OnCliMismatchActionReplaceCli,
-		AuthenticationMethod: &authenticationmethod.IpOnly{
+		AuthenticationMethod: &authenticationmethod.CredentialsAndIp{
 			AllowedSipIPs: []string{"203.0.113.0/24"},
 		},
 		DefaultDIDID: "7a028c32-e6b6-4c86-bf01-90f901b37012",
@@ -88,9 +88,11 @@ func TestVoiceOutTrunksCreate(t *testing.T) {
 
 	// Verify authentication_method in response
 	require.NotNil(t, trunk.AuthenticationMethod)
-	ipAM, ok := trunk.AuthenticationMethod.(*authenticationmethod.IpOnly)
-	require.True(t, ok, "expected IpOnly authentication method")
-	assert.Equal(t, []string{"203.0.113.0/24"}, ipAM.AllowedSipIPs)
+	credAM, ok := trunk.AuthenticationMethod.(*authenticationmethod.CredentialsAndIp)
+	require.True(t, ok, "expected CredentialsAndIp authentication method")
+	assert.Equal(t, []string{"203.0.113.0/24"}, credAM.AllowedSipIPs)
+	assert.Equal(t, "dLPa6JbLTeMjKjl5", credAM.Username)
+	assert.Equal(t, "BZj1YvP45yWvX5Ic", credAM.Password)
 
 	assertRequestJSON(t, *capturedBodyPtr, "voice_out_trunks/create_request.json")
 }
