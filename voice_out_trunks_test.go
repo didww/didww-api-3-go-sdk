@@ -68,6 +68,29 @@ func TestVoiceOutTrunksFindWithIncludedDids(t *testing.T) {
 	require.Len(t, trunk.DIDs, 2)
 }
 
+func TestVoiceOutTrunksFindIpOnly(t *testing.T) {
+	_, client := newTestServer(t, map[string]testRoute{
+		"GET /v3/voice_out_trunks/23fd58f9-9094-406c-bfd9-f4d25bda13c6": {status: http.StatusOK, fixture: "voice_out_trunks/show_ip_only.json"},
+	})
+
+	trunk, err := client.VoiceOutTrunks().Find(context.Background(), "23fd58f9-9094-406c-bfd9-f4d25bda13c6", nil)
+	require.NoError(t, err)
+
+	assert.Equal(t, "23fd58f9-9094-406c-bfd9-f4d25bda13c6", trunk.ID)
+	assert.Equal(t, "SDK Test credentials_and_ip", trunk.Name)
+	assert.Equal(t, enums.VoiceOutTrunkStatusActive, trunk.Status)
+
+	// Verify authentication_method is parsed as IpOnly, not CredentialsAndIp
+	require.NotNil(t, trunk.AuthenticationMethod)
+	ipAM, ok := trunk.AuthenticationMethod.(*authenticationmethod.IpOnly)
+	require.True(t, ok, "expected IpOnly authentication method, got %T", trunk.AuthenticationMethod)
+	assert.Equal(t, []string{"203.0.113.1/32"}, ipAM.AllowedSipIPs)
+
+	// Must NOT be CredentialsAndIp
+	_, notCred := trunk.AuthenticationMethod.(*authenticationmethod.CredentialsAndIp)
+	assert.False(t, notCred, "authentication_method should not be CredentialsAndIp")
+}
+
 func TestVoiceOutTrunksCreate(t *testing.T) {
 	server, capturedBodyPtr := captureRequestBody(t, map[string]testRoute{
 		"POST /v3/voice_out_trunks": {status: http.StatusCreated, fixture: "voice_out_trunks/create.json"},
