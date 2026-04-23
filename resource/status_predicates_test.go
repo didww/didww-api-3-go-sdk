@@ -89,8 +89,8 @@ func TestEmergencyCallingServiceStatusPredicates(t *testing.T) {
 
 func TestOrderStatusPredicates(t *testing.T) {
 	tests := []struct {
-		status                                          enums.OrderStatus
-		expectPending, expectCompleted, expectCancelled bool
+		status                                         enums.OrderStatus
+		expectPending, expectCompleted, expectCanceled bool
 	}{
 		{enums.OrderStatusPending, true, false, false},
 		{enums.OrderStatusCompleted, false, true, false},
@@ -104,8 +104,8 @@ func TestOrderStatusPredicates(t *testing.T) {
 		if got := o.IsCompleted(); got != tt.expectCompleted {
 			t.Errorf("IsCompleted() for %q = %v, want %v", tt.status, got, tt.expectCompleted)
 		}
-		if got := o.IsCancelled(); got != tt.expectCancelled {
-			t.Errorf("IsCancelled() for %q = %v, want %v", tt.status, got, tt.expectCancelled)
+		if got := o.IsCanceled(); got != tt.expectCanceled {
+			t.Errorf("IsCanceled() for %q = %v, want %v", tt.status, got, tt.expectCanceled)
 		}
 	}
 }

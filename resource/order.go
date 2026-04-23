@@ -29,8 +29,8 @@ func (o *Order) IsPending() bool { return o.Status == enums.OrderStatusPending }
 // IsCompleted returns true when the order status is "completed".
 func (o *Order) IsCompleted() bool { return o.Status == enums.OrderStatusCompleted }
 
-// IsCancelled returns true when the order status is "canceled".
-func (o *Order) IsCancelled() bool { return o.Status == enums.OrderStatusCanceled }
+// IsCanceled returns true when the order status is "canceled".
+func (o *Order) IsCanceled() bool { return o.Status == enums.OrderStatusCanceled }
 
 // UnmarshalJSON implements custom unmarshaling for Order.
 func (o *Order) UnmarshalJSON(data []byte) error {

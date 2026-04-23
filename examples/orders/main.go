@@ -66,5 +66,5 @@ func main() {
 	if err := client.Orders().Delete(ctx, created.ID); err != nil {
 		panic(err)
 	}
-	fmt.Println("Order cancelled")
+	fmt.Println("Order canceled")
 }
