@@ -52,7 +52,9 @@ jobs:
       run: go vet ./...
 
     - name: Run tests
-      run: go test -race -coverprofile=coverage.out -covermode=atomic -v $(go list ./... | grep -v /examples)
+      run: |
+        PKGS=$(go list ./... | grep -v /examples | tr '\n' ',')
+        go test -race -coverprofile=coverage.out -covermode=atomic -coverpkg="$PKGS" -v $(go list ./... | grep -v /examples)
 
     - name: Run tests for enums package
       run: go test -race -v ./resource/enums
