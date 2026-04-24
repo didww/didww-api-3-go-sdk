@@ -4,7 +4,7 @@ package enums
 type OrderStatus string
 
 const (
-	OrderStatusPending   OrderStatus = "Pending"
-	OrderStatusCanceled  OrderStatus = "Canceled"
-	OrderStatusCompleted OrderStatus = "Completed"
+	OrderStatusPending   OrderStatus = "pending"
+	OrderStatusCanceled  OrderStatus = "canceled"
+	OrderStatusCompleted OrderStatus = "completed"
 )

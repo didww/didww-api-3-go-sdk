@@ -60,7 +60,7 @@ func TestDIDsFindWithAddressVerificationAndDIDGroup(t *testing.T) {
 	// Verify address verification
 	require.NotNil(t, did.AddressVerification)
 	assert.Equal(t, "75dc8d39-5e17-4470-a6f3-df42642c975f", did.AddressVerification.ID)
-	assert.Equal(t, enums.AddressVerificationStatus("Approved"), did.AddressVerification.Status)
+	assert.Equal(t, enums.AddressVerificationStatusApproved, did.AddressVerification.Status)
 
 	// Verify DID group
 	require.NotNil(t, did.DIDGroup)
@@ -209,6 +209,24 @@ func TestDIDsUpdateAssignTrunkGroup(t *testing.T) {
 	require.NotNil(t, did.VoiceInTrunkGroup)
 	assert.Equal(t, "b2319703-ce6c-480d-bb53-614e7abcfc96", did.VoiceInTrunkGroup.ID)
 	assert.Equal(t, "trunk group sample with 2 trunks", did.VoiceInTrunkGroup.Name)
+}
+
+func TestDIDsUpdateUnassignEmergencyCallingService(t *testing.T) {
+	server, capturedBodyPtr := captureRequestBody(t, map[string]testRoute{
+		"PATCH /v3/dids/44957076-778a-4802-b60c-d22db0cda284": {status: http.StatusOK, fixture: "dids/unassign_emergency_calling_service.json"},
+	})
+
+	did, err := server.client.DIDs().Update(context.Background(), &resource.DID{
+		ID:                             "44957076-778a-4802-b60c-d22db0cda284",
+		NullifyEmergencyCallingService: true,
+	})
+	require.NoError(t, err)
+
+	assertRequestJSON(t, *capturedBodyPtr, "dids/unassign_emergency_calling_service_request.json")
+
+	assert.Equal(t, "44957076-778a-4802-b60c-d22db0cda284", did.ID)
+	assert.False(t, did.EmergencyEnabled)
+	assert.Nil(t, did.EmergencyCallingService)
 }
 
 func TestDIDsFindWithTrunkResolved(t *testing.T) {

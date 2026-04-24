@@ -62,10 +62,12 @@ func main() {
 	fmt.Println("Created trunk B:", trunkB.ID)
 
 	// Create a trunk group with both trunks
+	extRef := fmt.Sprintf("go-vitg-%d", ts)
 	group, err := client.VoiceInTrunkGroups().Create(ctx, &resource.VoiceInTrunkGroup{
-		Name:            fmt.Sprintf("SDK Trunk Group %d", ts),
-		CapacityLimit:   examples.Ptr(10),
-		VoiceInTrunkIDs: []string{trunkA.ID, trunkB.ID},
+		Name:                fmt.Sprintf("SDK Trunk Group %d", ts),
+		CapacityLimit:       examples.Ptr(10),
+		VoiceInTrunkIDs:     []string{trunkA.ID, trunkB.ID},
+		ExternalReferenceID: &extRef,
 	})
 	if err != nil {
 		panic(err)
@@ -81,7 +83,11 @@ func main() {
 	fmt.Printf("\nAll trunk groups (%d):\n", len(groups))
 	for _, g := range groups {
 		trunkCount := len(g.VoiceInTrunks)
-		fmt.Printf("  %s (%d trunks)\n", g.Name, trunkCount)
+		fmt.Printf("  %s (%d trunks)", g.Name, trunkCount)
+		if g.ExternalReferenceID != nil {
+			fmt.Printf(" [ref: %s]", *g.ExternalReferenceID)
+		}
+		fmt.Println()
 	}
 
 	// Update group name

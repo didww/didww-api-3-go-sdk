@@ -120,8 +120,8 @@ func (r *SingletonRepository[T]) Find(ctx context.Context) (*T, error) {
 
 const (
 	jsonapiMediaType = "application/vnd.api+json"
-	apiVersion       = "2022-05-10"
-	sdkVersion       = "1.0.0"
+	apiVersion       = "2026-04-16"
+	sdkVersion       = "3.0.0-dev"
 )
 
 // doRequest executes an HTTP request and returns the response body.

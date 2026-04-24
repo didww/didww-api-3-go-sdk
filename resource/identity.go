@@ -25,7 +25,9 @@ type Identity struct {
 	Verified            bool               `json:"verified" api:"readonly"`
 	ContactEmail        *string            `json:"contact_email"`
 	// Relationship IDs for create/update
-	CountryID string `json:"-" rel:"country,countries"`
+	CountryID      string `json:"-" rel:"country,countries"`
+	BirthCountryID string `json:"-" rel:"birth_country,countries"`
 	// Resolved relationships
-	Country *Country `json:"-" rel:"country"`
+	Country      *Country `json:"-" rel:"country"`
+	BirthCountry *Country `json:"-" rel:"birth_country"`
 }

@@ -20,19 +20,29 @@ type DID struct {
 	ExpiresAt              *time.Time `json:"expires_at" api:"readonly"`
 	ChannelsIncludedCount  int        `json:"channels_included_count" api:"readonly"`
 	DedicatedChannelsCount int        `json:"dedicated_channels_count"`
+	EmergencyEnabled       bool       `json:"emergency_enabled" api:"readonly"`
 	// Relationship IDs for create/update
-	VoiceInTrunkID        string `json:"-" rel:"voice_in_trunk,voice_in_trunks"`
-	VoiceInTrunkGroupID   string `json:"-" rel:"voice_in_trunk_group,voice_in_trunk_groups"`
-	CapacityPoolID        string `json:"-" rel:"capacity_pool,capacity_pools"`
-	SharedCapacityGroupID string `json:"-" rel:"shared_capacity_group,shared_capacity_groups"`
+	VoiceInTrunkID            string `json:"-" rel:"voice_in_trunk,voice_in_trunks"`
+	VoiceInTrunkGroupID       string `json:"-" rel:"voice_in_trunk_group,voice_in_trunk_groups"`
+	CapacityPoolID            string `json:"-" rel:"capacity_pool,capacity_pools"`
+	SharedCapacityGroupID     string `json:"-" rel:"shared_capacity_group,shared_capacity_groups"`
+	EmergencyCallingServiceID string `json:"-" rel:"emergency_calling_service,emergency_calling_services"`
+	EmergencyVerificationID   string `json:"-" rel:"emergency_verification,emergency_verifications"`
+	IdentityID                string `json:"-" rel:"identity,identities"`
+	// NullifyEmergencyCallingService, when true, sends {"data": null} for the
+	// emergency_calling_service relationship (unassign the service from this DID).
+	NullifyEmergencyCallingService bool `json:"-"`
 	// Resolved relationships
-	Order               *Order               `json:"-" rel:"order"`
-	AddressVerification *AddressVerification `json:"-" rel:"address_verification"`
-	DIDGroup            *DIDGroup            `json:"-" rel:"did_group"`
-	VoiceInTrunk        *VoiceInTrunk        `json:"-" rel:"voice_in_trunk"`
-	VoiceInTrunkGroup   *VoiceInTrunkGroup   `json:"-" rel:"voice_in_trunk_group"`
-	CapacityPool        *CapacityPool        `json:"-" rel:"capacity_pool"`
-	SharedCapacityGroup *SharedCapacityGroup `json:"-" rel:"shared_capacity_group"`
+	Order                   *Order                   `json:"-" rel:"order"`
+	AddressVerification     *AddressVerification     `json:"-" rel:"address_verification"`
+	DIDGroup                *DIDGroup                `json:"-" rel:"did_group"`
+	VoiceInTrunk            *VoiceInTrunk            `json:"-" rel:"voice_in_trunk"`
+	VoiceInTrunkGroup       *VoiceInTrunkGroup       `json:"-" rel:"voice_in_trunk_group"`
+	CapacityPool            *CapacityPool            `json:"-" rel:"capacity_pool"`
+	SharedCapacityGroup     *SharedCapacityGroup     `json:"-" rel:"shared_capacity_group"`
+	EmergencyCallingService *EmergencyCallingService `json:"-" rel:"emergency_calling_service"`
+	EmergencyVerification   *EmergencyVerification   `json:"-" rel:"emergency_verification"`
+	Identity                *Identity                `json:"-" rel:"identity"`
 }
 
 // MarshalRelationships implements RelationshipMarshaler for DID.
@@ -50,6 +60,9 @@ func (d *DID) MarshalRelationships() (map[string]any, error) {
 	}
 	if d.SharedCapacityGroupID != "" {
 		rels["capacity_pool"] = jsonapi.NullRelationship()
+	}
+	if d.NullifyEmergencyCallingService {
+		rels["emergency_calling_service"] = jsonapi.NullRelationship()
 	}
 	return rels, nil
 }

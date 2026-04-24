@@ -29,7 +29,7 @@ func TestAddressVerificationsCreate(t *testing.T) {
 	})
 
 	cbURL := "http://example.com"
-	cbMethod := "GET"
+	cbMethod := "get"
 	av, err := server.client.AddressVerifications().Create(context.Background(), &resource.AddressVerification{
 		CallbackURL:    &cbURL,
 		CallbackMethod: &cbMethod,
@@ -61,6 +61,47 @@ func TestAddressVerificationsFind(t *testing.T) {
 	assert.Equal(t, enums.AddressVerificationStatusApproved, av.Status)
 	assert.Equal(t, "SHB-485120", av.Reference)
 	assert.Nil(t, av.RejectReasons)
+}
+
+func TestAddressVerificationsUpdateExternalReferenceID(t *testing.T) {
+	server, capturedBodyPtr := captureRequestBody(t, map[string]testRoute{
+		"PATCH /v3/address_verifications/c8e004b0-87ec-4987-b4fb-ee89db099f0e": {status: http.StatusOK, fixture: "address_verifications/update.json"},
+	})
+
+	extRef := "ext-ref-123"
+	av, err := server.client.AddressVerifications().Update(context.Background(), &resource.AddressVerification{
+		ID:                  "c8e004b0-87ec-4987-b4fb-ee89db099f0e",
+		ExternalReferenceID: &extRef,
+	})
+	require.NoError(t, err)
+
+	assert.Equal(t, "c8e004b0-87ec-4987-b4fb-ee89db099f0e", av.ID)
+	require.NotNil(t, av.ExternalReferenceID)
+	assert.Equal(t, "ext-ref-123", *av.ExternalReferenceID)
+
+	assertRequestJSON(t, *capturedBodyPtr, "address_verifications/update_request.json")
+}
+
+func TestAddressVerificationsUpdateExternalReferenceIDFromLoaded(t *testing.T) {
+	server, capturedBodyPtr := captureRequestBody(t, map[string]testRoute{
+		"GET /v3/address_verifications/c8e004b0-87ec-4987-b4fb-ee89db099f0e":   {status: http.StatusOK, fixture: "address_verifications/show.json"},
+		"PATCH /v3/address_verifications/c8e004b0-87ec-4987-b4fb-ee89db099f0e": {status: http.StatusOK, fixture: "address_verifications/update.json"},
+	})
+
+	av, err := server.client.AddressVerifications().Find(context.Background(), "c8e004b0-87ec-4987-b4fb-ee89db099f0e")
+	require.NoError(t, err)
+
+	extRef := "ext-ref-123"
+	av.ExternalReferenceID = &extRef
+
+	av, err = server.client.AddressVerifications().Update(context.Background(), av)
+	require.NoError(t, err)
+
+	assert.Equal(t, "c8e004b0-87ec-4987-b4fb-ee89db099f0e", av.ID)
+	require.NotNil(t, av.ExternalReferenceID)
+	assert.Equal(t, "ext-ref-123", *av.ExternalReferenceID)
+
+	assertRequestJSON(t, *capturedBodyPtr, "address_verifications/update_request.json")
 }
 
 func TestAddressVerificationsFindRejected(t *testing.T) {

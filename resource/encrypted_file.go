@@ -6,5 +6,5 @@ import "time"
 type EncryptedFile struct {
 	ID          string     `json:"-" jsonapi:"encrypted_files"`
 	Description string     `json:"description"`
-	ExpireAt    *time.Time `json:"expire_at" api:"readonly"`
+	ExpiresAt   *time.Time `json:"expires_at" api:"readonly"`
 }

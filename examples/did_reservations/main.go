@@ -40,7 +40,7 @@ func main() {
 	}
 	fmt.Println("Created reservation:", created.ID)
 	fmt.Println("  description:", created.Description)
-	fmt.Println("  expires at:", created.ExpireAt)
+	fmt.Println("  expires at:", created.ExpiresAt)
 
 	// List reservations with includes
 	listParams := didww.NewQueryParams().Include("available_did")

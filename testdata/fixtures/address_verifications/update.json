@@ -1,0 +1,20 @@
+{
+  "data": {
+    "id": "c8e004b0-87ec-4987-b4fb-ee89db099f0e",
+    "type": "address_verifications",
+    "attributes": {
+      "service_description": null,
+      "callback_url": null,
+      "callback_method": null,
+      "status": "approved",
+      "reject_reasons": null,
+      "reference": "SHB-485120",
+      "reject_comment": null,
+      "external_reference_id": "ext-ref-123",
+      "created_at": "2020-10-28T08:29:29.960Z"
+    }
+  },
+  "meta": {
+    "api_version": "2026-04-16"
+  }
+}

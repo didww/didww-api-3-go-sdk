@@ -1,0 +1,32 @@
+{
+  "data": [
+    {
+      "id": "ecs-001-id",
+      "type": "emergency_calling_services",
+      "attributes": {
+        "name": "E911 Service US",
+        "reference": "ECS-12345",
+        "status": "active",
+        "activated_at": "2026-04-01T10:00:00.000Z",
+        "canceled_at": null,
+        "created_at": "2026-03-15T08:00:00.000Z",
+        "renew_date": "2026-05-01"
+      },
+      "meta": {
+        "setup_price": "0.0",
+        "monthly_price": "1.5"
+      },
+      "relationships": {
+        "country": {
+          "data": { "type": "countries", "id": "us-country" }
+        },
+        "did_group_type": {
+          "data": { "type": "did_group_types", "id": "local-dgt" }
+        }
+      }
+    }
+  ],
+  "meta": {
+    "api_version": "2026-04-16"
+  }
+}

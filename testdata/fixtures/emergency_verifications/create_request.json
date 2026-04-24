@@ -1,6 +1,6 @@
 {
   "data": {
-    "type": "requirement_validations",
+    "type": "emergency_verifications",
     "attributes": {},
     "relationships": {
       "address": {
@@ -9,10 +9,10 @@
           "id": "d3414687-40f4-4346-a267-c2c65117d28c"
         }
       },
-      "requirement": {
+      "emergency_calling_service": {
         "data": {
-          "type": "requirements",
-          "id": "aea92b24-a044-4864-9740-89d3e15b65c7"
+          "type": "emergency_calling_services",
+          "id": "ecs-001-id"
         }
       }
     }

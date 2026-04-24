@@ -1,0 +1,26 @@
+{
+  "data": {
+    "type": "emergency_requirement_validations",
+    "attributes": {},
+    "relationships": {
+      "emergency_requirement": {
+        "data": {
+          "type": "emergency_requirements",
+          "id": "c1d2e3f4-a5b6-7890-1234-567890abcdef"
+        }
+      },
+      "address": {
+        "data": {
+          "type": "addresses",
+          "id": "d3414687-40f4-4346-a267-c2c65117d28c"
+        }
+      },
+      "identity": {
+        "data": {
+          "type": "identities",
+          "id": "5e9df058-50d2-4e34-b0d4-d1746b86f41a"
+        }
+      }
+    }
+  }
+}

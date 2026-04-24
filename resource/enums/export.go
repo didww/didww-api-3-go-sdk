@@ -12,15 +12,15 @@ const (
 type ExportStatus string
 
 const (
-	ExportStatusPending    ExportStatus = "Pending"
-	ExportStatusProcessing ExportStatus = "Processing"
-	ExportStatusCompleted  ExportStatus = "Completed"
+	ExportStatusPending    ExportStatus = "pending"
+	ExportStatusProcessing ExportStatus = "processing"
+	ExportStatusCompleted  ExportStatus = "completed"
 )
 
 // CallbackMethod defines the HTTP method used for webhook callbacks.
 type CallbackMethod string
 
 const (
-	CallbackMethodPOST CallbackMethod = "POST"
-	CallbackMethodGET  CallbackMethod = "GET"
+	CallbackMethodPOST CallbackMethod = "post"
+	CallbackMethodGET  CallbackMethod = "get"
 )

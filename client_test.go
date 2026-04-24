@@ -44,7 +44,7 @@ func TestClientSendsCorrectHeaders(t *testing.T) {
 	assert.Equal(t, "application/vnd.api+json", receivedAccept)
 	assert.Equal(t, "test-api-key", receivedAPIKey)
 	assert.Equal(t, apiVersion, receivedAPIVersion)
-	assert.Equal(t, "didww-go-sdk/1.0.0", receivedUserAgent)
+	assert.Equal(t, "didww-go-sdk/3.0.0-dev", receivedUserAgent)
 }
 
 func TestClientHandlesHTTPErrors(t *testing.T) {

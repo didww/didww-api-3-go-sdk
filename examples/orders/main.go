@@ -23,7 +23,11 @@ func main() {
 		panic(err)
 	}
 	for _, order := range orders {
-		fmt.Printf("Order %s: %s ($%s)\n", order.ID, order.Status, order.Amount)
+		fmt.Printf("Order %s: %s ($%s)", order.ID, order.Status, order.Amount)
+		if order.ExternalReferenceID != nil {
+			fmt.Printf(" [ref: %s]", *order.ExternalReferenceID)
+		}
+		fmt.Println()
 		for _, item := range order.Items {
 			fmt.Printf("  - %T\n", item)
 		}
@@ -42,7 +46,9 @@ func main() {
 	}
 	skuID := didGroups[0].StockKeepingUnits[0].ID
 
+	extRef := "go-order-example"
 	newOrder := &resource.Order{
+		ExternalReferenceID: &extRef,
 		Items: []orderitem.OrderItem{
 			&orderitem.DidOrderItem{
 				SkuID: skuID,
@@ -60,5 +66,5 @@ func main() {
 	if err := client.Orders().Delete(ctx, created.ID); err != nil {
 		panic(err)
 	}
-	fmt.Println("Order cancelled")
+	fmt.Println("Order canceled")
 }

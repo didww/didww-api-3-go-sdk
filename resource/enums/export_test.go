@@ -26,9 +26,9 @@ func TestExportStatus(t *testing.T) {
 		value    ExportStatus
 		expected string
 	}{
-		{"Pending", ExportStatusPending, "Pending"},
-		{"Processing", ExportStatusProcessing, "Processing"},
-		{"Completed", ExportStatusCompleted, "Completed"},
+		{"Pending", ExportStatusPending, "pending"},
+		{"Processing", ExportStatusProcessing, "processing"},
+		{"Completed", ExportStatusCompleted, "completed"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -45,8 +45,8 @@ func TestCallbackMethod(t *testing.T) {
 		value    CallbackMethod
 		expected string
 	}{
-		{"POST", CallbackMethodPOST, "POST"},
-		{"GET", CallbackMethodGET, "GET"},
+		{"POST", CallbackMethodPOST, "post"},
+		{"GET", CallbackMethodGET, "get"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

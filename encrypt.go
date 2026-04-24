@@ -116,33 +116,33 @@ func CalculateFingerprint(publicKeyA, publicKeyB string) string {
 	return fingerprintFor(publicKeyA) + ":::" + fingerprintFor(publicKeyB)
 }
 
-// UploadEncryptedFile uploads an encrypted file via multipart/form-data POST.
-// Returns the list of encrypted file IDs created by the API.
-func (c *Client) UploadEncryptedFile(ctx context.Context, encryptedData []byte, fileName, fingerprint, description string) ([]string, error) {
+// UploadEncryptedFile uploads a single encrypted file via multipart/form-data POST.
+// Returns the created encrypted file ID.
+func (c *Client) UploadEncryptedFile(ctx context.Context, encryptedData []byte, fileName, fingerprint, description string) (string, error) {
 	var buf bytes.Buffer
 	w := multipart.NewWriter(&buf)
 
 	if err := w.WriteField("encrypted_files[encryption_fingerprint]", fingerprint); err != nil {
-		return nil, fmt.Errorf("failed to write fingerprint field: %w", err)
+		return "", fmt.Errorf("failed to write fingerprint field: %w", err)
 	}
-	if err := w.WriteField("encrypted_files[items][][description]", description); err != nil {
-		return nil, fmt.Errorf("failed to write description field: %w", err)
+	if err := w.WriteField("encrypted_files[description]", description); err != nil {
+		return "", fmt.Errorf("failed to write description field: %w", err)
 	}
-	part, err := w.CreateFormFile("encrypted_files[items][][file]", fileName)
+	part, err := w.CreateFormFile("encrypted_files[file]", fileName)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create file part: %w", err)
+		return "", fmt.Errorf("failed to create file part: %w", err)
 	}
 	if _, writeErr := part.Write(encryptedData); writeErr != nil {
-		return nil, fmt.Errorf("failed to write file data: %w", writeErr)
+		return "", fmt.Errorf("failed to write file data: %w", writeErr)
 	}
 	if closeErr := w.Close(); closeErr != nil {
-		return nil, fmt.Errorf("failed to close multipart writer: %w", closeErr)
+		return "", fmt.Errorf("failed to close multipart writer: %w", closeErr)
 	}
 
 	u := c.buildURL("encrypted_files")
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, u, &buf)
 	if err != nil {
-		return nil, &ClientError{Message: fmt.Sprintf("failed to create request: %v", err)}
+		return "", &ClientError{Message: fmt.Sprintf("failed to create request: %v", err)}
 	}
 	req.Header.Set("Content-Type", w.FormDataContentType())
 	req.Header.Set("Accept", "application/json")
@@ -151,29 +151,31 @@ func (c *Client) UploadEncryptedFile(ctx context.Context, encryptedData []byte, 
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return nil, &ClientError{Message: fmt.Sprintf("request failed: %v", err)}
+		return "", &ClientError{Message: fmt.Sprintf("request failed: %v", err)}
 	}
 	defer resp.Body.Close() //nolint:errcheck // best-effort close
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, &ClientError{Message: fmt.Sprintf("failed to read response: %v", err)}
+		return "", &ClientError{Message: fmt.Sprintf("failed to read response: %v", err)}
 	}
 
 	if resp.StatusCode >= 400 {
-		return nil, &ClientError{Message: fmt.Sprintf("upload failed: HTTP %d %s", resp.StatusCode, string(body))}
+		return "", &ClientError{Message: fmt.Sprintf("upload failed: HTTP %d %s", resp.StatusCode, string(body))}
 	}
 
 	var result struct {
-		IDs []string `json:"ids"`
+		Data struct {
+			ID string `json:"id"`
+		} `json:"data"`
 	}
 	if err := json.Unmarshal(body, &result); err != nil {
-		return nil, &ClientError{Message: fmt.Sprintf("unexpected upload response: %s", string(body))}
+		return "", &ClientError{Message: fmt.Sprintf("unexpected upload response: %s", string(body))}
 	}
-	if result.IDs == nil {
-		return nil, &ClientError{Message: fmt.Sprintf("unexpected upload response: %s", string(body))}
+	if result.Data.ID == "" {
+		return "", &ClientError{Message: fmt.Sprintf("unexpected upload response: %s", string(body))}
 	}
-	return result.IDs, nil
+	return result.Data.ID, nil
 }
 
 func encryptRSAOAEP(publicKeyPEM string, data []byte) ([]byte, error) {

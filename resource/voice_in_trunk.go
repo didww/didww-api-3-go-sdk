@@ -10,17 +10,18 @@ import (
 
 // VoiceInTrunk represents a voice inbound trunk.
 type VoiceInTrunk struct {
-	ID             string                                `json:"-" jsonapi:"voice_in_trunks"`
-	Priority       int                                   `json:"priority,omitempty"`
-	CapacityLimit  *int                                  `json:"capacity_limit,omitempty"`
-	Weight         int                                   `json:"weight,omitempty"`
-	Name           string                                `json:"name,omitempty"`
-	CliFormat      enums.CliFormat                       `json:"cli_format,omitempty"`
-	CliPrefix      *string                               `json:"cli_prefix,omitempty"`
-	Description    *string                               `json:"description,omitempty"`
-	RingingTimeout *int                                  `json:"ringing_timeout,omitempty"`
-	Configuration  trunkconfiguration.TrunkConfiguration `json:"-"`
-	CreatedAt      time.Time                             `json:"created_at" api:"readonly"`
+	ID                  string                                `json:"-" jsonapi:"voice_in_trunks"`
+	Priority            int                                   `json:"priority,omitempty"`
+	CapacityLimit       *int                                  `json:"capacity_limit,omitempty"`
+	Weight              int                                   `json:"weight,omitempty"`
+	Name                string                                `json:"name,omitempty"`
+	CliFormat           enums.CliFormat                       `json:"cli_format,omitempty"`
+	CliPrefix           *string                               `json:"cli_prefix,omitempty"`
+	Description         *string                               `json:"description,omitempty"`
+	RingingTimeout      *int                                  `json:"ringing_timeout,omitempty"`
+	Configuration       trunkconfiguration.TrunkConfiguration `json:"-"`
+	CreatedAt           time.Time                             `json:"created_at" api:"readonly"`
+	ExternalReferenceID *string                               `json:"external_reference_id,omitempty"`
 	// Resolved relationships
 	Pop               *Pop               `json:"-" rel:"pop"`
 	VoiceInTrunkGroup *VoiceInTrunkGroup `json:"-" rel:"voice_in_trunk_group"`
@@ -77,10 +78,11 @@ func (v VoiceInTrunk) MarshalJSON() ([]byte, error) { //nolint:gocritic // value
 
 // VoiceInTrunkGroup represents a group of voice inbound trunks.
 type VoiceInTrunkGroup struct {
-	ID            string    `json:"-" jsonapi:"voice_in_trunk_groups"`
-	Name          string    `json:"name,omitempty"`
-	CapacityLimit *int      `json:"capacity_limit,omitempty"`
-	CreatedAt     time.Time `json:"created_at" api:"readonly"`
+	ID                  string    `json:"-" jsonapi:"voice_in_trunk_groups"`
+	Name                string    `json:"name,omitempty"`
+	CapacityLimit       *int      `json:"capacity_limit,omitempty"`
+	CreatedAt           time.Time `json:"created_at" api:"readonly"`
+	ExternalReferenceID *string   `json:"external_reference_id,omitempty"`
 	// Relationship IDs for create/update
 	VoiceInTrunkIDs []string `json:"-" rel:"voice_in_trunks,voice_in_trunks"`
 	// Resolved relationships

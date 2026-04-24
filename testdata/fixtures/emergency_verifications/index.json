@@ -1,0 +1,29 @@
+{
+  "data": [
+    {
+      "id": "ev-001-id",
+      "type": "emergency_verifications",
+      "attributes": {
+        "reference": "EV-123",
+        "status": "pending",
+        "reject_reasons": null,
+        "reject_comment": null,
+        "callback_url": null,
+        "callback_method": null,
+        "external_reference_id": null,
+        "created_at": "2026-04-10T08:00:00.000Z"
+      },
+      "relationships": {
+        "address": {
+          "data": { "type": "addresses", "id": "addr-001" }
+        },
+        "emergency_calling_service": {
+          "data": { "type": "emergency_calling_services", "id": "ecs-001-id" }
+        }
+      }
+    }
+  ],
+  "meta": {
+    "api_version": "2026-04-16"
+  }
+}

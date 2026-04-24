@@ -8,9 +8,9 @@ func TestAddressVerificationStatus(t *testing.T) {
 		value    AddressVerificationStatus
 		expected string
 	}{
-		{"Pending", AddressVerificationStatusPending, "Pending"},
-		{"Approved", AddressVerificationStatusApproved, "Approved"},
-		{"Rejected", AddressVerificationStatusRejected, "Rejected"},
+		{"Pending", AddressVerificationStatusPending, "pending"},
+		{"Approved", AddressVerificationStatusApproved, "approved"},
+		{"Rejected", AddressVerificationStatusRejected, "rejected"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -27,10 +27,10 @@ func TestAreaLevel(t *testing.T) {
 		value    AreaLevel
 		expected string
 	}{
-		{"WorldWide", AreaLevelWorldWide, "WorldWide"},
-		{"Country", AreaLevelCountry, "Country"},
-		{"Area", AreaLevelArea, "Area"},
-		{"City", AreaLevelCity, "City"},
+		{"WorldWide", AreaLevelWorldWide, "world_wide"},
+		{"Country", AreaLevelCountry, "country"},
+		{"Area", AreaLevelArea, "area"},
+		{"City", AreaLevelCity, "city"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

@@ -44,13 +44,13 @@
           "related": "https://sandbox-api.didww.com/v3/did_groups/2187c36d-28fb-436f-8861-5a0f5b5a3ee1/stock_keeping_units"
         }
       },
-      "requirement": {
+      "address_requirement": {
         "links": {
-          "self": "https://sandbox-api.didww.com/v3/did_groups/2187c36d-28fb-436f-8861-5a0f5b5a3ee1/relationships/requirement",
-          "related": "https://sandbox-api.didww.com/v3/did_groups/2187c36d-28fb-436f-8861-5a0f5b5a3ee1/requirement"
+          "self": "https://sandbox-api.didww.com/v3/did_groups/2187c36d-28fb-436f-8861-5a0f5b5a3ee1/relationships/address_requirement",
+          "related": "https://sandbox-api.didww.com/v3/did_groups/2187c36d-28fb-436f-8861-5a0f5b5a3ee1/address_requirement"
         },
         "data": {
-          "type": "requirements",
+          "type": "address_requirements",
           "id": "8da1e0b2-047c-4baf-9c57-57143f09b9ce"
         }
       }
@@ -64,12 +64,12 @@
   "included": [
     {
       "id": "8da1e0b2-047c-4baf-9c57-57143f09b9ce",
-      "type": "requirements",
+      "type": "address_requirements",
       "attributes": {
-        "identity_type": "Any",
-        "personal_area_level": "WorldWide",
-        "business_area_level": "Country",
-        "address_area_level": "City",
+        "identity_type": "any",
+        "personal_area_level": "world_wide",
+        "business_area_level": "country",
+        "address_area_level": "city",
         "personal_proof_qty": 1,
         "business_proof_qty": 1,
         "address_proof_qty": 1,

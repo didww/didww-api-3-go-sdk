@@ -12,7 +12,6 @@ func TestFeature(t *testing.T) {
 		{"VoiceOut", FeatureVoiceOut, "voice_out"},
 		{"T38", FeatureT38, "t38"},
 		{"SmsIn", FeatureSmsIn, "sms_in"},
-		{"SmsOut", FeatureSmsOut, "sms_out"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

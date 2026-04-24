@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/didww/didww-api-3-go-sdk/resource"
+	"github.com/didww/didww-api-3-go-sdk/resource/authenticationmethod"
 )
 
 const testDIDID = "9df99644-f1a5-4a3c-99a4-559d758eb96b"
@@ -493,6 +494,74 @@ func TestDirtyPatch_LoadedSetSharedCapacityGroupOnlyRelChange(t *testing.T) {
 	assertRelSet(t, doc.Rels, "shared_capacity_group", "shared_capacity_groups", "group-1")
 	// capacity_pool should be null
 	assertRelNull(t, doc.Rels, "capacity_pool")
+}
+
+// TestDirtyPatch_VoiceOutTrunk_ReassignAuthenticationMethod verifies that after loading
+// a VoiceOutTrunk from the API, reassigning authentication_method to a different
+// polymorphic variant sends only that attribute.
+func TestDirtyPatch_VoiceOutTrunk_ReassignAuthenticationMethod(t *testing.T) {
+	server, capturedBodyPtr := captureRequestBody(t, map[string]testRoute{
+		"GET /v3/voice_out_trunks/" + testVoiceOutTrunkID:   {status: http.StatusOK, fixture: "voice_out_trunks/show.json"},
+		"PATCH /v3/voice_out_trunks/" + testVoiceOutTrunkID: {status: http.StatusOK, fixture: "voice_out_trunks/update.json"},
+	})
+
+	trunk, err := server.client.VoiceOutTrunks().Find(context.Background(), testVoiceOutTrunkID)
+	require.NoError(t, err)
+
+	// Reassign to a different polymorphic variant
+	trunk.AuthenticationMethod = &authenticationmethod.CredentialsAndIp{
+		AllowedSipIPs: []string{"192.0.2.10/32"},
+		TechPrefix:    "99",
+	}
+
+	_, err = server.client.VoiceOutTrunks().Update(context.Background(), trunk)
+	require.NoError(t, err)
+
+	doc := parsePatchBody(t, *capturedBodyPtr)
+
+	// Only authentication_method should be in attributes
+	require.Len(t, doc.Attrs, 1)
+	assert.Contains(t, doc.Attrs, "authentication_method")
+
+	// No relationships should be present
+	assert.Empty(t, doc.Rels)
+}
+
+// TestDirtyPatch_VoiceOutTrunk_ReplaceEmergencyDIDs verifies that setting
+// EmergencyDIDIDs sends the relationship with the specified DID IDs.
+func TestDirtyPatch_VoiceOutTrunk_ReplaceEmergencyDIDs(t *testing.T) {
+	const trunkID = "01234567-89ab-cdef-0123-456789abcdef"
+	server, capturedBodyPtr := captureRequestBody(t, map[string]testRoute{
+		"PATCH /v3/voice_out_trunks/" + trunkID: {status: http.StatusOK, fixture: "voice_out_trunks/update_emergency_dids.json"},
+	})
+
+	_, err := server.client.VoiceOutTrunks().Update(context.Background(), &resource.VoiceOutTrunk{
+		ID: trunkID,
+		EmergencyDIDIDs: []string{
+			"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+			"bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
+		},
+	})
+	require.NoError(t, err)
+
+	assertRequestJSON(t, *capturedBodyPtr, "voice_out_trunks/update_emergency_dids_request.json")
+}
+
+// TestDirtyPatch_VoiceOutTrunk_ClearEmergencyDIDs verifies that clearing
+// emergency_dids sends an empty data array in the relationship.
+func TestDirtyPatch_VoiceOutTrunk_ClearEmergencyDIDs(t *testing.T) {
+	const trunkID = "01234567-89ab-cdef-0123-456789abcdef"
+	server, capturedBodyPtr := captureRequestBody(t, map[string]testRoute{
+		"PATCH /v3/voice_out_trunks/" + trunkID: {status: http.StatusOK, fixture: "voice_out_trunks/update_emergency_dids.json"},
+	})
+
+	_, err := server.client.VoiceOutTrunks().Update(context.Background(), &resource.VoiceOutTrunk{
+		ID:                 trunkID,
+		ClearEmergencyDIDs: true,
+	})
+	require.NoError(t, err)
+
+	assertRequestJSON(t, *capturedBodyPtr, "voice_out_trunks/update_emergency_dids_clear_request.json")
 }
 
 // --- test helpers ---

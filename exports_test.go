@@ -41,8 +41,8 @@ func TestExportsCreate(t *testing.T) {
 		ExportType: enums.ExportTypeCdrIn,
 		Filters: map[string]interface{}{
 			"did_number": "1234556789",
-			"year":       "2019",
-			"month":      "01",
+			"from":       "2026-04-01 00:00:00",
+			"to":         "2026-04-15 23:59:59",
 		},
 	})
 	require.NoError(t, err)
@@ -62,8 +62,8 @@ func TestExportsCreateCdrOut(t *testing.T) {
 	export, err := client.Exports().Create(context.Background(), &resource.Export{
 		ExportType: enums.ExportTypeCdrOut,
 		Filters: map[string]interface{}{
-			"year":  "2019",
-			"month": "01",
+			"from": "2026-04-01 00:00:00",
+			"to":   "2026-04-30 23:59:59",
 		},
 	})
 	require.NoError(t, err)
@@ -103,6 +103,47 @@ func TestExportsFind(t *testing.T) {
 	assert.Equal(t, enums.ExportTypeCdrIn, export.ExportType)
 	require.NotNil(t, export.URL)
 	assert.NotEmpty(t, *export.URL)
+}
+
+func TestExportsUpdateExternalReferenceID(t *testing.T) {
+	server, capturedBodyPtr := captureRequestBody(t, map[string]testRoute{
+		"PATCH /v3/exports/da15f006-5da4-45ca-b0df-735baeadf423": {status: http.StatusOK, fixture: "exports/update.json"},
+	})
+
+	extRef := "export-ext-ref"
+	export, err := server.client.Exports().Update(context.Background(), &resource.Export{
+		ID:                  "da15f006-5da4-45ca-b0df-735baeadf423",
+		ExternalReferenceID: &extRef,
+	})
+	require.NoError(t, err)
+
+	assert.Equal(t, "da15f006-5da4-45ca-b0df-735baeadf423", export.ID)
+	require.NotNil(t, export.ExternalReferenceID)
+	assert.Equal(t, "export-ext-ref", *export.ExternalReferenceID)
+
+	assertRequestJSON(t, *capturedBodyPtr, "exports/update_request.json")
+}
+
+func TestExportsUpdateExternalReferenceIDFromLoaded(t *testing.T) {
+	server, capturedBodyPtr := captureRequestBody(t, map[string]testRoute{
+		"GET /v3/exports/da15f006-5da4-45ca-b0df-735baeadf423":   {status: http.StatusOK, fixture: "exports/show.json"},
+		"PATCH /v3/exports/da15f006-5da4-45ca-b0df-735baeadf423": {status: http.StatusOK, fixture: "exports/update.json"},
+	})
+
+	export, err := server.client.Exports().Find(context.Background(), "da15f006-5da4-45ca-b0df-735baeadf423")
+	require.NoError(t, err)
+
+	extRef := "export-ext-ref"
+	export.ExternalReferenceID = &extRef
+
+	export, err = server.client.Exports().Update(context.Background(), export)
+	require.NoError(t, err)
+
+	assert.Equal(t, "da15f006-5da4-45ca-b0df-735baeadf423", export.ID)
+	require.NotNil(t, export.ExternalReferenceID)
+	assert.Equal(t, "export-ext-ref", *export.ExternalReferenceID)
+
+	assertRequestJSON(t, *capturedBodyPtr, "exports/update_request.json")
 }
 
 func TestDownloadExport(t *testing.T) {

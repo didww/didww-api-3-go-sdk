@@ -4,7 +4,7 @@ package enums
 type IdentityType string
 
 const (
-	IdentityTypePersonal IdentityType = "Personal"
-	IdentityTypeBusiness IdentityType = "Business"
-	IdentityTypeAny      IdentityType = "Any"
+	IdentityTypePersonal IdentityType = "personal"
+	IdentityTypeBusiness IdentityType = "business"
+	IdentityTypeAny      IdentityType = "any"
 )

@@ -171,11 +171,11 @@ func (c *Client) Proofs() *Repository[resource.Proof] { return NewRepository[res
 func (c *Client) ProofTypes() *Repository[resource.ProofType] {
 	return NewRepository[resource.ProofType](c)
 }
-func (c *Client) Requirements() *Repository[resource.Requirement] {
-	return NewRepository[resource.Requirement](c)
+func (c *Client) AddressRequirements() *Repository[resource.AddressRequirement] {
+	return NewRepository[resource.AddressRequirement](c)
 }
-func (c *Client) RequirementValidations() *Repository[resource.RequirementValidation] {
-	return NewRepository[resource.RequirementValidation](c)
+func (c *Client) AddressRequirementValidations() *Repository[resource.AddressRequirementValidation] {
+	return NewRepository[resource.AddressRequirementValidation](c)
 }
 func (c *Client) Exports() *Repository[resource.Export] { return NewRepository[resource.Export](c) }
 func (c *Client) CapacityPools() *Repository[resource.CapacityPool] {
@@ -198,6 +198,21 @@ func (c *Client) PermanentSupportingDocuments() *Repository[resource.PermanentSu
 }
 func (c *Client) NanpaPrefixes() *Repository[resource.NanpaPrefix] {
 	return NewRepository[resource.NanpaPrefix](c)
+}
+func (c *Client) EmergencyCallingServices() *Repository[resource.EmergencyCallingService] {
+	return NewRepository[resource.EmergencyCallingService](c)
+}
+func (c *Client) EmergencyVerifications() *Repository[resource.EmergencyVerification] {
+	return NewRepository[resource.EmergencyVerification](c)
+}
+func (c *Client) EmergencyRequirementValidations() *Repository[resource.EmergencyRequirementValidation] {
+	return NewRepository[resource.EmergencyRequirementValidation](c)
+}
+func (c *Client) EmergencyRequirements() *Repository[resource.EmergencyRequirement] {
+	return NewRepository[resource.EmergencyRequirement](c)
+}
+func (c *Client) DIDHistory() *Repository[resource.DIDHistory] {
+	return NewRepository[resource.DIDHistory](c)
 }
 func (c *Client) VoiceOutTrunkRegenerateCredentials() *Repository[resource.VoiceOutTrunkRegenerateCredential] {
 	return NewRepository[resource.VoiceOutTrunkRegenerateCredential](c)
