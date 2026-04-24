@@ -14,13 +14,14 @@ This SDK implements JSON:API serialization and deserialization without external 
 
 Read more https://doc.didww.com/api
 
-This SDK targets DIDWW API v3 documentation version:
-[https://doc.didww.com/api3/2026-04-16/index.html](https://doc.didww.com/api3/2026-04-16/index.html)
+## API Version
 
-The client sends the `X-DIDWW-API-Version: 2026-04-16` header with each request.
+This SDK sends the `X-DIDWW-API-Version: 2026-04-16` header with every request by default.
 
-Version **3.x** targets API version `2026-04-16`.
-Version **2.x** (branch `release-2`) targets API version `2022-05-10`.
+| Module Version | Branch | DIDWW API Version |
+|----------------|--------|-------------------|
+| **3.x** | [`main`](https://github.com/didww/didww-api-3-go-sdk) | [`2026-04-16`](https://doc.didww.com/api3/2026-04-16/index.html) |
+| **2.x** | [`2022-05-10`](https://github.com/didww/didww-api-3-go-sdk/tree/2022-05-10) | [`2022-05-10`](https://doc.didww.com/api3/2022-05-10/index.html) |
 
 ## Requirements
 
