@@ -9,7 +9,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/didww/didww-api-3-go-sdk/resource"
+	"github.com/didww/didww-api-3-go-sdk/v3/resource"
 )
 
 // Client is the DIDWW API client.

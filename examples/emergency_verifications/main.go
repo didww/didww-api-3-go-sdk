@@ -11,7 +11,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/didww/didww-api-3-go-sdk/examples"
+	"github.com/didww/didww-api-3-go-sdk/v3/examples"
 )
 
 func main() {

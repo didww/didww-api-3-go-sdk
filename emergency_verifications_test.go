@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/didww/didww-api-3-go-sdk/resource"
+	"github.com/didww/didww-api-3-go-sdk/v3/resource"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

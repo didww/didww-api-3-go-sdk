@@ -26,10 +26,10 @@ import (
 	"strings"
 	"time"
 
-	didww "github.com/didww/didww-api-3-go-sdk"
-	"github.com/didww/didww-api-3-go-sdk/examples"
-	"github.com/didww/didww-api-3-go-sdk/resource"
-	"github.com/didww/didww-api-3-go-sdk/resource/orderitem"
+	didww "github.com/didww/didww-api-3-go-sdk/v3"
+	"github.com/didww/didww-api-3-go-sdk/v3/examples"
+	"github.com/didww/didww-api-3-go-sdk/v3/resource"
+	"github.com/didww/didww-api-3-go-sdk/v3/resource/orderitem"
 )
 
 func randomHex(n int) string {

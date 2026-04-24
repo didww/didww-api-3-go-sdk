@@ -1,6 +1,6 @@
 package resource
 
-import "github.com/didww/didww-api-3-go-sdk/resource/enums"
+import "github.com/didww/didww-api-3-go-sdk/v3/resource/enums"
 
 // DIDGroup represents a DID group.
 type DIDGroup struct {

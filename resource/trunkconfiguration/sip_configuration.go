@@ -1,6 +1,6 @@
 package trunkconfiguration
 
-import "github.com/didww/didww-api-3-go-sdk/resource/enums"
+import "github.com/didww/didww-api-3-go-sdk/v3/resource/enums"
 
 // SIPConfiguration represents a SIP trunk configuration.
 type SIPConfiguration struct {

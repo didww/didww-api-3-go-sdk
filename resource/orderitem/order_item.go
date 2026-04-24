@@ -3,7 +3,7 @@ package orderitem
 import (
 	"encoding/json"
 
-	"github.com/didww/didww-api-3-go-sdk/jsonapi"
+	"github.com/didww/didww-api-3-go-sdk/v3/jsonapi"
 )
 
 const (

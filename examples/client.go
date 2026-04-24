@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	didww "github.com/didww/didww-api-3-go-sdk"
+	didww "github.com/didww/didww-api-3-go-sdk/v3"
 )
 
 // ClientFromEnv creates a DIDWW client using the DIDWW_API_KEY environment variable.

@@ -7,9 +7,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/didww/didww-api-3-go-sdk/examples"
-	"github.com/didww/didww-api-3-go-sdk/resource"
-	"github.com/didww/didww-api-3-go-sdk/resource/orderitem"
+	"github.com/didww/didww-api-3-go-sdk/v3/examples"
+	"github.com/didww/didww-api-3-go-sdk/v3/resource"
+	"github.com/didww/didww-api-3-go-sdk/v3/resource/orderitem"
 )
 
 func main() {
