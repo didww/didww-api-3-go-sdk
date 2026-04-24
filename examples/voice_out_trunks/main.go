@@ -11,10 +11,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/didww/didww-api-3-go-sdk/examples"
-	"github.com/didww/didww-api-3-go-sdk/resource"
-	"github.com/didww/didww-api-3-go-sdk/resource/authenticationmethod"
-	"github.com/didww/didww-api-3-go-sdk/resource/enums"
+	"github.com/didww/didww-api-3-go-sdk/v3/examples"
+	"github.com/didww/didww-api-3-go-sdk/v3/resource"
+	"github.com/didww/didww-api-3-go-sdk/v3/resource/authenticationmethod"
+	"github.com/didww/didww-api-3-go-sdk/v3/resource/enums"
 )
 
 func main() {

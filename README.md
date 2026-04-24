@@ -30,13 +30,14 @@ This SDK sends the `X-DIDWW-API-Version: 2026-04-16` header with every request b
 ## Installation
 
 ```bash
-go get github.com/didww/didww-api-3-go-sdk
+go get github.com/didww/didww-api-3-go-sdk/v3
 ```
 
-**Note on module path:** This module intentionally does not use a `/v3` suffix,
-following the same convention established in v2. The major version is bumped in
-`go.mod` and tagged releases, but the import path stays
-`github.com/didww/didww-api-3-go-sdk` for backward compatibility.
+**Note on module path:** Starting with v3, this module follows Go's
+[Semantic Import Versioning](https://go.dev/ref/mod#major-version-suffixes):
+the major version appears in the import path (`/v3`). Projects pinned to v2
+(import path without a suffix) are unaffected by `go get -u` and must
+consciously update their imports to adopt v3.
 
 ## Usage
 
@@ -47,7 +48,7 @@ import (
     "context"
     "fmt"
 
-    didww "github.com/didww/didww-api-3-go-sdk"
+    didww "github.com/didww/didww-api-3-go-sdk/v3"
 )
 
 func main() {
@@ -102,7 +103,7 @@ import (
     "net/http"
     "net/url"
 
-    didww "github.com/didww/didww-api-3-go-sdk"
+    didww "github.com/didww/didww-api-3-go-sdk/v3"
 )
 
 proxyURL, _ := url.Parse("http://proxy.example.com:8080")
@@ -202,7 +203,7 @@ updated, _ := client.DIDs().Update(ctx, did)
 ### Voice In Trunks
 
 ```go
-import "github.com/didww/didww-api-3-go-sdk/resource/enums"
+import "github.com/didww/didww-api-3-go-sdk/v3/resource/enums"
 
 // Create SIP trunk
 ringingTimeout := 30
@@ -255,8 +256,8 @@ Voice Out Trunks use a polymorphic `AuthenticationMethod` (2026-04-16). Three ty
 
 ```go
 import (
-    "github.com/didww/didww-api-3-go-sdk/resource/authenticationmethod"
-    "github.com/didww/didww-api-3-go-sdk/resource/enums"
+    "github.com/didww/didww-api-3-go-sdk/v3/resource/authenticationmethod"
+    "github.com/didww/didww-api-3-go-sdk/v3/resource/enums"
 )
 
 // NOTE: 203.0.113.0/24 is RFC 5737 TEST-NET-3 documentation space.
@@ -324,7 +325,7 @@ created, _ := client.SharedCapacityGroups().Create(ctx, group)
 ### Identities
 
 ```go
-import "github.com/didww/didww-api-3-go-sdk/resource/enums"
+import "github.com/didww/didww-api-3-go-sdk/v3/resource/enums"
 
 identity := &didww.Identity{
     FirstName:    "John",
@@ -393,7 +394,7 @@ history, _ := client.DIDHistory().List(ctx, params)
 ### Exports
 
 ```go
-import "github.com/didww/didww-api-3-go-sdk/resource/enums"
+import "github.com/didww/didww-api-3-go-sdk/v3/resource/enums"
 
 export := &didww.Export{
     ExportType: enums.ExportTypeCdrIn,
@@ -598,7 +599,7 @@ fmt.Println(identity.BirthDate)  // "1990-05-20"
 
 ## Enums
 
-The SDK provides enum types in `github.com/didww/didww-api-3-go-sdk/resource/enums`:
+The SDK provides enum types in `github.com/didww/didww-api-3-go-sdk/v3/resource/enums`:
 
 `CallbackMethod`, `IdentityType`, `OrderStatus`, `ExportType`, `ExportStatus`, `CliFormat`,
 `OnCliMismatchAction`\*, `MediaEncryptionMode`, `DefaultDstAction`, `VoiceOutTrunkStatus`,
@@ -613,7 +614,7 @@ The SDK provides enum types in `github.com/didww/didww-api-3-go-sdk/resource/enu
 Validate incoming webhook callbacks from DIDWW using HMAC-SHA1 signature verification.
 
 ```go
-import didww "github.com/didww/didww-api-3-go-sdk"
+import didww "github.com/didww/didww-api-3-go-sdk/v3"
 
 validator := didww.NewRequestValidator("YOUR_API_KEY")
 
@@ -622,6 +623,38 @@ signature := r.Header.Get(didww.SignatureHeaderName) // "X-DIDWW-Signature"
 payload := map[string]string{"key": "value"}         // parsed form/query payload
 valid := validator.Validate(requestURL, payload, signature)
 ```
+
+## Releasing a New Major Version
+
+Go enforces [Semantic Import Versioning](https://go.dev/ref/mod#major-version-suffixes):
+every major version ≥ 2 must live at a distinct import path (`/v3`, `/v4`, ...).
+Bumping the major version is therefore mechanical — follow the same recipe as
+established libraries (e.g. [stripe-go's v84→v85 bump](https://github.com/stripe/stripe-go/commit/cc93bb36f7)).
+
+Steps for `/vN` → `/v(N+1)`:
+
+1. Cut a maintenance branch from the current `main` before starting (e.g.
+   `release-N`) and push it, so v(N) can still receive patch releases.
+2. Create a feature branch from `main` (e.g. `feat/api-YYYY-MM-DD`).
+3. Update the module path in `go.mod`:
+   ```diff
+   - module github.com/didww/didww-api-3-go-sdk/vN
+   + module github.com/didww/didww-api-3-go-sdk/v(N+1)
+   ```
+4. Rewrite every internal import across the repo:
+   ```bash
+   grep -rln 'github.com/didww/didww-api-3-go-sdk/vN' --include='*.go' \
+     | xargs sed -i '' 's|didww-api-3-go-sdk/vN|didww-api-3-go-sdk/v(N+1)|g'
+   ```
+5. Update this README: installation snippet, usage imports, and the API
+   version compatibility table at the top.
+6. Update `examples/` imports the same way.
+7. Run `go build ./... && go test ./...` — everything must stay green.
+8. Commit as a single atomic change (`chore!: bump module path to /v(N+1)`),
+   merge to `main`, then tag `vN+1.0.0` and push the tag.
+
+Existing users on `/vN` are unaffected — they must consciously change their
+import path to adopt the new major version.
 
 ## Contributing
 

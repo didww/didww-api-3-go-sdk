@@ -10,8 +10,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/didww/didww-api-3-go-sdk/resource"
-	"github.com/didww/didww-api-3-go-sdk/resource/authenticationmethod"
+	"github.com/didww/didww-api-3-go-sdk/v3/resource"
+	"github.com/didww/didww-api-3-go-sdk/v3/resource/authenticationmethod"
 )
 
 const testDIDID = "9df99644-f1a5-4a3c-99a4-559d758eb96b"

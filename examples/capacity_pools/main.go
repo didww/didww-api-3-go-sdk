@@ -7,8 +7,8 @@ import (
 	"context"
 	"fmt"
 
-	didww "github.com/didww/didww-api-3-go-sdk"
-	"github.com/didww/didww-api-3-go-sdk/examples"
+	didww "github.com/didww/didww-api-3-go-sdk/v3"
+	"github.com/didww/didww-api-3-go-sdk/v3/examples"
 )
 
 func main() {
