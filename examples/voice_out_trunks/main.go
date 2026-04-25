@@ -23,8 +23,8 @@ func main() {
 	// Create a voice out trunk
 	trunk := &resource.VoiceOutTrunk{
 		Name:                fmt.Sprintf("SDK Outbound Trunk %d", time.Now().UnixMilli()),
-		AllowedSipIPs:       []string{"192.168.1.1"},
-		AllowedRtpIPs:       []string{"192.168.1.1"},
+		AllowedSipIPs:       []string{"203.0.113.1"},
+		AllowedRtpIPs:       []string{"203.0.113.1"},
 		DstPrefixes:         []string{},
 		DefaultDstAction:    enums.DefaultDstActionAllowAll,
 		OnCliMismatchAction: enums.OnCliMismatchActionRejectCall,
@@ -53,7 +53,7 @@ func main() {
 
 	// Update
 	created.Name = "Updated Outbound Trunk"
-	created.AllowedSipIPs = []string{"10.0.0.0/8"}
+	created.AllowedSipIPs = []string{"203.0.113.0/24"}
 	updated, err := client.VoiceOutTrunks().Update(ctx, created)
 	if err != nil {
 		panic(err)

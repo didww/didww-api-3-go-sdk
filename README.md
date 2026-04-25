@@ -237,8 +237,8 @@ import "github.com/didww/didww-api-3-go-sdk/resource/enums"
 
 trunk := &didww.VoiceOutTrunk{
     Name:                "My Outbound Trunk",
-    AllowedSipIPs:       []string{"0.0.0.0/0"},
-    AllowedRtpIPs:       []string{"0.0.0.0/0"},
+    AllowedSipIPs:       []string{"203.0.113.0/24"},
+    AllowedRtpIPs:       []string{"203.0.113.0/24"},
     DstPrefixes:         []string{},
     DefaultDstAction:    enums.DefaultDstActionAllowAll,
     OnCliMismatchAction: enums.OnCliMismatchActionRejectCall,
