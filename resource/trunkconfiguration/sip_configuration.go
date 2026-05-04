@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/didww/didww-api-3-go-sdk/v3/internal/redact"
 	"github.com/didww/didww-api-3-go-sdk/v3/jsonapi"
 	"github.com/didww/didww-api-3-go-sdk/v3/resource/enums"
 )
@@ -83,18 +84,12 @@ func (c *SIPConfiguration) ConfigurationType() string { return "sip_configuratio
 // above continues to emit the real values (or strip read-only ones via the
 // `api:"readonly"` tag).
 func (c *SIPConfiguration) String() string {
-	mask := func(s string) string {
-		if s == "" {
-			return ""
-		}
-		return "[FILTERED]"
-	}
 	enabled := "<nil>"
 	if c.EnabledSipRegistration != nil {
 		enabled = fmt.Sprintf("%v", *c.EnabledSipRegistration)
 	}
 	return fmt.Sprintf("SIPConfiguration{Username:%q Host:%q Port:%d AuthPassword:%q EnabledSipRegistration:%s IncomingAuthUsername:%q IncomingAuthPassword:%q}",
-		c.Username, c.Host, c.Port, mask(c.AuthPassword), enabled, mask(c.IncomingAuthUsername), mask(c.IncomingAuthPassword))
+		c.Username, c.Host, c.Port, redact.Mask(c.AuthPassword), enabled, redact.Mask(c.IncomingAuthUsername), redact.Mask(c.IncomingAuthPassword))
 }
 
 // GoString mirrors String for the %#v verb.

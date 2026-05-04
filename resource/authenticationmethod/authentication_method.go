@@ -3,6 +3,8 @@ package authenticationmethod
 import (
 	"encoding/json"
 	"fmt"
+
+	"github.com/didww/didww-api-3-go-sdk/v3/internal/redact"
 )
 
 // AuthenticationMethod is the interface for polymorphic authentication methods
@@ -38,14 +40,8 @@ func (a *CredentialsAndIp) AuthenticationType() string { return "credentials_and
 // redacts the server-generated credentials. The wire format is unaffected —
 // MarshalJSON above still emits the real values.
 func (a *CredentialsAndIp) String() string {
-	mask := func(s string) string {
-		if s == "" {
-			return ""
-		}
-		return "[FILTERED]"
-	}
 	return fmt.Sprintf("CredentialsAndIp{AllowedSipIPs:%v TechPrefix:%q Username:%q Password:%q}",
-		a.AllowedSipIPs, a.TechPrefix, mask(a.Username), mask(a.Password))
+		a.AllowedSipIPs, a.TechPrefix, redact.Mask(a.Username), redact.Mask(a.Password))
 }
 
 // GoString mirrors String for the %#v verb (debugger / spew output).
