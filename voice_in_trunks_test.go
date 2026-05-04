@@ -3,6 +3,7 @@ package didww
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"testing"
 
@@ -254,6 +255,40 @@ func TestSIPConfigurationDisableFlowSerializesExplicitFalse(t *testing.T) {
 	assert.Contains(t, out, `"cnam_lookup":false`,
 		"explicit false must be serialized; reverting to plain bool drops it")
 	assert.Contains(t, out, `"host":"203.0.113.10"`)
+}
+
+// Default fmt output (Sprintf / Println / %v / %#v) MUST redact SIP
+// credentials — log lines / panics / debugger inspection should never
+// show plaintext credentials. The wire format is unaffected: MarshalJSON
+// continues to emit the real values (or strip read-only ones via the
+// `api:"readonly"` tag).
+func TestSIPConfigurationStringRedactsCredentials(t *testing.T) {
+	cfg := &trunkconfiguration.SIPConfiguration{
+		Username:               "alice",
+		Host:                   "sip.example.com",
+		AuthPassword:           "s3cret-Pa55",
+		EnabledSipRegistration: Ptr(true),
+		IncomingAuthUsername:   "srv-user-xyz",
+		IncomingAuthPassword:   "srv-pass-xyz",
+	}
+	out := cfg.String()
+	assert.Contains(t, out, "alice")
+	assert.Contains(t, out, "sip.example.com")
+	assert.NotContains(t, out, "s3cret-Pa55")
+	assert.NotContains(t, out, "srv-user-xyz")
+	assert.NotContains(t, out, "srv-pass-xyz")
+	assert.Contains(t, out, "[FILTERED]")
+
+	// %v and %#v go through Stringer / GoStringer.
+	verboseV := fmt.Sprintf("%v", cfg)
+	verboseHash := fmt.Sprintf("%#v", cfg)
+	assert.NotContains(t, verboseV, "s3cret-Pa55")
+	assert.NotContains(t, verboseHash, "s3cret-Pa55")
+
+	// Wire format still includes the real values.
+	data, err := json.Marshal(cfg)
+	require.NoError(t, err)
+	assert.Contains(t, string(data), `"auth_password":"s3cret-Pa55"`)
 }
 
 // Companion: when the toggle pointers are nil, omitempty kicks in and the

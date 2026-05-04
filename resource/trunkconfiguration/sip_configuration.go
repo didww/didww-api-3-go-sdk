@@ -1,6 +1,8 @@
 package trunkconfiguration
 
 import (
+	"fmt"
+
 	"github.com/didww/didww-api-3-go-sdk/v3/jsonapi"
 	"github.com/didww/didww-api-3-go-sdk/v3/resource/enums"
 )
@@ -74,6 +76,28 @@ type SIPConfiguration struct {
 }
 
 func (c *SIPConfiguration) ConfigurationType() string { return "sip_configurations" }
+
+// String implements fmt.Stringer so default fmt.Sprintf / fmt.Println output
+// redacts SIP credential fields. The wire payload is unaffected — MarshalJSON
+// above continues to emit the real values (or strip read-only ones via the
+// `api:"readonly"` tag).
+func (c *SIPConfiguration) String() string {
+	mask := func(s string) string {
+		if s == "" {
+			return ""
+		}
+		return "[FILTERED]"
+	}
+	enabled := "<nil>"
+	if c.EnabledSipRegistration != nil {
+		enabled = fmt.Sprintf("%v", *c.EnabledSipRegistration)
+	}
+	return fmt.Sprintf("SIPConfiguration{Username:%q Host:%q Port:%d AuthPassword:%q EnabledSipRegistration:%s IncomingAuthUsername:%q IncomingAuthPassword:%q}",
+		c.Username, c.Host, c.Port, mask(c.AuthPassword), enabled, mask(c.IncomingAuthUsername), mask(c.IncomingAuthPassword))
+}
+
+// GoString mirrors String for the %#v verb.
+func (c *SIPConfiguration) GoString() string { return c.String() }
 
 // MarshalJSON serializes SIPConfiguration for outbound POST/PATCH bodies,
 // excluding fields tagged `api:"readonly"` (the server-generated
