@@ -2,6 +2,7 @@ package didww
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"testing"
 
@@ -94,6 +95,17 @@ func TestVoiceInTrunksCreateSipWithReroutingCodes(t *testing.T) {
 			MediaEncryptionMode: enums.MediaEncryptionModeZrtp,
 			StirShakenMode:      enums.StirShakenModePai,
 			AllowedRtpIPs:       []string{"203.0.113.1"},
+			// API 2026-04-16 writable attributes.
+			//
+			// Note: `EnabledSipRegistration` and `UseDIDInRuri` are bool
+			// fields with `omitempty`, so leaving them at their zero value
+			// (false) keeps them out of the wire body — which is what the
+			// API expects for a non-registered SIP trunk.  The dedicated
+			// SIP-registration test exercises the true case.
+			DiversionRelayPolicy:    enums.DiversionRelayPolicyAsIs,
+			DiversionInjectMode:     enums.DiversionInjectModeDIDNumber,
+			NetworkProtocolPriority: enums.NetworkProtocolPriorityForceIPv4,
+			CnamLookup:              Ptr(true),
 		},
 	})
 	require.NoError(t, err)
@@ -170,6 +182,193 @@ func TestVoiceInTrunksUpdateSip(t *testing.T) {
 	require.True(t, ok, "expected SIP configuration")
 	assert.Equal(t, "new-username", sipCfg.Username)
 	assert.Equal(t, 5, sipCfg.MaxTransfers)
+}
+
+// API 2026-04-16 SIP-registration attributes.
+//
+// Verifies that the new SipConfiguration fields round-trip correctly and
+// that the read-only incoming_auth_* credentials returned by the server are
+// stripped from POST/PATCH request bodies (the API returns 400 Param not
+// allowed if a client tries to write them).
+func TestSIPConfigurationV35WritableAttributesSerialize(t *testing.T) {
+	cfg := trunkconfiguration.SIPConfiguration{
+		Host:                    "example.com",
+		EnabledSipRegistration:  Ptr(true),
+		UseDIDInRuri:            Ptr(true),
+		CnamLookup:              Ptr(true),
+		DiversionInjectMode:     enums.DiversionInjectModeDIDNumber,
+		NetworkProtocolPriority: enums.NetworkProtocolPriorityPreferIPv4,
+	}
+	data, err := json.Marshal(cfg)
+	require.NoError(t, err)
+	out := string(data)
+	assert.Contains(t, out, `"enabled_sip_registration":true`)
+	assert.Contains(t, out, `"use_did_in_ruri":true`)
+	assert.Contains(t, out, `"cnam_lookup":true`)
+	assert.Contains(t, out, `"diversion_inject_mode":"did_number"`)
+	assert.Contains(t, out, `"network_protocol_priority":"prefer_ipv4"`)
+}
+
+func TestSIPConfigurationStripsReadOnlyCredentialsOnSerialize(t *testing.T) {
+	cfg := trunkconfiguration.SIPConfiguration{
+		Host:                   "example.com",
+		EnabledSipRegistration: Ptr(true),
+		UseDIDInRuri:           Ptr(true),
+		IncomingAuthUsername:   "sipreg-user-1",
+		IncomingAuthPassword:   "s3cret-Pa55",
+	}
+	data, err := json.Marshal(cfg)
+	require.NoError(t, err)
+	out := string(data)
+	assert.Contains(t, out, `"enabled_sip_registration":true`)
+	assert.Contains(t, out, `"use_did_in_ruri":true`)
+	assert.NotContains(t, out, "incoming_auth_username")
+	assert.NotContains(t, out, "incoming_auth_password")
+}
+
+// Regression test for the disable-sip_registration PATCH flow.
+//
+// `EnabledSipRegistration`, `UseDIDInRuri`, and `CnamLookup` are *bool
+// (pointers) — a plain `bool + json:",omitempty"` would silently drop
+// any `false` value, breaking the documented disable PATCH flow that
+// has to send `enabled_sip_registration: false` together with
+// `use_did_in_ruri: false` and a non-blank `host` in the same body.
+//
+// If anyone reverts these fields to plain `bool`, this test fails because
+// the explicit `false` values are dropped from the JSON output by
+// `json:",omitempty"`.
+func TestSIPConfigurationDisableFlowSerializesExplicitFalse(t *testing.T) {
+	cfg := trunkconfiguration.SIPConfiguration{
+		Host:                   "203.0.113.10",
+		EnabledSipRegistration: Ptr(false),
+		UseDIDInRuri:           Ptr(false),
+		CnamLookup:             Ptr(false),
+	}
+	data, err := json.Marshal(cfg)
+	require.NoError(t, err)
+	out := string(data)
+	assert.Contains(t, out, `"enabled_sip_registration":false`,
+		"explicit false must be serialized; reverting to plain bool drops it")
+	assert.Contains(t, out, `"use_did_in_ruri":false`,
+		"explicit false must be serialized; reverting to plain bool drops it")
+	assert.Contains(t, out, `"cnam_lookup":false`,
+		"explicit false must be serialized; reverting to plain bool drops it")
+	assert.Contains(t, out, `"host":"203.0.113.10"`)
+}
+
+// Companion: when the toggle pointers are nil, omitempty kicks in and the
+// keys are absent — that's how callers express "leave this field alone"
+// in a partial PATCH.
+func TestSIPConfigurationOmitsBoolPointersWhenNil(t *testing.T) {
+	cfg := trunkconfiguration.SIPConfiguration{
+		Host: "example.com",
+		// EnabledSipRegistration / UseDIDInRuri / CnamLookup deliberately nil.
+	}
+	data, err := json.Marshal(cfg)
+	require.NoError(t, err)
+	out := string(data)
+	assert.NotContains(t, out, "enabled_sip_registration")
+	assert.NotContains(t, out, "use_did_in_ruri")
+	assert.NotContains(t, out, "cnam_lookup")
+}
+
+// End-to-end PATCH /voice_in_trunks/:id wire-format check for the disable
+// flow.  The server's V3 form rejects (422) any request that flips
+// EnabledSipRegistration to false without simultaneously providing a
+// non-blank Host (model-level presence) and UseDIDInRuri = false
+// (form-level), so the wire body must carry all three fields together.
+// The capturedBody comparison fails if anyone reverts EnabledSip-
+// Registration / UseDIDInRuri to plain bool — the explicit `false`
+// values silently drop from `json:",omitempty"` output and the captured
+// body no longer matches the fixture.
+func TestVoiceInTrunksDisableSipRegistrationPatchSerializesAllThreeFields(t *testing.T) {
+	server, capturedBodyPtr := captureRequestBody(t, map[string]testRoute{
+		"PATCH /v3/voice_in_trunks/57a939dd-1600-41a6-80b1-f624e22a1f4c": {
+			status:  http.StatusOK,
+			fixture: "voice_in_trunks/disable_sip_registration.json",
+		},
+	})
+
+	trunk, err := server.client.VoiceInTrunks().Update(context.Background(), &resource.VoiceInTrunk{
+		ID: "57a939dd-1600-41a6-80b1-f624e22a1f4c",
+		Configuration: &trunkconfiguration.SIPConfiguration{
+			Host:                   "203.0.113.10",
+			EnabledSipRegistration: Ptr(false),
+			UseDIDInRuri:           Ptr(false),
+		},
+	})
+	require.NoError(t, err)
+
+	assertRequestJSON(t, *capturedBodyPtr, "voice_in_trunks/disable_sip_registration_request.json")
+
+	sipCfg, ok := trunk.Configuration.(*trunkconfiguration.SIPConfiguration)
+	require.True(t, ok, "expected SIP configuration")
+	require.NotNil(t, sipCfg.EnabledSipRegistration)
+	assert.False(t, *sipCfg.EnabledSipRegistration)
+	require.NotNil(t, sipCfg.UseDIDInRuri)
+	assert.False(t, *sipCfg.UseDIDInRuri)
+	assert.Equal(t, "203.0.113.10", sipCfg.Host)
+	assert.Empty(t, sipCfg.IncomingAuthUsername)
+	assert.Empty(t, sipCfg.IncomingAuthPassword)
+}
+
+func TestSIPConfigurationDeserializesIncomingAuthCredentials(t *testing.T) {
+	// Real wire shape captured from sandbox: when sip_registration is
+	// enabled, host/port/username come back as null and the API rejects
+	// any attempt to set them.
+	body := `{
+		"username": null,
+		"host": null,
+		"port": null,
+		"enabled_sip_registration": true,
+		"incoming_auth_username": "sipreg-user-1",
+		"incoming_auth_password": "s3cret-Pa55"
+	}`
+	var cfg trunkconfiguration.SIPConfiguration
+	require.NoError(t, json.Unmarshal([]byte(body), &cfg))
+	assert.NotNil(t, cfg.EnabledSipRegistration); assert.True(t, *cfg.EnabledSipRegistration)
+	assert.Equal(t, "sipreg-user-1", cfg.IncomingAuthUsername)
+	assert.Equal(t, "s3cret-Pa55", cfg.IncomingAuthPassword)
+}
+
+// End-to-end: when the SDK sends `enabled_sip_registration: true`, the
+// server returns 201 with server-generated `incoming_auth_username` and
+// `incoming_auth_password`. The SDK must surface those populated values to
+// the caller, not nil/empty strings. The captureRequestBody helper also
+// asserts the outgoing wire body matches the fixture, so a regression
+// that drops EnabledSipRegistration / UseDIDInRuri / CnamLookup from the
+// POST body fails the request-body diff.
+func TestVoiceInTrunksCreateWithEnabledSipRegistrationReturnsPopulatedIncomingAuth(t *testing.T) {
+	server, capturedBodyPtr := captureRequestBody(t, map[string]testRoute{
+		"POST /v3/voice_in_trunks": {status: http.StatusCreated, fixture: "voice_in_trunks/create_with_sip_registration.json"},
+	})
+
+	ringingTimeout := 30
+	created, err := server.client.VoiceInTrunks().Create(context.Background(), &resource.VoiceInTrunk{
+		Name:           "sip-registration",
+		Priority:       1,
+		Weight:         100,
+		CliFormat:      enums.CliFormatE164,
+		RingingTimeout: &ringingTimeout,
+		Configuration: &trunkconfiguration.SIPConfiguration{
+			EnabledSipRegistration:  Ptr(true),
+			UseDIDInRuri:            Ptr(true),
+			CnamLookup:              Ptr(true),
+			DiversionRelayPolicy:    enums.DiversionRelayPolicyAsIs,
+			DiversionInjectMode:     enums.DiversionInjectModeDIDNumber,
+			NetworkProtocolPriority: enums.NetworkProtocolPriorityPreferIPv4,
+		},
+	})
+	require.NoError(t, err)
+
+	assertRequestJSON(t, *capturedBodyPtr, "voice_in_trunks/create_with_sip_registration_request.json")
+
+	cfg, ok := created.Configuration.(*trunkconfiguration.SIPConfiguration)
+	require.True(t, ok, "expected SIP configuration")
+	assert.NotNil(t, cfg.EnabledSipRegistration); assert.True(t, *cfg.EnabledSipRegistration)
+	// Server-generated credentials are populated, not empty.
+	assert.NotEmpty(t, cfg.IncomingAuthUsername, "expected incoming_auth_username to be populated")
+	assert.NotEmpty(t, cfg.IncomingAuthPassword, "expected incoming_auth_password to be populated")
 }
 
 func TestVoiceInTrunksDelete(t *testing.T) {
