@@ -36,6 +36,7 @@ DIDWW_API_KEY=your_api_key go run ./examples/balance/
 | [`orders_available_dids`](orders_available_dids/) | Orders an available DID using included DID group SKU. |
 | [`orders_reservation_dids`](orders_reservation_dids/) | Reserves a DID and then places an order from that reservation. |
 | [`voice_in_trunk_groups`](voice_in_trunk_groups/) | CRUD for trunk groups with trunk relationships. |
+| [`voice_in_trunk_sip_registration`](voice_in_trunk_sip_registration/) | End-to-end SIP registration flow: create with `EnabledSipRegistration=true`, rename, disable by setting `Host`, re-enable by toggling the flag. The SDK keeps the dependent fields (`Host`, `Port`, `UseDIDInRuri`) aligned with the server's validation rules automatically. |
 | [`voice_out_trunks`](voice_out_trunks/) | CRUD for voice out trunks using 2026-04-16 polymorphic authentication_method. |
 | [`did_reservations`](did_reservations/) | Creates, lists, finds and deletes DID reservations. |
 | [`exports`](exports/) | Creates and lists CDR exports with 2026-04-16 external_reference_id. |

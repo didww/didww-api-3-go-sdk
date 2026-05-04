@@ -191,9 +191,11 @@ func TestVoiceInTrunksUpdateSip(t *testing.T) {
 // that the read-only incoming_auth_* credentials returned by the server are
 // stripped from POST/PATCH request bodies (the API returns 400 Param not
 // allowed if a client tries to write them).
-func TestSIPConfigurationV35WritableAttributesSerialize(t *testing.T) {
+func TestSIPConfigurationRegistrationWritableAttributesSerialize(t *testing.T) {
+	// Host intentionally absent: sip_registration enabled + host present is
+	// invalid per the server, and the MarshalJSON cascade would reset
+	// EnabledSipRegistration to false to keep the wire consistent.
 	cfg := trunkconfiguration.SIPConfiguration{
-		Host:                    "example.com",
 		EnabledSipRegistration:  Ptr(true),
 		UseDIDInRuri:            Ptr(true),
 		CnamLookup:              Ptr(true),
@@ -212,7 +214,6 @@ func TestSIPConfigurationV35WritableAttributesSerialize(t *testing.T) {
 
 func TestSIPConfigurationStripsReadOnlyCredentialsOnSerialize(t *testing.T) {
 	cfg := trunkconfiguration.SIPConfiguration{
-		Host:                   "example.com",
 		EnabledSipRegistration: Ptr(true),
 		UseDIDInRuri:           Ptr(true),
 		IncomingAuthUsername:   "sipreg-user-1",
@@ -291,13 +292,108 @@ func TestSIPConfigurationStringRedactsCredentials(t *testing.T) {
 	assert.Contains(t, string(data), `"auth_password":"s3cret-Pa55"`)
 }
 
-// Companion: when the toggle pointers are nil, omitempty kicks in and the
-// keys are absent — that's how callers express "leave this field alone"
-// in a partial PATCH.
+// Auto-cascade tests: MarshalJSON normalises server-enforced field
+// dependencies on the wire so callers do not have to enumerate them.
+
+func TestSIPConfigurationMarshalJSONCascadesEnabledSipRegistrationOnHost(t *testing.T) {
+	// Setting Host implies sip_registration is disabled (server-side rule);
+	// the cascade adds enabled_sip_registration: false and use_did_in_ruri:
+	// false to the wire even when the caller did not set them.
+	cfg := trunkconfiguration.SIPConfiguration{Host: "sip.example.com"}
+	data, err := json.Marshal(cfg)
+	require.NoError(t, err)
+	out := string(data)
+	assert.Contains(t, out, `"host":"sip.example.com"`)
+	assert.Contains(t, out, `"enabled_sip_registration":false`)
+	assert.Contains(t, out, `"use_did_in_ruri":false`)
+}
+
+func TestSIPConfigurationMarshalJSONCascadesUseDidInRuriOnDisable(t *testing.T) {
+	// EnabledSipRegistration: false forces use_did_in_ruri: false on the wire.
+	cfg := trunkconfiguration.SIPConfiguration{EnabledSipRegistration: Ptr(false)}
+	data, err := json.Marshal(cfg)
+	require.NoError(t, err)
+	out := string(data)
+	assert.Contains(t, out, `"enabled_sip_registration":false`)
+	assert.Contains(t, out, `"use_did_in_ruri":false`)
+}
+
+func TestSIPConfigurationMarshalJSONLeavesUseDidInRuriOnEnable(t *testing.T) {
+	// EnabledSipRegistration: true does not touch use_did_in_ruri — the
+	// server allows either value when sip_registration is enabled.
+	cfg := trunkconfiguration.SIPConfiguration{EnabledSipRegistration: Ptr(true)}
+	data, err := json.Marshal(cfg)
+	require.NoError(t, err)
+	out := string(data)
+	assert.Contains(t, out, `"enabled_sip_registration":true`)
+	assert.NotContains(t, out, `"use_did_in_ruri"`)
+}
+
+func TestSIPConfigurationMarshalJSONOnFreshConfigEmitsHostAndPortAsNullOnWire(t *testing.T) {
+	// Regression: PATCH against an existing trunk that already has a
+	// host/port persisted server-side. The local SIPConfiguration starts
+	// empty (Host/Port zero-valued), so the cascade must still emit
+	// "host": null and "port": null on the wire — otherwise the server
+	// merges the new EnabledSipRegistration=true with the persisted host
+	// and rejects with 422.
+	cfg := trunkconfiguration.SIPConfiguration{EnabledSipRegistration: Ptr(true)}
+	data, err := json.Marshal(cfg)
+	require.NoError(t, err)
+	out := string(data)
+	assert.Contains(t, out, `"host":null`)
+	assert.Contains(t, out, `"port":null`)
+	assert.Contains(t, out, `"enabled_sip_registration":true`)
+}
+
+func TestSIPConfigurationMarshalJSONDoesNotMutateInput(t *testing.T) {
+	// The cascade applies to a local copy inside MarshalJSON, so the
+	// caller's struct must remain untouched. Without this guarantee the
+	// SDK would surprise users by retroactively flipping fields after
+	// they had passed the value to a serializer.
+	cfg := trunkconfiguration.SIPConfiguration{
+		Host:                   "sip.example.com",
+		EnabledSipRegistration: Ptr(true),
+		UseDIDInRuri:           Ptr(true),
+	}
+	_, err := json.Marshal(cfg)
+	require.NoError(t, err)
+	assert.Equal(t, "sip.example.com", cfg.Host, "input Host must not be mutated by Marshal")
+	require.NotNil(t, cfg.EnabledSipRegistration)
+	assert.True(t, *cfg.EnabledSipRegistration, "input EnabledSipRegistration must not be mutated")
+	require.NotNil(t, cfg.UseDIDInRuri)
+	assert.True(t, *cfg.UseDIDInRuri, "input UseDIDInRuri must not be mutated")
+}
+
+func TestSIPConfigurationDeserializeServerResponseBypassesCascade(t *testing.T) {
+	// json.Unmarshal writes directly into struct fields; the cascade lives
+	// in MarshalJSON only. Server-returned shapes (regular SIP trunk with
+	// host: present + sip_registration: false + use_did_in_ruri: true)
+	// deserialize as-is.
+	body := `{
+		"host": "sip.example.com",
+		"port": 5060,
+		"enabled_sip_registration": false,
+		"use_did_in_ruri": true
+	}`
+	var cfg trunkconfiguration.SIPConfiguration
+	require.NoError(t, json.Unmarshal([]byte(body), &cfg))
+	assert.Equal(t, "sip.example.com", cfg.Host)
+	assert.Equal(t, 5060, cfg.Port)
+	require.NotNil(t, cfg.EnabledSipRegistration)
+	assert.False(t, *cfg.EnabledSipRegistration)
+	require.NotNil(t, cfg.UseDIDInRuri)
+	assert.True(t, *cfg.UseDIDInRuri, "deserialization must not cascade UseDIDInRuri to false")
+}
+
+// Companion: when neither host nor the toggle pointers are set, omitempty
+// kicks in and the keys are absent — that's how callers express "leave
+// these fields alone" in a partial PATCH. (When Host is set, the cascade
+// in MarshalJSON populates enabled_sip_registration / use_did_in_ruri on
+// the wire — see TestSIPConfigurationMarshalJSONCascadesOnHost.)
 func TestSIPConfigurationOmitsBoolPointersWhenNil(t *testing.T) {
 	cfg := trunkconfiguration.SIPConfiguration{
-		Host: "example.com",
-		// EnabledSipRegistration / UseDIDInRuri / CnamLookup deliberately nil.
+		Username: "alice",
+		// Host / EnabledSipRegistration / UseDIDInRuri / CnamLookup deliberately empty/nil.
 	}
 	data, err := json.Marshal(cfg)
 	require.NoError(t, err)
@@ -308,10 +404,10 @@ func TestSIPConfigurationOmitsBoolPointersWhenNil(t *testing.T) {
 }
 
 // End-to-end PATCH /voice_in_trunks/:id wire-format check for the disable
-// flow.  The server's V3 form rejects (422) any request that flips
+// flow.  The server returns 422 for any request that flips
 // EnabledSipRegistration to false without simultaneously providing a
-// non-blank Host (model-level presence) and UseDIDInRuri = false
-// (form-level), so the wire body must carry all three fields together.
+// non-blank Host and UseDIDInRuri = false, so the wire body must carry
+// all three fields together.
 // The capturedBody comparison fails if anyone reverts EnabledSip-
 // Registration / UseDIDInRuri to plain bool — the explicit `false`
 // values silently drop from `json:",omitempty"` output and the captured
@@ -361,7 +457,8 @@ func TestSIPConfigurationDeserializesIncomingAuthCredentials(t *testing.T) {
 	}`
 	var cfg trunkconfiguration.SIPConfiguration
 	require.NoError(t, json.Unmarshal([]byte(body), &cfg))
-	assert.NotNil(t, cfg.EnabledSipRegistration); assert.True(t, *cfg.EnabledSipRegistration)
+	assert.NotNil(t, cfg.EnabledSipRegistration)
+	assert.True(t, *cfg.EnabledSipRegistration)
 	assert.Equal(t, "sipreg-user-1", cfg.IncomingAuthUsername)
 	assert.Equal(t, "s3cret-Pa55", cfg.IncomingAuthPassword)
 }
@@ -400,7 +497,8 @@ func TestVoiceInTrunksCreateWithEnabledSipRegistrationReturnsPopulatedIncomingAu
 
 	cfg, ok := created.Configuration.(*trunkconfiguration.SIPConfiguration)
 	require.True(t, ok, "expected SIP configuration")
-	assert.NotNil(t, cfg.EnabledSipRegistration); assert.True(t, *cfg.EnabledSipRegistration)
+	assert.NotNil(t, cfg.EnabledSipRegistration)
+	assert.True(t, *cfg.EnabledSipRegistration)
 	// Server-generated credentials are populated, not empty.
 	assert.NotEmpty(t, cfg.IncomingAuthUsername, "expected incoming_auth_username to be populated")
 	assert.NotEmpty(t, cfg.IncomingAuthPassword, "expected incoming_auth_password to be populated")
