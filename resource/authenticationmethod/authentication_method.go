@@ -3,6 +3,8 @@ package authenticationmethod
 import (
 	"encoding/json"
 	"fmt"
+
+	"github.com/didww/didww-api-3-go-sdk/v3/internal/redact"
 )
 
 // AuthenticationMethod is the interface for polymorphic authentication methods
@@ -33,6 +35,17 @@ type CredentialsAndIp struct {
 }
 
 func (a *CredentialsAndIp) AuthenticationType() string { return "credentials_and_ip" }
+
+// String implements fmt.Stringer so default fmt.Sprintf / fmt.Println output
+// redacts the server-generated credentials. The wire format is unaffected —
+// MarshalJSON above still emits the real values.
+func (a *CredentialsAndIp) String() string {
+	return fmt.Sprintf("CredentialsAndIp{AllowedSipIPs:%v TechPrefix:%q Username:%q Password:%q}",
+		a.AllowedSipIPs, a.TechPrefix, redact.Mask(a.Username), redact.Mask(a.Password))
+}
+
+// GoString mirrors String for the %#v verb (debugger / spew output).
+func (a *CredentialsAndIp) GoString() string { return a.String() }
 
 // Twilio uses Twilio SIP trunking authentication.
 type Twilio struct {
