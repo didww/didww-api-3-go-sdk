@@ -547,6 +547,10 @@ updated, _ := client.VoiceInTrunks().Update(ctx, trunk)
 | Emergency | `emergency_order_items` |
 | Generic (response only) | `generic_order_items` |
 
+## Filter Reference
+
+> See [`FILTERS.md`](FILTERS.md) for the canonical list of `filter[KEY]` keys accepted by every list endpoint, verified live against the DIDWW API at version `2026-04-16`.
+
 ## Error Handling
 
 ```go
