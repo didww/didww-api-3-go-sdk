@@ -36,13 +36,6 @@ func WithBaseURL(url string) ClientOption {
 	}
 }
 
-// WithTimeout sets the HTTP client timeout in milliseconds.
-func WithTimeout(ms int) ClientOption {
-	return func(c *Client) {
-		c.httpClient.Timeout = time.Duration(ms) * time.Millisecond
-	}
-}
-
 // WithHTTPClient sets a custom HTTP client.
 func WithHTTPClient(httpClient *http.Client) ClientOption {
 	return func(c *Client) {
