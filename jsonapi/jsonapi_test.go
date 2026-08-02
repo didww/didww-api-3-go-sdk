@@ -183,7 +183,6 @@ func TestUnmarshalOne(t *testing.T) {
 		_, err := UnmarshalOne[testResource]([]byte(body))
 		require.Error(t, err)
 	})
-
 }
 
 func TestUnmarshalMany(t *testing.T) {
@@ -213,7 +212,6 @@ func TestUnmarshalMany(t *testing.T) {
 		require.NoError(t, err)
 		assert.Len(t, results, 0)
 	})
-
 }
 
 func TestToOneRelationship(t *testing.T) {
@@ -280,86 +278,6 @@ func TestParseToManyRelationship(t *testing.T) {
 	t.Run("invalid JSON", func(t *testing.T) {
 		raw := json.RawMessage(`{bad`)
 		_, err := ParseToManyRelationship(raw)
-		require.Error(t, err)
-	})
-}
-
-func TestResolveToOne(t *testing.T) {
-	included := IncludedResources{
-		"tests:99": json.RawMessage(`{"id":"99","type":"tests","attributes":{"name":"Found","age":10}}`),
-	}
-	rels := map[string]json.RawMessage{
-		"parent": json.RawMessage(`{"data":{"type":"tests","id":"99"}}`),
-	}
-
-	t.Run("present and included", func(t *testing.T) {
-		r, err := ResolveToOne[testResource](included, rels, "parent")
-		require.NoError(t, err)
-		require.NotNil(t, r)
-		assert.Equal(t, "Found", r.Name)
-	})
-
-	t.Run("present but missing from included", func(t *testing.T) {
-		missingRels := map[string]json.RawMessage{
-			"parent": json.RawMessage(`{"data":{"type":"tests","id":"999"}}`),
-		}
-		r, err := ResolveToOne[testResource](included, missingRels, "parent")
-		require.NoError(t, err)
-		assert.Nil(t, r)
-	})
-
-	t.Run("missing relationship", func(t *testing.T) {
-		r, err := ResolveToOne[testResource](included, rels, "nonexistent")
-		require.NoError(t, err)
-		assert.Nil(t, r)
-	})
-
-	t.Run("error on bad JSON", func(t *testing.T) {
-		badRels := map[string]json.RawMessage{
-			"parent": json.RawMessage(`{bad`),
-		}
-		_, err := ResolveToOne[testResource](included, badRels, "parent")
-		require.Error(t, err)
-	})
-}
-
-func TestResolveToMany(t *testing.T) {
-	included := IncludedResources{
-		"tags:1": json.RawMessage(`{"id":"1","type":"tags","attributes":{"name":"A","age":1}}`),
-		"tags:2": json.RawMessage(`{"id":"2","type":"tags","attributes":{"name":"B","age":2}}`),
-	}
-	rels := map[string]json.RawMessage{
-		"tags": json.RawMessage(`{"data":[{"type":"tags","id":"1"},{"type":"tags","id":"2"}]}`),
-	}
-
-	t.Run("present and included", func(t *testing.T) {
-		results, err := ResolveToMany[testResource](included, rels, "tags")
-		require.NoError(t, err)
-		require.Len(t, results, 2)
-		assert.Equal(t, "A", results[0].Name)
-		assert.Equal(t, "B", results[1].Name)
-	})
-
-	t.Run("present but missing from included", func(t *testing.T) {
-		missingRels := map[string]json.RawMessage{
-			"tags": json.RawMessage(`{"data":[{"type":"tags","id":"999"}]}`),
-		}
-		results, err := ResolveToMany[testResource](included, missingRels, "tags")
-		require.NoError(t, err)
-		assert.Equal(t, 0, len(results))
-	})
-
-	t.Run("missing relationship", func(t *testing.T) {
-		results, err := ResolveToMany[testResource](included, rels, "nonexistent")
-		require.NoError(t, err)
-		assert.Nil(t, results)
-	})
-
-	t.Run("error on bad JSON", func(t *testing.T) {
-		badRels := map[string]json.RawMessage{
-			"tags": json.RawMessage(`{bad`),
-		}
-		_, err := ResolveToMany[testResource](included, badRels, "tags")
 		require.Error(t, err)
 	})
 }

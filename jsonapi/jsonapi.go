@@ -103,56 +103,6 @@ func ParseToManyRelationship(raw json.RawMessage) ([]RelationshipRef, error) {
 	return wrapper.Data, nil
 }
 
-// ResolveToOne resolves a to-one relationship from included resources.
-func ResolveToOne[T any](included IncludedResources, rels map[string]json.RawMessage, name string) (*T, error) {
-	raw, ok := rels[name]
-	if !ok {
-		return nil, nil
-	}
-	ref, err := ParseToOneRelationship(raw)
-	if err != nil {
-		return nil, err
-	}
-	if ref == nil {
-		return nil, nil
-	}
-	key := ref.Type + ":" + ref.ID
-	resRaw, ok := included[key]
-	if !ok {
-		return nil, nil
-	}
-	return unmarshalResourceWithIncluded[T](resRaw, included)
-}
-
-// ResolveToMany resolves a to-many relationship from included resources.
-func ResolveToMany[T any](included IncludedResources, rels map[string]json.RawMessage, name string) ([]*T, error) {
-	raw, ok := rels[name]
-	if !ok {
-		return nil, nil
-	}
-	refs, err := ParseToManyRelationship(raw)
-	if err != nil {
-		return nil, err
-	}
-	if len(refs) == 0 {
-		return nil, nil
-	}
-	results := make([]*T, 0, len(refs))
-	for _, ref := range refs {
-		key := ref.Type + ":" + ref.ID
-		resRaw, ok := included[key]
-		if !ok {
-			continue
-		}
-		item, err := unmarshalResourceWithIncluded[T](resRaw, included)
-		if err != nil {
-			return nil, err
-		}
-		results = append(results, item)
-	}
-	return results, nil
-}
-
 // parseIncluded builds an IncludedResources map from the raw included array.
 func parseIncluded(raw json.RawMessage) (IncludedResources, error) {
 	if len(raw) == 0 || string(raw) == jsonNull {
