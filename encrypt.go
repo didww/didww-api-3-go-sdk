@@ -3,7 +3,6 @@ package didww
 import (
 	"bytes"
 	"context"
-	"crypto"
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
@@ -216,6 +215,3 @@ func pkcs7Pad(data []byte, blockSize int) []byte {
 	padText := bytes.Repeat([]byte{byte(padding)}, padding)
 	return append(data, padText...)
 }
-
-// Ensure Encrypt uses the correct RSA-OAEP hash.
-var _ crypto.Hash = crypto.SHA256
