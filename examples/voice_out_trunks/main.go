@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"time"
 
+	didww "github.com/didww/didww-api-3-go-sdk/v3"
 	"github.com/didww/didww-api-3-go-sdk/v3/examples"
 	"github.com/didww/didww-api-3-go-sdk/v3/resource"
 	"github.com/didww/didww-api-3-go-sdk/v3/resource/authenticationmethod"
@@ -66,7 +67,7 @@ func main() {
 		DefaultDstAction:    enums.DefaultDstActionAllowAll,
 		OnCliMismatchAction: enums.OnCliMismatchActionRejectCall,
 		MediaEncryptionMode: enums.MediaEncryptionModeDisabled,
-		ThresholdAmount:     examples.Ptr("100.00"),
+		ThresholdAmount:     didww.Ptr("100.00"),
 		ExternalReferenceID: &extRef,
 		RtpTimeout:          &rtpTimeout,
 	}

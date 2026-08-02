@@ -56,8 +56,8 @@ func main() {
 	}
 
 	// Update DID with capacity settings
-	did.Description = examples.Ptr("Hi")
-	did.CapacityLimit = examples.Ptr(5)
+	did.Description = didww.Ptr("Hi")
+	did.CapacityLimit = didww.Ptr(5)
 	did.DedicatedChannelsCount = 0
 
 	savedDid, err := client.DIDs().Update(ctx, did)

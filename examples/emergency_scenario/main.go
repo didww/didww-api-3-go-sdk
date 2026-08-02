@@ -226,7 +226,7 @@ func main() {
 	callbackMethod := "post"
 	externalRef := fmt.Sprintf("go-scenario-%s", suffix)
 	verification, err := client.EmergencyVerifications().Create(ctx, &resource.EmergencyVerification{
-		CallbackURL:         examples.Ptr("https://example.com/webhooks/emergency"),
+		CallbackURL:         didww.Ptr("https://example.com/webhooks/emergency"),
 		CallbackMethod:      &callbackMethod,
 		ExternalReferenceID: &externalRef,
 		AddressID:           addr.ID,

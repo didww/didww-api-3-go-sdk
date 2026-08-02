@@ -31,7 +31,7 @@ func main() {
 			SstRefreshMethodID:  enums.SstRefreshMethodInvite,
 			SstMinTimer:         600,
 			SstMaxTimer:         900,
-			SstSessionExpires:   examples.Ptr(900),
+			SstSessionExpires:   didww.Ptr(900),
 			SipTimerB:           8000,
 			DnsSrvFailoverTimer: 2000,
 			RtpTimeout:          30,
@@ -65,7 +65,7 @@ func main() {
 	extRef := fmt.Sprintf("go-vitg-%d", ts)
 	group, err := client.VoiceInTrunkGroups().Create(ctx, &resource.VoiceInTrunkGroup{
 		Name:                fmt.Sprintf("SDK Trunk Group %d", ts),
-		CapacityLimit:       examples.Ptr(10),
+		CapacityLimit:       didww.Ptr(10),
 		VoiceInTrunkIDs:     []string{trunkA.ID, trunkB.ID},
 		ExternalReferenceID: &extRef,
 	})

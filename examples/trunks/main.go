@@ -36,8 +36,8 @@ func main() {
 		Priority:       1,
 		Weight:         100,
 		CliFormat:      enums.CliFormatE164,
-		RingingTimeout: examples.Ptr(30),
-		CapacityLimit:  examples.Ptr(10),
+		RingingTimeout: didww.Ptr(30),
+		CapacityLimit:  didww.Ptr(10),
 		Configuration: &trunkconfiguration.SIPConfiguration{
 			Host:                "sip.example.com",
 			Port:                5060,
@@ -48,7 +48,7 @@ func main() {
 			SstRefreshMethodID:  enums.SstRefreshMethodInvite,
 			SstMinTimer:         600,
 			SstMaxTimer:         900,
-			SstSessionExpires:   examples.Ptr(900),
+			SstSessionExpires:   didww.Ptr(900),
 			SipTimerB:           8000,
 			DnsSrvFailoverTimer: 2000,
 			RtpTimeout:          30,
@@ -67,7 +67,7 @@ func main() {
 	fmt.Printf("Created trunk: %s - %s\n", created.ID, created.Name)
 
 	// Update trunk
-	created.Description = examples.Ptr("Updated description")
+	created.Description = didww.Ptr("Updated description")
 	updated, err := client.VoiceInTrunks().Update(ctx, created)
 	if err != nil {
 		panic(err)
@@ -83,7 +83,7 @@ func main() {
 	// --- Create a PSTN trunk ---
 	pstnTrunk := &resource.VoiceInTrunk{
 		Name:           "My PSTN Trunk",
-		RingingTimeout: examples.Ptr(30),
+		RingingTimeout: didww.Ptr(30),
 		Configuration: &trunkconfiguration.PSTNConfiguration{
 			Dst: "12125551234",
 		},

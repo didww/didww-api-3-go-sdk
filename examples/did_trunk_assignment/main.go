@@ -119,7 +119,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	freshDID.Description = examples.Ptr("DID with trunk assigned")
+	freshDID.Description = didww.Ptr("DID with trunk assigned")
 	_, err = client.DIDs().Update(ctx, freshDID)
 	if err != nil {
 		panic(fmt.Sprintf("Error updating description: %v", err))
