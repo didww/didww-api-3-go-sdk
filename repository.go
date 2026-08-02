@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/didww/didww-api-3-go-sdk/v3/jsonapi"
+	"github.com/didww/didww-api-3-go-sdk/v3/resource"
 )
 
 // Repository provides CRUD operations for a JSON:API resource.
@@ -94,28 +95,18 @@ func (r *Repository[T]) Delete(ctx context.Context, id string) error {
 	return err
 }
 
-// SingletonRepository provides read access to a singleton resource.
-type SingletonRepository[T any] struct {
-	client       *Client
-	resourceType string // JSON:API type, also used as URL path
+// BalanceRepository provides read access to the account balance.
+type BalanceRepository struct {
+	client *Client
 }
 
-// NewSingletonRepository creates a SingletonRepository for resource type T.
-// The JSON:API type is read from T's struct tag.
-func NewSingletonRepository[T any](client *Client) *SingletonRepository[T] {
-	return &SingletonRepository[T]{
-		client:       client,
-		resourceType: jsonapi.ResourceType[T](),
-	}
-}
-
-// Find retrieves the singleton resource.
-func (r *SingletonRepository[T]) Find(ctx context.Context) (*T, error) {
-	body, err := r.client.doRequest(ctx, http.MethodGet, r.resourceType, nil, nil)
+// Find retrieves the account balance.
+func (r *BalanceRepository) Find(ctx context.Context) (*resource.Balance, error) {
+	body, err := r.client.doRequest(ctx, http.MethodGet, jsonapi.ResourceType[resource.Balance](), nil, nil)
 	if err != nil {
 		return nil, err
 	}
-	return jsonapi.UnmarshalOne[T](body)
+	return jsonapi.UnmarshalOne[resource.Balance](body)
 }
 
 const (

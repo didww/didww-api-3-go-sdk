@@ -128,8 +128,8 @@ func (c *Client) DownloadAndDecompressExport(ctx context.Context, downloadURL st
 
 // --- Repository Accessors ---
 
-func (c *Client) Balance() *SingletonRepository[resource.Balance] {
-	return NewSingletonRepository[resource.Balance](c)
+func (c *Client) Balance() *BalanceRepository {
+	return &BalanceRepository{client: c}
 }
 
 func (c *Client) Countries() *Repository[resource.Country] { return NewRepository[resource.Country](c) }
