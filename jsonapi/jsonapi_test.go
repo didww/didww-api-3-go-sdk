@@ -38,21 +38,6 @@ func (r *testResourceWithRels) MarshalRelationships() (map[string]any, error) {
 	return rels, nil
 }
 
-type testResourceWithResolver struct {
-	ID     string        `json:"-"`
-	Name   string        `json:"name"`
-	Parent *testResource `json:"-"`
-}
-
-func (r *testResourceWithResolver) ResolveRelationships(included IncludedResources, rels map[string]json.RawMessage) error {
-	if parent, err := ResolveToOne[testResource](included, rels, "parent"); err != nil {
-		return err
-	} else if parent != nil {
-		r.Parent = parent
-	}
-	return nil
-}
-
 // --- Tests ---
 
 func TestGetID(t *testing.T) {
@@ -199,17 +184,6 @@ func TestUnmarshalOne(t *testing.T) {
 		require.Error(t, err)
 	})
 
-	t.Run("with included and resolver", func(t *testing.T) {
-		body := `{
-			"data":{"id":"1","type":"children","attributes":{"name":"Child"},
-				"relationships":{"parent":{"data":{"type":"tests","id":"99"}}}},
-			"included":[{"id":"99","type":"tests","attributes":{"name":"Parent","age":50}}]
-		}`
-		r, err := UnmarshalOne[testResourceWithResolver]([]byte(body))
-		require.NoError(t, err)
-		require.NotNil(t, r.Parent)
-		assert.Equal(t, "Parent", r.Parent.Name)
-	})
 }
 
 func TestUnmarshalMany(t *testing.T) {
@@ -240,18 +214,6 @@ func TestUnmarshalMany(t *testing.T) {
 		assert.Len(t, results, 0)
 	})
 
-	t.Run("with included", func(t *testing.T) {
-		body := `{
-			"data":[{"id":"1","type":"children","attributes":{"name":"Child"},
-				"relationships":{"parent":{"data":{"type":"tests","id":"99"}}}}],
-			"included":[{"id":"99","type":"tests","attributes":{"name":"Parent","age":50}}]
-		}`
-		results, err := UnmarshalMany[testResourceWithResolver]([]byte(body))
-		require.NoError(t, err)
-		require.Len(t, results, 1)
-		require.NotNil(t, results[0].Parent)
-		assert.Equal(t, "Parent", results[0].Parent.Name)
-	})
 }
 
 func TestToOneRelationship(t *testing.T) {

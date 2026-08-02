@@ -45,11 +45,6 @@ type RelationshipUnmarshaler interface {
 	UnmarshalRelationships(rels map[string]json.RawMessage) error
 }
 
-// RelationshipResolver is implemented by resources that resolve included relationships.
-type RelationshipResolver interface {
-	ResolveRelationships(included IncludedResources, rels map[string]json.RawMessage) error
-}
-
 type dirtySnapshot struct {
 	attributes    map[string]json.RawMessage
 	relationships map[string]json.RawMessage
@@ -278,12 +273,6 @@ func unmarshalResourceWithIncluded[T any](data []byte, included IncludedResource
 		// Resolve from rel tags
 		if err := resolveRelsFromTags(&result, included, res.Relationships); err != nil {
 			return nil, fmt.Errorf("failed to resolve relationships: %w", err)
-		}
-		// Then interface (backward compat)
-		if rr, ok := any(&result).(RelationshipResolver); ok {
-			if err := rr.ResolveRelationships(included, res.Relationships); err != nil {
-				return nil, fmt.Errorf("failed to resolve relationships: %w", err)
-			}
 		}
 	}
 
