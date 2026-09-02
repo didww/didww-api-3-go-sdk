@@ -37,11 +37,11 @@ type EmergencyCallingService struct {
 
 // UnmarshalMeta parses the resource-level JSON:API meta block into a generic map.
 func (e *EmergencyCallingService) UnmarshalMeta(raw json.RawMessage) error {
-	var m map[string]string
-	if err := json.Unmarshal(raw, &m); err != nil {
+	meta, err := unmarshalStringMeta(raw)
+	if err != nil {
 		return err
 	}
-	e.Meta = m
+	e.Meta = meta
 	return nil
 }
 

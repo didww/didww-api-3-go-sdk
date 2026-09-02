@@ -37,11 +37,11 @@
       "attributes": {
         "identity_type": "personal",
         "address_area_level": "city",
-        "personal_area_level": "city",
-        "business_area_level": "country",
+        "personal_area_level": "country",
+        "business_area_level": null,
         "address_mandatory_fields": ["city", "postal_code"],
         "personal_mandatory_fields": ["first_name", "last_name"],
-        "business_mandatory_fields": ["company_name"]
+        "business_mandatory_fields": []
       },
       "relationships": {
         "country": {

@@ -22,10 +22,10 @@ type DIDHistory struct {
 
 // UnmarshalMeta parses the resource-level JSON:API meta block into a generic map.
 func (d *DIDHistory) UnmarshalMeta(raw json.RawMessage) error {
-	var m map[string]string
-	if err := json.Unmarshal(raw, &m); err != nil {
+	meta, err := unmarshalStringMeta(raw)
+	if err != nil {
 		return err
 	}
-	d.Meta = m
+	d.Meta = meta
 	return nil
 }

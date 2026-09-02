@@ -26,6 +26,33 @@
           "data": { "type": "did_group_types", "id": "abc-dgt" }
         }
       }
+    },
+    {
+      "id": "d2e3f4a5-b6c7-8901-2345-67890abcdef1",
+      "type": "emergency_requirements",
+      "attributes": {
+        "identity_type": "business",
+        "address_area_level": "area",
+        "personal_area_level": null,
+        "business_area_level": "world_wide",
+        "address_mandatory_fields": ["city", "postal_code"],
+        "personal_mandatory_fields": [],
+        "business_mandatory_fields": ["company_name"],
+        "estimate_setup_time": "3-5 business days",
+        "requirement_restriction_message": null
+      },
+      "meta": {
+        "setup_price": "0.0",
+        "monthly_price": "2.5"
+      },
+      "relationships": {
+        "country": {
+          "data": { "type": "countries", "id": "def-country" }
+        },
+        "did_group_type": {
+          "data": { "type": "did_group_types", "id": "abc-dgt" }
+        }
+      }
     }
   ],
   "meta": {

@@ -11,8 +11,10 @@ type EmergencyRequirement struct {
 	// AddressAreaLevel is the minimum geographic precision for the address ("country", "city", "street", etc.).
 	AddressAreaLevel string `json:"address_area_level" api:"readonly"`
 	// PersonalAreaLevel is the minimum geographic precision for personal identity addresses.
+	// Empty when the country does not accept a personal identity for emergency calling.
 	PersonalAreaLevel string `json:"personal_area_level" api:"readonly"`
 	// BusinessAreaLevel is the minimum geographic precision for business identity addresses.
+	// Empty when the country does not accept a business identity for emergency calling.
 	BusinessAreaLevel string `json:"business_area_level" api:"readonly"`
 	// AddressMandatoryFields lists address fields required for this requirement.
 	AddressMandatoryFields []string `json:"address_mandatory_fields" api:"readonly"`
@@ -24,7 +26,7 @@ type EmergencyRequirement struct {
 	EstimateSetupTime string `json:"estimate_setup_time" api:"readonly"`
 	// RequirementRestrictionMessage is a human-readable restriction message. May be empty.
 	RequirementRestrictionMessage string `json:"requirement_restriction_message" api:"readonly"`
-	// Meta holds resource-level JSON:API meta (e.g. setup_price, monthly_price).
+	// Meta holds resource-level JSON:API meta: setup_price and monthly_price, decimal strings.
 	Meta map[string]string `json:"-"`
 	// Resolved relationships
 	Country      *Country      `json:"-" rel:"country"`
@@ -33,10 +35,10 @@ type EmergencyRequirement struct {
 
 // UnmarshalMeta parses the resource-level JSON:API meta block into a generic map.
 func (e *EmergencyRequirement) UnmarshalMeta(raw json.RawMessage) error {
-	var m map[string]string
-	if err := json.Unmarshal(raw, &m); err != nil {
+	meta, err := unmarshalStringMeta(raw)
+	if err != nil {
 		return err
 	}
-	e.Meta = m
+	e.Meta = meta
 	return nil
 }
