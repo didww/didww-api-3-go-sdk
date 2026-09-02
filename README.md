@@ -90,7 +90,6 @@ For details on obtaining your API key please visit https://doc.didww.com/api3/co
 ```go
 client, err := didww.NewClient("YOUR_API_KEY",
     didww.WithEnvironment(didww.Production),
-    didww.WithTimeout(30000), // 30 seconds
 )
 ```
 

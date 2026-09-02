@@ -36,13 +36,6 @@ func WithBaseURL(url string) ClientOption {
 	}
 }
 
-// WithTimeout sets the HTTP client timeout in milliseconds.
-func WithTimeout(ms int) ClientOption {
-	return func(c *Client) {
-		c.httpClient.Timeout = time.Duration(ms) * time.Millisecond
-	}
-}
-
 // WithHTTPClient sets a custom HTTP client.
 func WithHTTPClient(httpClient *http.Client) ClientOption {
 	return func(c *Client) {
@@ -128,8 +121,8 @@ func (c *Client) DownloadAndDecompressExport(ctx context.Context, downloadURL st
 
 // --- Repository Accessors ---
 
-func (c *Client) Balance() *SingletonRepository[resource.Balance] {
-	return NewSingletonRepository[resource.Balance](c)
+func (c *Client) Balance() *BalanceRepository {
+	return &BalanceRepository{client: c}
 }
 
 func (c *Client) Countries() *Repository[resource.Country] { return NewRepository[resource.Country](c) }

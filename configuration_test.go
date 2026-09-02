@@ -1,7 +1,9 @@
 package didww
 
 import (
+	"net/http"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -45,16 +47,10 @@ func TestNewClientWithCustomBaseURL(t *testing.T) {
 	assert.Equal(t, customURL, client.BaseURL())
 }
 
-func TestNewClientWithTimeout(t *testing.T) {
-	client, err := NewClient("test-api-key", WithTimeout(5000))
-	require.NoError(t, err)
-	require.NotNil(t, client)
-}
-
 func TestNewClientWithMultipleOptions(t *testing.T) {
 	client, err := NewClient("test-api-key",
 		WithEnvironment(Production),
-		WithTimeout(10000),
+		WithHTTPClient(&http.Client{Timeout: 10 * time.Second}),
 	)
 	require.NoError(t, err)
 	assert.Equal(t, string(Production), client.BaseURL())
