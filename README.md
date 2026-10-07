@@ -662,10 +662,12 @@ The SDK provides enum types in `github.com/didww/didww-api-3-go-sdk/v3/resource/
 
 Validate incoming webhook callbacks from DIDWW using HMAC-SHA1 signature verification.
 
+Initialize the validator with the callback secret that is enabled in the DIDWW User Panel (**APIs → DIDWW API 3 → Callback Secrets**). DIDWW signs every callback with it and sends callbacks only while a callback secret is enabled.
+
 ```go
 import didww "github.com/didww/didww-api-3-go-sdk/v3"
 
-validator := didww.NewRequestValidator("YOUR_API_KEY")
+validator := didww.NewRequestValidator("YOUR_CALLBACK_SECRET")
 
 // In your webhook handler:
 signature := r.Header.Get(didww.SignatureHeaderName) // "X-DIDWW-Signature"
