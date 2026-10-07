@@ -14,12 +14,13 @@ const SignatureHeaderName = "X-DIDWW-Signature"
 
 // RequestValidator validates DIDWW callback request signatures using HMAC-SHA1.
 type RequestValidator struct {
-	apiKey string
+	callbackSecret string
 }
 
-// NewRequestValidator creates a new RequestValidator with the given API key.
-func NewRequestValidator(apiKey string) *RequestValidator {
-	return &RequestValidator{apiKey: apiKey}
+// NewRequestValidator creates a new RequestValidator with the callback secret
+// enabled in the DIDWW User Panel.
+func NewRequestValidator(callbackSecret string) *RequestValidator {
+	return &RequestValidator{callbackSecret: callbackSecret}
 }
 
 // Validate checks whether the provided signature matches the expected HMAC-SHA1
@@ -58,7 +59,7 @@ func (rv *RequestValidator) computeSignatureBytes(rawURL string, payload map[str
 		data.WriteString(payload[k])
 	}
 
-	mac := hmac.New(sha1.New, []byte(rv.apiKey))
+	mac := hmac.New(sha1.New, []byte(rv.callbackSecret))
 	_, _ = mac.Write([]byte(data.String()))
 	return mac.Sum(nil)
 }
