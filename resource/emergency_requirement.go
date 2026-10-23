@@ -1,6 +1,6 @@
 package resource
 
-import "github.com/didww/didww-api-3-go-sdk/v3/resource/enums"
+import "github.com/didww/didww-api-3-go-sdk/v4/resource/enums"
 
 // EmergencyRequirement represents the regulatory requirements for ordering
 // an emergency calling service. Introduced in API 2026-04-16.

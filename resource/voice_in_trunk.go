@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/didww/didww-api-3-go-sdk/v3/resource/enums"
-	"github.com/didww/didww-api-3-go-sdk/v3/resource/trunkconfiguration"
+	"github.com/didww/didww-api-3-go-sdk/v4/resource/enums"
+	"github.com/didww/didww-api-3-go-sdk/v4/resource/trunkconfiguration"
 )
 
 // VoiceInTrunk represents a voice inbound trunk.

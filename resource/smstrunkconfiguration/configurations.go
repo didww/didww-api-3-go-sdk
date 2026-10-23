@@ -3,8 +3,8 @@ package smstrunkconfiguration
 import (
 	"fmt"
 
-	"github.com/didww/didww-api-3-go-sdk/v3/internal/redact"
-	"github.com/didww/didww-api-3-go-sdk/v3/jsonapi"
+	"github.com/didww/didww-api-3-go-sdk/v4/internal/redact"
+	"github.com/didww/didww-api-3-go-sdk/v4/jsonapi"
 )
 
 // SmsToEmail forwards inbound messages as email.

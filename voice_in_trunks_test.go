@@ -7,9 +7,9 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/didww/didww-api-3-go-sdk/v3/resource"
-	"github.com/didww/didww-api-3-go-sdk/v3/resource/enums"
-	"github.com/didww/didww-api-3-go-sdk/v3/resource/trunkconfiguration"
+	"github.com/didww/didww-api-3-go-sdk/v4/resource"
+	"github.com/didww/didww-api-3-go-sdk/v4/resource/enums"
+	"github.com/didww/didww-api-3-go-sdk/v4/resource/trunkconfiguration"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/didww/didww-api-3-go-sdk/v3/jsonapi"
-	"github.com/didww/didww-api-3-go-sdk/v3/resource/authenticationmethod"
-	"github.com/didww/didww-api-3-go-sdk/v3/resource/enums"
+	"github.com/didww/didww-api-3-go-sdk/v4/jsonapi"
+	"github.com/didww/didww-api-3-go-sdk/v4/resource/authenticationmethod"
+	"github.com/didww/didww-api-3-go-sdk/v4/resource/enums"
 )
 
 // VoiceOutTrunk represents a voice outbound trunk.

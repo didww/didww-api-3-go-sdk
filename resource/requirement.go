@@ -1,6 +1,6 @@
 package resource
 
-import "github.com/didww/didww-api-3-go-sdk/v3/resource/enums"
+import "github.com/didww/didww-api-3-go-sdk/v4/resource/enums"
 
 // AddressRequirement represents a regulatory address requirement.
 type AddressRequirement struct {

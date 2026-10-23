@@ -3,8 +3,8 @@ package resource
 import (
 	"time"
 
-	"github.com/didww/didww-api-3-go-sdk/v3/jsonapi"
-	"github.com/didww/didww-api-3-go-sdk/v3/resource/enums"
+	"github.com/didww/didww-api-3-go-sdk/v4/jsonapi"
+	"github.com/didww/didww-api-3-go-sdk/v4/resource/enums"
 )
 
 // SenderIDVerification represents the verification of a sender identity used

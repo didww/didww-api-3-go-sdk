@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/didww/didww-api-3-go-sdk/v3/resource/enums"
-	"github.com/didww/didww-api-3-go-sdk/v3/resource/orderitem"
+	"github.com/didww/didww-api-3-go-sdk/v4/resource/enums"
+	"github.com/didww/didww-api-3-go-sdk/v4/resource/orderitem"
 )
 
 // Order represents a DIDWW order.

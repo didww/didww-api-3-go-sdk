@@ -8,8 +8,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/didww/didww-api-3-go-sdk/v3/jsonapi"
-	"github.com/didww/didww-api-3-go-sdk/v3/resource"
+	"github.com/didww/didww-api-3-go-sdk/v4/jsonapi"
+	"github.com/didww/didww-api-3-go-sdk/v4/resource"
 )
 
 // Repository provides CRUD operations for a JSON:API resource.

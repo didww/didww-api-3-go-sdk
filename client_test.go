@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/didww/didww-api-3-go-sdk/v3/resource"
+	"github.com/didww/didww-api-3-go-sdk/v4/resource"
 )
 
 func TestClientSendsCorrectHeaders(t *testing.T) {
@@ -317,6 +317,7 @@ func TestNewClientAPIVersion(t *testing.T) {
 	_, err = NewClient("test-api-key", WithAPIVersion("2026-04-16"))
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "release-3")
+	assert.Contains(t, err.Error(), "github.com/didww/didww-api-3-go-sdk/v3 ")
 }
 
 func TestNewClientScope(t *testing.T) {

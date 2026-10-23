@@ -33,14 +33,16 @@ This SDK targets DIDWW API version `2026-10-22` (`didww.DefaultAPIVersion`). The
 ## Installation
 
 ```bash
-go get github.com/didww/didww-api-3-go-sdk/v3
+go get github.com/didww/didww-api-3-go-sdk/v4
 ```
 
-**Note on module path:** Starting with v3, this module follows Go's
+**Note on module path:** this module follows Go's
 [Semantic Import Versioning](https://go.dev/ref/mod#major-version-suffixes):
-the major version appears in the import path (`/v3`). Projects pinned to v2
-(import path without a suffix) are unaffected by `go get -u` and must
-consciously update their imports to adopt v3.
+the major version of the SDK appears in the import path (`/v4`). It is the
+version of the Go module, not of the API: requests still go to
+`https://api.didww.com/v3`. Projects on `/v3` are unaffected by `go get -u` and
+must consciously update their imports to adopt v4; v3 stays on the `release-3`
+branch for API version 2026-04-16.
 
 ## Usage
 
@@ -51,7 +53,7 @@ import (
     "context"
     "fmt"
 
-    didww "github.com/didww/didww-api-3-go-sdk/v3"
+    didww "github.com/didww/didww-api-3-go-sdk/v4"
 )
 
 func main() {
@@ -119,7 +121,7 @@ import (
     "net/http"
     "net/url"
 
-    didww "github.com/didww/didww-api-3-go-sdk/v3"
+    didww "github.com/didww/didww-api-3-go-sdk/v4"
 )
 
 proxyURL, _ := url.Parse("http://proxy.example.com:8080")
@@ -291,7 +293,7 @@ updated, _ := client.DIDs().Update(ctx, did)
 A DID's inbound messages go to an SMS trunk or to an SMS trunk group. The two are exclusive: setting one sends the other as `null` in the same request, as `VoiceInTrunkID` and `VoiceInTrunkGroupID` do.
 
 ```go
-import "github.com/didww/didww-api-3-go-sdk/v3/resource"
+import "github.com/didww/didww-api-3-go-sdk/v4/resource"
 
 // sends sms_trunk and sms_trunk_group: null
 client.DIDs().Update(ctx, &resource.DID{ID: "did-uuid", SmsTrunkID: "sms-trunk-uuid"})
@@ -313,7 +315,7 @@ An SMS trunk cannot be deleted while DIDs are routed to it, nor an SMS trunk gro
 ### Voice In Trunks
 
 ```go
-import "github.com/didww/didww-api-3-go-sdk/v3/resource/enums"
+import "github.com/didww/didww-api-3-go-sdk/v4/resource/enums"
 
 // Create SIP trunk
 ringingTimeout := 30
@@ -423,8 +425,8 @@ Voice Out Trunks use a polymorphic `AuthenticationMethod` (2026-04-16). Three ty
 
 ```go
 import (
-    "github.com/didww/didww-api-3-go-sdk/v3/resource/authenticationmethod"
-    "github.com/didww/didww-api-3-go-sdk/v3/resource/enums"
+    "github.com/didww/didww-api-3-go-sdk/v4/resource/authenticationmethod"
+    "github.com/didww/didww-api-3-go-sdk/v4/resource/enums"
 )
 
 // NOTE: 203.0.113.0/24 is RFC 5737 TEST-NET-3 documentation space.
@@ -445,7 +447,7 @@ created, _ := client.VoiceOutTrunks().Create(ctx, trunk)
 
 ### SMS Trunks
 
-An SMS trunk delivers inbound messages, accepts outbound ones, or both. Its `Configuration` is one of five types in package `github.com/didww/didww-api-3-go-sdk/v3/resource/smstrunkconfiguration`:
+An SMS trunk delivers inbound messages, accepts outbound ones, or both. Its `Configuration` is one of five types in package `github.com/didww/didww-api-3-go-sdk/v4/resource/smstrunkconfiguration`:
 
 | Type | Struct | Notes |
 |------|--------|-------|
@@ -459,8 +461,8 @@ The read-only `AllowIn` and `AllowOut` tell which directions a trunk handles. `S
 
 ```go
 import (
-    "github.com/didww/didww-api-3-go-sdk/v3/resource"
-    "github.com/didww/didww-api-3-go-sdk/v3/resource/smstrunkconfiguration"
+    "github.com/didww/didww-api-3-go-sdk/v4/resource"
+    "github.com/didww/didww-api-3-go-sdk/v4/resource/smstrunkconfiguration"
 )
 
 trunk, _ := client.SmsTrunks().Create(ctx, &resource.SmsTrunk{
@@ -609,7 +611,7 @@ created, _ := client.SharedCapacityGroups().Create(ctx, group)
 ### Identities
 
 ```go
-import "github.com/didww/didww-api-3-go-sdk/v3/resource/enums"
+import "github.com/didww/didww-api-3-go-sdk/v4/resource/enums"
 
 identity := &didww.Identity{
     FirstName:    "John",
@@ -679,8 +681,8 @@ history, _ := client.DIDHistory().List(ctx, params)
 
 ```go
 import (
-    "github.com/didww/didww-api-3-go-sdk/v3/resource"
-    "github.com/didww/didww-api-3-go-sdk/v3/resource/enums"
+    "github.com/didww/didww-api-3-go-sdk/v4/resource"
+    "github.com/didww/didww-api-3-go-sdk/v4/resource/enums"
 )
 
 export := &resource.Export{
@@ -1081,7 +1083,7 @@ fmt.Println(identity.BirthDate)  // "1990-05-20"
 
 ## Enums
 
-The SDK provides enum types in `github.com/didww/didww-api-3-go-sdk/v3/resource/enums`:
+The SDK provides enum types in `github.com/didww/didww-api-3-go-sdk/v4/resource/enums`:
 
 `CallbackMethod`, `IdentityType`, `OrderStatus`, `ExportType`, `ExportStatus`, `CliFormat`,
 `OnCliMismatchAction`\*, `MediaEncryptionMode`, `DefaultDstAction`, `VoiceOutTrunkStatus`,
@@ -1092,7 +1094,7 @@ The SDK provides enum types in `github.com/didww/didww-api-3-go-sdk/v3/resource/
 
 \* `replace_cli` and `randomize_cli` require account configuration.
 
-The same package holds the `Pop*` values of `VoiceInTrunk.Pop` and the `ExportTrunkType*` values of the `trunk_type` filter of `sms_in` exports. The SMS trunk configuration values are constants of package `github.com/didww/didww-api-3-go-sdk/v3/resource/smstrunkconfiguration`: `Type*`, `HTTPMethod*`, `BodyType*` and `ServerLocation*`.
+The same package holds the `Pop*` values of `VoiceInTrunk.Pop` and the `ExportTrunkType*` values of the `trunk_type` filter of `sms_in` exports. The SMS trunk configuration values are constants of package `github.com/didww/didww-api-3-go-sdk/v4/resource/smstrunkconfiguration`: `Type*`, `HTTPMethod*`, `BodyType*` and `ServerLocation*`.
 
 ## Webhook Signature Validation
 
@@ -1101,7 +1103,7 @@ Validate incoming webhook callbacks from DIDWW using HMAC-SHA1 signature verific
 Initialize the validator with the callback secret that is enabled in the DIDWW User Panel (**APIs → DIDWW API 3 → Callback Secrets**). DIDWW signs every callback with it and sends callbacks only while a callback secret is enabled.
 
 ```go
-import didww "github.com/didww/didww-api-3-go-sdk/v3"
+import didww "github.com/didww/didww-api-3-go-sdk/v4"
 
 validator := didww.NewRequestValidator("YOUR_CALLBACK_SECRET")
 

@@ -3,7 +3,7 @@ package resource
 import (
 	"time"
 
-	"github.com/didww/didww-api-3-go-sdk/v3/resource/enums"
+	"github.com/didww/didww-api-3-go-sdk/v4/resource/enums"
 )
 
 // Export represents a CDR or SMS export.

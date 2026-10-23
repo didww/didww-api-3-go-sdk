@@ -15,7 +15,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/didww/didww-api-3-go-sdk/v3/resource"
+	"github.com/didww/didww-api-3-go-sdk/v4/resource"
 )
 
 // Client is the DIDWW API client. It is safe for concurrent use.

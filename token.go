@@ -5,7 +5,7 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/didww/didww-api-3-go-sdk/v3/internal/redact"
+	"github.com/didww/didww-api-3-go-sdk/v4/internal/redact"
 )
 
 // Token is an access token granted by the token service. It marshals to JSON
