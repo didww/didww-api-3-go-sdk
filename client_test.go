@@ -273,9 +273,11 @@ func TestNewClientEndpoints(t *testing.T) {
 	}
 
 	for name, opt := range map[string]func(string) ClientOption{
-		"API base":      WithBaseURL,
-		"token service": WithAuthURL,
-		"SMS prices":    WithSMSPricesURL,
+		"API base":         WithBaseURL,
+		"token service":    WithAuthURL,
+		"Voice IN prices":  WithVoiceInPricesURL,
+		"Voice OUT prices": WithVoiceOutPricesURL,
+		"SMS prices":       WithSMSPricesURL,
 	} {
 		for _, u := range []string{"https://auth.example.com#custom", "https://api-prices.example.com/v3?region=eu", "https://api-prices.example.com/v3?"} {
 			t.Run(name+" URL with a query or fragment "+u, func(t *testing.T) {
