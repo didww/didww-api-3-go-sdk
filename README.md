@@ -457,7 +457,7 @@ An SMS trunk delivers inbound messages, accepts outbound ones, or both. Its `Con
 | `smpp_esme` | `SmppEsme` | You bind to DIDWW as an SMPP ESME. `ServerLocation` is required; `SystemID` and `Password` are generated. |
 | `smpp_smsc` | `SmppSmsc` | DIDWW binds to your SMSC with your `Host`, `SystemID`, `Password` and `ServerLocation`. |
 
-The read-only `AllowIn` and `AllowOut` tell which directions a trunk handles. `ServerLocation` is `ServerLocationNYC` or `ServerLocationAMS`; the sandbox accepts `nyc` only. A configuration type this SDK does not know is read as `*smstrunkconfiguration.Generic` and sent back unchanged.
+The read-only `AllowIn` and `AllowOut` tell which directions a trunk handles. `ServerLocation` is `ServerLocationNYC` or `ServerLocationAMS`; the sandbox accepts `nyc` only. A configuration type this SDK does not know is read as `*smstrunkconfiguration.Generic` and sent back unchanged; its numbers are `json.Number`, so they keep their exact value.
 
 ```go
 import (
@@ -497,7 +497,7 @@ The typed configuration structs cannot clear a nullable attribute: a field at it
 
 `OutgoingDIDIDs` replaces the whole `outgoing_dids` list of the trunk: list every DID to keep. A fetched trunk does not fill it; build it from `trunk.OutgoingDIDs` (include `outgoing_dids`).
 
-The generated credentials of `http_out` and `smpp_esme` trunks are read-only and are never sent back on update. `String` and `GoString` (`%v`, `%+v`, `%#v`) mask them, the `Password` of an `smpp_smsc` configuration, and the `Headers` of an `http_in` configuration, which may carry the credentials of your endpoint. The masking applies to the configuration pointers that `trunk.Configuration` holds; a dereferenced value prints its fields, and the struct fields keep the real values. To rotate the generated credentials:
+The generated credentials of `http_out` and `smpp_esme` trunks are read-only and are never sent back on update. `String` and `GoString` (`%v`, `%+v`, `%#v`) mask them, the `Password` of an `smpp_smsc` configuration, and the `Headers` of an `http_in` configuration, which may carry the credentials of your endpoint. A `*smstrunkconfiguration.Generic` masks every attribute value, since its fields are not known; only the attribute names and explicit nulls are shown. The masking applies to the configuration pointers that `trunk.Configuration` holds; a dereferenced value prints its fields, and the struct fields keep the real values. To rotate the generated credentials:
 
 ```go
 _, err := client.SmsTrunkRegenerateCredentials().Create(ctx, &resource.SmsTrunkRegenerateCredential{

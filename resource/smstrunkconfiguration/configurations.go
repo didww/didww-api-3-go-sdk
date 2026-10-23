@@ -134,16 +134,18 @@ func (c *SmppSmsc) String() string {
 // GoString mirrors String for the %#v verb.
 func (c *SmppSmsc) GoString() string { return c.String() }
 
+const nilString = "<nil>"
+
 func boolString(b *bool) string {
 	if b == nil {
-		return "<nil>"
+		return nilString
 	}
 	return fmt.Sprintf("%v", *b)
 }
 
 func intString(i *int) string {
 	if i == nil {
-		return "<nil>"
+		return nilString
 	}
 	return fmt.Sprintf("%d", *i)
 }

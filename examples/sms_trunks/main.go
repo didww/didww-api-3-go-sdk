@@ -29,30 +29,7 @@ func main() {
 	client := examples.ClientFromEnv()
 	ctx := context.Background()
 
-	fmt.Println("=== Existing SMS Trunks ===")
-	params := didww.NewQueryParams().
-		Include("sms_trunk_group").
-		Page(1, 10)
-	trunks, err := client.SmsTrunks().List(ctx, params)
-	if err != nil {
-		panic(err)
-	}
-	fmt.Printf("Found %d SMS trunks\n", len(trunks))
-	for _, trunk := range trunks {
-		configType := "none"
-		if trunk.Configuration != nil {
-			configType = trunk.Configuration.ConfigurationType()
-		}
-		fmt.Printf("%s [%s]\n", trunk.Name, configType)
-		fmt.Printf("  ID: %s\n", trunk.ID)
-		fmt.Printf("  Inbound: %t, outbound: %t\n", trunk.AllowIn, trunk.AllowOut)
-		if trunk.SmsTrunkGroup != nil {
-			fmt.Printf("  Group: %s\n", trunk.SmsTrunkGroup.Name)
-		}
-		if host := trunk.Meta["host"]; host != "" {
-			fmt.Printf("  Submit URL: %s\n", host)
-		}
-	}
+	listTrunks(ctx, client)
 
 	suffix := strconv.FormatInt(time.Now().UnixNano(), 36)
 
@@ -88,8 +65,50 @@ func main() {
 		fmt.Printf("Updated: %s -> %s\n", updated.Name, cfg.URL)
 	}
 
-	// The generated credentials of http_out and smpp_esme trunks are rotated
-	// with an SmsTrunkRegenerateCredential and read back from the trunk.
+	httpOutRoundTrip(ctx, client, suffix)
+
+	fmt.Println("\n=== Deleting HTTP IN Trunk ===")
+	if err := client.SmsTrunks().Delete(ctx, created.ID); err != nil {
+		panic(err)
+	}
+	fmt.Println("SMS trunk deleted")
+}
+
+func listTrunks(ctx context.Context, client *didww.Client) {
+	fmt.Println("=== Existing SMS Trunks ===")
+	params := didww.NewQueryParams().
+		Include("sms_trunk_group").
+		Page(1, 10)
+	trunks, err := client.SmsTrunks().List(ctx, params)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Printf("Found %d SMS trunks\n", len(trunks))
+	for _, trunk := range trunks {
+		printTrunk(trunk)
+	}
+}
+
+func printTrunk(trunk *resource.SmsTrunk) {
+	configType := "none"
+	if trunk.Configuration != nil {
+		configType = trunk.Configuration.ConfigurationType()
+	}
+	fmt.Printf("%s [%s]\n", trunk.Name, configType)
+	fmt.Printf("  ID: %s\n", trunk.ID)
+	fmt.Printf("  Inbound: %t, outbound: %t\n", trunk.AllowIn, trunk.AllowOut)
+	if trunk.SmsTrunkGroup != nil {
+		fmt.Printf("  Group: %s\n", trunk.SmsTrunkGroup.Name)
+	}
+	if host := trunk.Meta["host"]; host != "" {
+		fmt.Printf("  Submit URL: %s\n", host)
+	}
+}
+
+// httpOutRoundTrip creates an HTTP OUT trunk, regenerates its credentials and
+// deletes it. The generated credentials of http_out and smpp_esme trunks are
+// rotated with an SmsTrunkRegenerateCredential and read back from the trunk.
+func httpOutRoundTrip(ctx context.Context, client *didww.Client, suffix string) {
 	fmt.Println("\n=== Creating HTTP OUT Trunk and Regenerating Its Credentials ===")
 	httpOut, err := client.SmsTrunks().Create(ctx, &resource.SmsTrunk{
 		Name: "Go HTTP OUT " + suffix,
@@ -100,22 +119,16 @@ func main() {
 	})
 	if err != nil {
 		fmt.Println("Error creating HTTP OUT trunk:", err)
+		return
+	}
+	fmt.Printf("Created SMS trunk: %s - %s\n", httpOut.ID, httpOut.Name)
+	regenerateCredentials(ctx, client, httpOut.ID)
+
+	if err := client.SmsTrunks().Delete(ctx, httpOut.ID); err != nil {
+		fmt.Println("Error deleting HTTP OUT trunk:", err)
 	} else {
-		fmt.Printf("Created SMS trunk: %s - %s\n", httpOut.ID, httpOut.Name)
-		regenerateCredentials(ctx, client, httpOut.ID)
-
-		if err := client.SmsTrunks().Delete(ctx, httpOut.ID); err != nil {
-			fmt.Println("Error deleting HTTP OUT trunk:", err)
-		} else {
-			fmt.Println("HTTP OUT trunk deleted")
-		}
+		fmt.Println("HTTP OUT trunk deleted")
 	}
-
-	fmt.Println("\n=== Deleting HTTP IN Trunk ===")
-	if err := client.SmsTrunks().Delete(ctx, created.ID); err != nil {
-		panic(err)
-	}
-	fmt.Println("SMS trunk deleted")
 }
 
 func regenerateCredentials(ctx context.Context, client *didww.Client, trunkID string) {

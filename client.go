@@ -137,11 +137,8 @@ func WithSMSPricesURL(url string) ClientOption {
 
 // NewClient creates a new DIDWW API client.
 func NewClient(apiKey string, opts ...ClientOption) (*Client, error) {
-	if apiKey == "" {
-		return nil, fmt.Errorf("API key is required")
-	}
-	if strings.ContainsFunc(apiKey, func(r rune) bool { return (r < 0x20 && r != '\t') || r == 0x7f }) {
-		return nil, fmt.Errorf("API key contains characters not allowed in an HTTP header")
+	if err := validateAPIKey(apiKey); err != nil {
+		return nil, err
 	}
 
 	c := &Client{
@@ -155,22 +152,59 @@ func NewClient(apiKey string, opts ...ClientOption) (*Client, error) {
 		opt(c)
 	}
 
+	if err := c.validateOptions(); err != nil {
+		return nil, err
+	}
+	if err := c.resolveEndpoints(); err != nil {
+		return nil, err
+	}
+	if c.httpClient == nil {
+		c.httpClient = defaultHTTPClient()
+	}
+	noRedirect := *c.httpClient
+	noRedirect.CheckRedirect = func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }
+	c.noRedirectClient = &noRedirect
+	if c.tokenStore == nil {
+		c.tokenStore = NewMemoryTokenStore()
+	}
+	c.tokens = newTokenProvider(c)
+
+	return c, nil
+}
+
+func validateAPIKey(apiKey string) error {
+	if apiKey == "" {
+		return fmt.Errorf("API key is required")
+	}
+	if strings.ContainsFunc(apiKey, func(r rune) bool { return (r < 0x20 && r != '\t') || r == 0x7f }) {
+		return fmt.Errorf("API key contains characters not allowed in an HTTP header")
+	}
+	return nil
+}
+
+// validateOptions checks the API version and the scope set by the options.
+func (c *Client) validateOptions() error {
 	if !apiVersionPattern.MatchString(c.apiVersion) {
-		return nil, fmt.Errorf("API version must be a YYYY-MM-DD date, got %q", c.apiVersion)
+		return fmt.Errorf("API version must be a YYYY-MM-DD date, got %q", c.apiVersion)
 	}
 	if c.apiVersion < DefaultAPIVersion {
-		return nil, fmt.Errorf("API version %s is not supported: this SDK requires %s or later; "+
+		return fmt.Errorf("API version %s is not supported: this SDK requires %s or later; "+
 			"use module github.com/didww/didww-api-3-go-sdk/v3 (branch release-3) for 2026-04-16", c.apiVersion, DefaultAPIVersion)
 	}
 	switch c.scope {
 	case "", ScopeRead, ScopeFull:
+		return nil
 	default:
-		return nil, fmt.Errorf("scope must be %q or %q, got %q", ScopeRead, ScopeFull, c.scope)
+		return fmt.Errorf("scope must be %q or %q, got %q", ScopeRead, ScopeFull, c.scope)
 	}
+}
 
+// resolveEndpoints fills the service URLs not set by an option from the
+// environment and checks that each one is an http or https URL.
+func (c *Client) resolveEndpoints() error {
 	e, ok := environmentEndpoints[c.env]
 	if !ok {
-		return nil, fmt.Errorf("environment must be didww.Sandbox or didww.Production, got %q; "+
+		return fmt.Errorf("environment must be didww.Sandbox or didww.Production, got %q; "+
 			"use WithBaseURL, WithAuthURL and the prices URL options for other hosts", c.env)
 	}
 	if c.authURL == "" {
@@ -190,21 +224,10 @@ func NewClient(apiKey string, opts ...ClientOption) (*Client, error) {
 		"Voice OUT prices": c.voiceOutPricesURL, "SMS prices": c.smsPricesURL,
 	} {
 		if !isHTTPURL(u) {
-			return nil, fmt.Errorf("%s URL must be an http or https URL, got %q", name, u)
+			return fmt.Errorf("%s URL must be an http or https URL, got %q", name, u)
 		}
 	}
-	if c.httpClient == nil {
-		c.httpClient = defaultHTTPClient()
-	}
-	noRedirect := *c.httpClient
-	noRedirect.CheckRedirect = func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }
-	c.noRedirectClient = &noRedirect
-	if c.tokenStore == nil {
-		c.tokenStore = NewMemoryTokenStore()
-	}
-	c.tokens = newTokenProvider(c)
-
-	return c, nil
+	return nil
 }
 
 func isHTTPURL(s string) bool {

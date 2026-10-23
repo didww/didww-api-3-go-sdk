@@ -2,6 +2,7 @@ package didww
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -379,7 +380,7 @@ func TestSmsTrunksUnknownConfigurationIsPreserved(t *testing.T) {
 	assert.Equal(t, "future_transport", generic.Type)
 	assert.Equal(t, "future_transport", generic.ConfigurationType())
 	assert.Equal(t, "https://example.com/future", generic.Attributes["endpoint"])
-	assert.Equal(t, float64(3), generic.Attributes["retries"])
+	assert.Equal(t, json.Number("3"), generic.Attributes["retries"])
 	assert.Equal(t, true, generic.Attributes["enabled"])
 
 	generic.Attributes["endpoint"] = "https://example.com/future/v2"
@@ -460,6 +461,22 @@ func TestSmsTrunkConfigurationsRedactSecrets(t *testing.T) {
 			secrets: []string{"Authorization", "Bearer abc123"},
 			visible: []string{"https://example.com/sms"},
 		},
+		{
+			name: "generic_http_in",
+			config: &smstrunkconfiguration.Generic{Type: smstrunkconfiguration.TypeHTTPIn, Attributes: map[string]any{
+				"url": "https://example.com/sms", "headers": map[string]any{"Authorization": "Bearer abc123"}, "body": nil,
+			}},
+			secrets: []string{"Authorization", "Bearer abc123", "https://example.com/sms"},
+			visible: []string{"http_in", "headers", "url", "body:<nil>"},
+		},
+		{
+			name: "generic_smpp_smsc",
+			config: &smstrunkconfiguration.Generic{Type: smstrunkconfiguration.TypeSmppSmsc, Attributes: map[string]any{
+				"host": "smsc.example.com", "password": "secret",
+			}},
+			secrets: []string{"smsc.example.com", "secret"},
+			visible: []string{"smpp_smsc", "host", "password"},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -487,6 +504,26 @@ func TestSmsTrunkConfigurationRedactionKeepsWireValues(t *testing.T) {
 	raw, err := smstrunkconfiguration.Marshal(cfg)
 	require.NoError(t, err)
 	assert.JSONEq(t, `{"type":"smpp_smsc","attributes":{"host":"smsc.example.com","password":"secret"}}`, string(raw))
+
+	generic := &smstrunkconfiguration.Generic{Type: smstrunkconfiguration.TypeSmppSmsc, Attributes: map[string]any{"password": "secret", "system_type": nil}}
+	raw, err = smstrunkconfiguration.Marshal(generic)
+	require.NoError(t, err)
+	assert.JSONEq(t, `{"type":"smpp_smsc","attributes":{"password":"secret","system_type":null}}`, string(raw))
+}
+
+func TestSmsTrunkConfigurationGenericKeepsLargeNumbers(t *testing.T) {
+	input := `{"attributes":{"id":9007199254740993,"nested":{"ids":[9007199254740993]},"ratio":0.1},"type":"future_transport"}`
+	cfg, err := smstrunkconfiguration.Parse([]byte(input))
+	require.NoError(t, err)
+
+	generic, ok := cfg.(*smstrunkconfiguration.Generic)
+	require.True(t, ok, "expected generic configuration")
+	assert.Equal(t, json.Number("9007199254740993"), generic.Attributes["id"])
+	assert.Equal(t, []any{json.Number("9007199254740993")}, generic.Attributes["nested"].(map[string]any)["ids"])
+
+	out, err := smstrunkconfiguration.Marshal(cfg)
+	require.NoError(t, err)
+	assert.Equal(t, input, string(out))
 }
 
 func TestSmsTrunkConfigurationRoundTrip(t *testing.T) {

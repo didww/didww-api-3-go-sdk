@@ -86,6 +86,8 @@ var (
 	ErrInvalidGrant = errors.New("didww: token service granted an unusable token")
 )
 
+const authErrPrefix = "didww: token service: "
+
 // AuthError is returned when an access token cannot be obtained. It never
 // contains the API key or a token. Use errors.Is with the sentinels above to
 // tell the cases apart.
@@ -101,13 +103,13 @@ type AuthError struct {
 func (e *AuthError) Error() string {
 	switch {
 	case e.Code != "" && e.Description != "":
-		return "didww: token service: " + e.Code + ": " + e.Description
+		return authErrPrefix + e.Code + ": " + e.Description
 	case e.Code != "":
-		return "didww: token service: " + e.Code
+		return authErrPrefix + e.Code
 	case e.Description != "":
-		return "didww: token service: " + e.Description
+		return authErrPrefix + e.Description
 	case e.Err != nil:
-		return "didww: token service: " + e.Err.Error()
+		return authErrPrefix + e.Err.Error()
 	default:
 		return fmt.Sprintf("didww: token service responded with status %d", e.StatusCode)
 	}

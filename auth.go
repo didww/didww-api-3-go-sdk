@@ -30,6 +30,7 @@ const (
 	storeTimeout        = 10 * time.Second
 	backoffBase         = 500 * time.Millisecond
 	backoffCap          = 8 * time.Second
+	storeReadFailedMsg  = "DIDWW token store read failed"
 )
 
 // send authenticates the request built by build for audience and sends it.
@@ -211,7 +212,7 @@ func (p *tokenProvider) cachedWithin(ctx context.Context, key string) (Token, bo
 	defer cancel()
 	t, ok, err := p.store.Get(ctx, key)
 	if err != nil {
-		p.log().Warn("DIDWW token store read failed", "error", err)
+		p.log().Warn(storeReadFailedMsg, "error", err)
 		return Token{}, false
 	}
 	return t, ok && t.AccessToken != ""
@@ -262,7 +263,7 @@ func (p *tokenProvider) invalidate(ctx context.Context, audience, accessToken st
 	defer cancel()
 	t, ok, err := p.store.Get(ctx, key)
 	if err != nil {
-		p.log().Warn("DIDWW token store read failed", "error", err)
+		p.log().Warn(storeReadFailedMsg, "error", err)
 		return
 	}
 	if !ok || t.AccessToken != accessToken {
@@ -277,7 +278,7 @@ func (p *tokenProvider) cached(ctx context.Context, key string) (Token, bool) {
 	t, ok, err := p.store.Get(ctx, key)
 	if err != nil {
 		if ctx.Err() == nil {
-			p.log().Warn("DIDWW token store read failed", "error", err)
+			p.log().Warn(storeReadFailedMsg, "error", err)
 		}
 		return Token{}, false
 	}

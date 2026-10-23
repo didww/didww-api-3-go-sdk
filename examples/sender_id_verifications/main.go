@@ -25,46 +25,13 @@ func main() {
 	ctx := context.Background()
 
 	fmt.Println("=== Sender ID Verifications ===")
-	params := didww.NewQueryParams().Include("sms_trunk")
-	verifications, err := client.SenderIDVerifications().List(ctx, params)
-	if err != nil {
-		panic(err)
-	}
-	var verification *resource.SenderIDVerification
-	for _, v := range verifications {
-		routedThrough := "no SMS trunk"
-		if v.SmsTrunk != nil {
-			routedThrough = v.SmsTrunk.Name
-		}
-		fmt.Printf("%s %s (%s, %s): %s via %s\n",
-			v.Reference, v.Name, v.SenderType, v.Status, strings.Join(v.SenderIDs, ", "), routedThrough)
-		if v.IsChangesRequired() {
-			comment := ""
-			if v.RejectComment != nil {
-				comment = *v.RejectComment
-			}
-			fmt.Printf("  changes required: %s %s\n", strings.Join(v.RejectReasons, "; "), comment)
-		}
-		if verification == nil && v.IsActive() {
-			verification = v
-		}
-	}
+	verification := listVerifications(ctx, client)
 	if verification == nil {
 		fmt.Println("No active Sender ID verification")
 		return
 	}
 
-	trunks, err := client.SmsTrunks().List(ctx, nil)
-	if err != nil {
-		panic(err)
-	}
-	var trunk *resource.SmsTrunk
-	for _, t := range trunks {
-		if t.AllowOut {
-			trunk = t
-			break
-		}
-	}
+	trunk := findSendingTrunk(ctx, client)
 	if trunk == nil {
 		fmt.Println("No SMS trunk that sends messages")
 		return
@@ -78,12 +45,65 @@ func main() {
 	if err != nil {
 		panic(fmt.Sprintf("Error routing the verification: %v", err))
 	}
+	// Restore the original trunk even when a later step fails.
+	defer restoreTrunk(ctx, client, verification)
 	fmt.Printf("Routed %s through %s\n", routed.Reference, trunk.ID)
 
+	printRoutedThrough(ctx, client, trunk.ID)
+}
+
+// listVerifications prints the verifications and returns the first active one.
+func listVerifications(ctx context.Context, client *didww.Client) *resource.SenderIDVerification {
+	params := didww.NewQueryParams().Include("sms_trunk")
+	verifications, err := client.SenderIDVerifications().List(ctx, params)
+	if err != nil {
+		panic(err)
+	}
+	var verification *resource.SenderIDVerification
+	for _, v := range verifications {
+		printVerification(v)
+		if verification == nil && v.IsActive() {
+			verification = v
+		}
+	}
+	return verification
+}
+
+func printVerification(v *resource.SenderIDVerification) {
+	routedThrough := "no SMS trunk"
+	if v.SmsTrunk != nil {
+		routedThrough = v.SmsTrunk.Name
+	}
+	fmt.Printf("%s %s (%s, %s): %s via %s\n",
+		v.Reference, v.Name, v.SenderType, v.Status, strings.Join(v.SenderIDs, ", "), routedThrough)
+	if v.IsChangesRequired() {
+		comment := ""
+		if v.RejectComment != nil {
+			comment = *v.RejectComment
+		}
+		fmt.Printf("  changes required: %s %s\n", strings.Join(v.RejectReasons, "; "), comment)
+	}
+}
+
+// findSendingTrunk returns the first SMS trunk that sends messages.
+func findSendingTrunk(ctx context.Context, client *didww.Client) *resource.SmsTrunk {
+	trunks, err := client.SmsTrunks().List(ctx, nil)
+	if err != nil {
+		panic(err)
+	}
+	for _, t := range trunks {
+		if t.AllowOut {
+			return t
+		}
+	}
+	return nil
+}
+
+func printRoutedThrough(ctx context.Context, client *didww.Client, trunkID string) {
 	fmt.Println("\nActive verifications routed through this trunk:")
 	filtered := didww.NewQueryParams().
 		Filter("status", string(enums.SenderIDVerificationStatusActive)).
-		Filter("sms_trunk.id", trunk.ID)
+		Filter("sms_trunk.id", trunkID)
 	active, err := client.SenderIDVerifications().List(ctx, filtered)
 	if err != nil {
 		panic(err)
@@ -91,9 +111,11 @@ func main() {
 	for _, v := range active {
 		fmt.Printf("  %s %s\n", v.Reference, v.Name)
 	}
+}
 
-	// Restore the original trunk; NullifySmsTrunk unassigns the trunk, which
-	// stops outbound messages until a trunk is assigned again.
+// restoreTrunk restores the original trunk; NullifySmsTrunk unassigns the
+// trunk, which stops outbound messages until a trunk is assigned again.
+func restoreTrunk(ctx context.Context, client *didww.Client, verification *resource.SenderIDVerification) {
 	fmt.Printf("\n=== Restoring the original SMS trunk of %s ===\n", verification.Reference)
 	restore := &resource.SenderIDVerification{ID: verification.ID, NullifySmsTrunk: true}
 	if verification.SmsTrunk != nil {

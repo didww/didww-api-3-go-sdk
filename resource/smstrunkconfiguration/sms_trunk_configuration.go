@@ -14,7 +14,16 @@
 //	}}
 package smstrunkconfiguration
 
-import "encoding/json"
+import (
+	"bytes"
+	"encoding/json"
+	"fmt"
+	"maps"
+	"slices"
+	"strings"
+
+	"github.com/didww/didww-api-3-go-sdk/v4/internal/redact"
+)
 
 // Configuration type values, as returned by ConfigurationType.
 const (
@@ -80,7 +89,9 @@ func Parse(data []byte) (SmsTrunkConfiguration, error) {
 	default:
 		g := &Generic{Type: env.Type}
 		if len(env.Attributes) > 0 {
-			if err := json.Unmarshal(env.Attributes, &g.Attributes); err != nil {
+			dec := json.NewDecoder(bytes.NewReader(env.Attributes))
+			dec.UseNumber()
+			if err := dec.Decode(&g.Attributes); err != nil {
 				return nil, err
 			}
 		}
@@ -108,13 +119,32 @@ func Marshal(c SmsTrunkConfiguration) ([]byte, error) {
 }
 
 // Generic wraps a configuration type this SDK version does not know yet.
-// It keeps the type and the attributes as received.
+// It keeps the type and the attributes as received; numbers are decoded as
+// json.Number, so they keep their exact value.
 type Generic struct {
 	Type       string
 	Attributes map[string]any
 }
 
 func (c *Generic) ConfigurationType() string { return c.Type }
+
+// String implements fmt.Stringer and redacts the attribute values, which may
+// carry credentials. Only the attribute names and explicit nulls are shown.
+func (c *Generic) String() string {
+	names := slices.Sorted(maps.Keys(c.Attributes))
+	attrs := make([]string, len(names))
+	for i, name := range names {
+		value := nilString
+		if v := c.Attributes[name]; v != nil {
+			value = redact.Mask(fmt.Sprint(v))
+		}
+		attrs[i] = name + ":" + value
+	}
+	return fmt.Sprintf("Generic{Type:%q Attributes:map[%s]}", c.Type, strings.Join(attrs, " "))
+}
+
+// GoString mirrors String for the %#v verb.
+func (c *Generic) GoString() string { return c.String() }
 
 // MarshalJSON serializes the attributes of a Generic configuration.
 func (c Generic) MarshalJSON() ([]byte, error) {
