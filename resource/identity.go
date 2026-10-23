@@ -17,6 +17,7 @@ type Identity struct {
 	CompanyName         *string            `json:"company_name"`
 	CompanyRegNumber    *string            `json:"company_reg_number"`
 	VatID               *string            `json:"vat_id"`
+	CompanyWebsite      *string            `json:"company_website,omitempty"`
 	Description         *string            `json:"description"`
 	PersonalTaxID       *string            `json:"personal_tax_id"`
 	IdentityType        enums.IdentityType `json:"identity_type"`

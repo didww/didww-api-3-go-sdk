@@ -27,8 +27,8 @@ func main() {
 	fmt.Printf("Found %d DID groups\n", len(didGroups))
 
 	for _, dg := range didGroups {
-		fmt.Printf("%s - %s prefix=%s features=%v metered=%v allow_additional_channels=%v\n",
-			dg.ID, dg.AreaName, dg.Prefix, dg.Features, dg.IsMetered, dg.AllowAdditionalChannels)
+		fmt.Printf("%s - %s prefix=%s number_type=%s demo=%v features=%v metered=%v allow_additional_channels=%v\n",
+			dg.ID, dg.AreaName, dg.Prefix, dg.NumberType, dg.IsDemo, dg.Features, dg.IsMetered, dg.AllowAdditionalChannels)
 		if dg.ServiceRestrictions != nil {
 			fmt.Printf("  Service restrictions: %s\n", *dg.ServiceRestrictions)
 		}

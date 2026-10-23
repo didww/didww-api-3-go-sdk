@@ -42,6 +42,9 @@ func main() {
 			fmt.Printf("  Birth Country: %s\n", id.BirthCountry.Name)
 		}
 		fmt.Printf("  Birth Date: %s\n", id.BirthDate)
+		if id.CompanyWebsite != nil {
+			fmt.Printf("  Company Website: %s\n", *id.CompanyWebsite)
+		}
 		fmt.Printf("  Verified: %v\n", id.Verified)
 	}
 }

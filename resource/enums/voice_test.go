@@ -271,3 +271,26 @@ func TestCodecJSONArrayUnmarshal(t *testing.T) {
 		t.Errorf("expected CodecG729, got %d", codecs[2])
 	}
 }
+
+func TestPop(t *testing.T) {
+	tests := []struct {
+		name     string
+		value    string
+		expected string
+	}{
+		{"NYC", PopNYC, "NYC"},
+		{"FRA", PopFRA, "FRA"},
+		{"LAC", PopLAC, "LAC"},
+		{"MIA", PopMIA, "MIA"},
+		{"SG", PopSG, "SG"},
+		{"HK", PopHK, "HK"},
+		{"AMS", PopAMS, "AMS"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.value != tt.expected {
+				t.Errorf("expected %q, got %q", tt.expected, tt.value)
+			}
+		})
+	}
+}

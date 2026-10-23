@@ -20,14 +20,18 @@ func main() {
 
 	// List voice in trunks with included relationships
 	params := didww.NewQueryParams().
-		Include("pop", "voice_in_trunk_group").
+		Include("voice_in_trunk_group").
 		Page(1, 10)
 	trunks, err := client.VoiceInTrunks().List(ctx, params)
 	if err != nil {
 		panic(err)
 	}
 	for _, trunk := range trunks {
-		fmt.Printf("%s [%T]\n", trunk.Name, trunk.Configuration)
+		pop := "auto"
+		if trunk.Pop != nil {
+			pop = *trunk.Pop
+		}
+		fmt.Printf("%s [%T] pop=%s\n", trunk.Name, trunk.Configuration, pop)
 	}
 
 	// Create a SIP trunk

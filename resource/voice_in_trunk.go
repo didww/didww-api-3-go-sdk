@@ -22,8 +22,10 @@ type VoiceInTrunk struct {
 	Configuration       trunkconfiguration.TrunkConfiguration `json:"-"`
 	CreatedAt           time.Time                             `json:"created_at" api:"readonly"`
 	ExternalReferenceID *string                               `json:"external_reference_id,omitempty"`
+	// Pop pins the trunk to a point of presence, one of the enums.Pop* values.
+	// Nil lets DIDWW choose.
+	Pop *string `json:"pop,omitempty"`
 	// Resolved relationships
-	Pop               *Pop               `json:"-" rel:"pop"`
 	VoiceInTrunkGroup *VoiceInTrunkGroup `json:"-" rel:"voice_in_trunk_group"`
 }
 

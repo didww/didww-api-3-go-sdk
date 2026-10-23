@@ -11,6 +11,7 @@
       "company_name": "Test Company Limited",
       "company_reg_number": "543221",
       "vat_id": "GB1234",
+      "company_website": "https://example.com",
       "description": "test identity",
       "personal_tax_id": "987654321",
       "identity_type": "business",

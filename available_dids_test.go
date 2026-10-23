@@ -7,6 +7,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/didww/didww-api-3-go-sdk/v3/resource/enums"
 )
 
 func TestAvailableDIDsList(t *testing.T) {
@@ -34,6 +36,8 @@ func TestAvailableDIDsFindWithIncludedDIDGroup(t *testing.T) {
 	require.NotNil(t, did.DIDGroup)
 	assert.Equal(t, "a9e3d346-d7bc-4a85-adb0-8ef1119cf237", did.DIDGroup.ID)
 	assert.Equal(t, "Grand Rapids", did.DIDGroup.AreaName)
+	assert.Equal(t, enums.NumberTypeLocal, did.DIDGroup.NumberType)
+	assert.False(t, did.DIDGroup.IsDemo)
 }
 
 func TestAvailableDIDsListWithNanpaPrefix(t *testing.T) {

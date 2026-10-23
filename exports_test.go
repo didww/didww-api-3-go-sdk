@@ -3,6 +3,8 @@ package didww
 import (
 	"bytes"
 	"context"
+	"errors"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -149,47 +151,42 @@ func TestExportsUpdateExternalReferenceIDFromLoaded(t *testing.T) {
 func TestDownloadExport(t *testing.T) {
 	gzData := loadFixture(t, "exports/download.csv.gz")
 
-	var capturedAuth string
-	var capturedAPIVersion string
-	var capturedUserAgent string
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		capturedAuth = r.Header.Get("Api-Key")
-		capturedAPIVersion = r.Header.Get("X-DIDWW-API-Version")
-		capturedUserAgent = r.Header.Get("User-Agent")
+	var capturedHeader http.Header
+	server := httptest.NewServer(withTokenEndpoint(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		capturedHeader = r.Header.Clone()
 		w.Header().Set("Content-Type", "application/octet-stream")
 		w.WriteHeader(http.StatusOK)
 		w.Write(gzData)
-	}))
+	})))
 	defer server.Close()
 
-	client, err := NewClient("test-api-key", WithBaseURL(server.URL))
-	require.NoError(t, err)
+	client := newTestClient(t, server.URL)
 
 	var buf bytes.Buffer
-	err = client.DownloadExport(context.Background(), server.URL+"/v3/exports/02bf6df4.csv.gz", &buf)
+	err := client.DownloadExport(context.Background(), server.URL+"/v3/exports/02bf6df4.csv.gz", &buf)
 	require.NoError(t, err)
 
 	assert.Equal(t, gzData, buf.Bytes())
-	assert.Equal(t, "test-api-key", capturedAuth)
-	assert.Equal(t, apiVersion, capturedAPIVersion)
-	assert.Equal(t, "didww-go-sdk/"+sdkVersion, capturedUserAgent)
+	assert.Equal(t, "Bearer "+testAccessToken, capturedHeader.Get("Authorization"))
+	assert.NotContains(t, capturedHeader, "Api-Key")
+	assert.NotContains(t, capturedHeader, "X-Didww-Api-Version")
+	assert.Equal(t, "didww-go-sdk/"+sdkVersion, capturedHeader.Get("User-Agent"))
 }
 
 func TestDownloadAndDecompressExport(t *testing.T) {
 	gzData := loadFixture(t, "exports/download.csv.gz")
 
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	server := httptest.NewServer(withTokenEndpoint(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/octet-stream")
 		w.WriteHeader(http.StatusOK)
 		w.Write(gzData)
-	}))
+	})))
 	defer server.Close()
 
-	client, err := NewClient("test-api-key", WithBaseURL(server.URL))
-	require.NoError(t, err)
+	client := newTestClient(t, server.URL)
 
 	var buf bytes.Buffer
-	err = client.DownloadAndDecompressExport(context.Background(), server.URL+"/v3/exports/02bf6df4.csv.gz", &buf)
+	err := client.DownloadAndDecompressExport(context.Background(), server.URL+"/v3/exports/02bf6df4.csv.gz", &buf)
 	require.NoError(t, err)
 
 	content := buf.String()
@@ -198,17 +195,128 @@ func TestDownloadAndDecompressExport(t *testing.T) {
 }
 
 func TestDownloadExportError(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	server := httptest.NewServer(withTokenEndpoint(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNotFound)
 		w.Write([]byte("not found"))
-	}))
+	})))
 	defer server.Close()
 
-	client, err := NewClient("test-api-key", WithBaseURL(server.URL))
-	require.NoError(t, err)
+	client := newTestClient(t, server.URL)
 
 	var buf bytes.Buffer
-	err = client.DownloadExport(context.Background(), server.URL+"/v3/exports/missing.csv.gz", &buf)
+	err := client.DownloadExport(context.Background(), server.URL+"/v3/exports/missing.csv.gz", &buf)
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "HTTP 404")
+
+	var apiErr *APIError
+	require.ErrorAs(t, err, &apiErr)
+	assert.Equal(t, http.StatusNotFound, apiErr.HTTPStatus)
+	require.Len(t, apiErr.Errors, 1)
+	assert.Equal(t, "not found", apiErr.Errors[0].Detail)
+	assert.Empty(t, buf.Bytes())
+}
+
+func TestDownloadExportJSONAPIError(t *testing.T) {
+	server := httptest.NewServer(withTokenEndpoint(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/vnd.api+json")
+		w.WriteHeader(http.StatusNotFound)
+		w.Write([]byte(`{"errors":[{"title":"Not found","detail":"Export file not found","status":"404"}]}`))
+	})))
+	defer server.Close()
+
+	client := newTestClient(t, server.URL)
+
+	err := client.DownloadExport(context.Background(), server.URL+"/v3/exports/missing.csv.gz", io.Discard)
+
+	var apiErr *APIError
+	require.ErrorAs(t, err, &apiErr)
+	assert.Equal(t, http.StatusNotFound, apiErr.HTTPStatus)
+	require.Len(t, apiErr.Errors, 1)
+	assert.Equal(t, "Export file not found", apiErr.Errors[0].Detail)
+}
+
+func TestDownloadExportDoesNotFollowRedirects(t *testing.T) {
+	var redirectedHits int
+	server := httptest.NewServer(withTokenEndpoint(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/elsewhere/export.csv.gz" {
+			redirectedHits++
+			w.Write(loadFixture(t, "exports/download.csv.gz"))
+			return
+		}
+		http.Redirect(w, r, "/elsewhere/export.csv.gz", http.StatusFound)
+	})))
+	defer server.Close()
+
+	client := newTestClient(t, server.URL)
+
+	var buf bytes.Buffer
+	err := client.DownloadExport(context.Background(), server.URL+"/v3/exports/02bf6df4.csv.gz", &buf)
+
+	var apiErr *APIError
+	require.ErrorAs(t, err, &apiErr)
+	assert.Equal(t, http.StatusFound, apiErr.HTTPStatus)
+	assert.Equal(t, 0, redirectedHits)
+	assert.Empty(t, buf.Bytes())
+}
+
+func TestDownloadExportNoContent(t *testing.T) {
+	server := httptest.NewServer(withTokenEndpoint(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNoContent)
+	})))
+	defer server.Close()
+
+	client := newTestClient(t, server.URL)
+
+	err := client.DownloadExport(context.Background(), server.URL+"/v3/exports/02bf6df4.csv.gz", io.Discard)
+
+	var apiErr *APIError
+	require.ErrorAs(t, err, &apiErr)
+	assert.Equal(t, http.StatusNoContent, apiErr.HTTPStatus)
+	require.Len(t, apiErr.Errors, 1)
+	assert.Equal(t, "Unexpected status", apiErr.Errors[0].Title)
+}
+
+func TestDownloadExportRetriedAfter401(t *testing.T) {
+	gzData := loadFixture(t, "exports/download.csv.gz")
+	var log requestLog
+	srv := newAuthTestServer(t, nil, func(w http.ResponseWriter, r *http.Request) {
+		log.record(r)
+		if r.Header.Get("Authorization") == "Bearer token-1" {
+			w.Header().Set("Content-Type", "application/vnd.api+json")
+			w.WriteHeader(http.StatusUnauthorized)
+			w.Write([]byte(unauthorizedBody))
+			return
+		}
+		w.Header().Set("Content-Type", "application/octet-stream")
+		w.Write(gzData)
+	})
+	client := newTestClient(t, srv.URL)
+
+	var buf bytes.Buffer
+	err := client.DownloadExport(context.Background(), srv.URL+"/v3/exports/02bf6df4.csv.gz", &buf)
+	require.NoError(t, err)
+
+	assert.Equal(t, gzData, buf.Bytes())
+	assert.Len(t, log.all(), 2)
+	assert.Equal(t, 2, srv.mints())
+	assert.JSONEq(t, `{"aud":["api.didww.com"],"api_version":"2026-10-22"}`, string(srv.mintBody(0)))
+	assert.JSONEq(t, `{"aud":["api.didww.com"],"api_version":"2026-10-22"}`, string(srv.mintBody(1)))
+}
+
+type failingWriter struct{ err error }
+
+func (w failingWriter) Write([]byte) (int, error) { return 0, w.err }
+
+func TestDownloadExportReturnsWriteError(t *testing.T) {
+	server := httptest.NewServer(withTokenEndpoint(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write(loadFixture(t, "exports/download.csv.gz"))
+	})))
+	defer server.Close()
+
+	client := newTestClient(t, server.URL)
+	writeErr := errors.New("disk full")
+
+	err := client.DownloadExport(context.Background(), server.URL+"/v3/exports/02bf6df4.csv.gz", failingWriter{err: writeErr})
+
+	assert.Same(t, writeErr, err)
 }

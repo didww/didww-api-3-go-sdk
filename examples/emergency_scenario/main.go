@@ -6,7 +6,7 @@
 //  0. Find an address with a country, find an available DID with emergency
 //     feature in that country, order via available DID, wait for completion.
 //  1. Find a DID with the emergency feature that is not yet emergency-enabled.
-//  2. Look up emergency requirements for that DID's country + did_group_type.
+//  2. Look up emergency requirements for that DID's country + number_type.
 //  3. Find an existing identity on the account.
 //  4. Find an existing address for that identity.
 //  5. Validate the (emergency_requirement, address, identity) triple.
@@ -124,7 +124,7 @@ func main() {
 	didParams := didww.NewQueryParams().
 		Filter("did_group.features", "emergency").
 		Filter("emergency_enabled", "false").
-		Include("did_group,did_group.country,did_group.did_group_type,emergency_calling_service").
+		Include("did_group,did_group.country,emergency_calling_service").
 		Sort("-created_at").
 		Page(1, 10)
 	dids, err := client.DIDs().List(ctx, didParams)
@@ -149,25 +149,23 @@ func main() {
 		log.Fatal("DID has no included did_group")
 	}
 	country := didGroup.Country
-	dgt := didGroup.DIDGroupType
+	numberType := didGroup.NumberType
 
 	fmt.Printf("  DID:            %s (%s)\n", did.Number, did.ID)
 	fmt.Printf("  DID Group:      %s\n", didGroup.ID)
 	if country != nil {
 		fmt.Printf("  Country:        %s (%s)\n", country.Name, country.ID)
 	}
-	if dgt != nil {
-		fmt.Printf("  DID Group Type: %s (%s)\n", dgt.Name, dgt.ID)
-	}
+	fmt.Printf("  Number Type:    %s\n", numberType)
 
 	// === Step 2: Get emergency requirements ===
-	fmt.Println("\n=== Step 2: Get emergency requirements for country + did_group_type ===")
+	fmt.Println("\n=== Step 2: Get emergency requirements for country + number_type ===")
 	reqParams := didww.NewQueryParams()
 	if country != nil {
 		reqParams = reqParams.Filter("country.id", country.ID)
 	}
-	if dgt != nil {
-		reqParams = reqParams.Filter("did_group_type.id", dgt.ID)
+	if numberType != "" {
+		reqParams = reqParams.Filter("number_type", string(numberType))
 	}
 	requirements, err := client.EmergencyRequirements().List(ctx, reqParams)
 	if err != nil {
@@ -267,7 +265,7 @@ func main() {
 	ecs := fetched.EmergencyCallingService
 	if ecs != nil {
 		// Re-fetch with includes for full details
-		svcParams := didww.NewQueryParams().Include("country,did_group_type,dids")
+		svcParams := didww.NewQueryParams().Include("country,dids")
 		service, err := client.EmergencyCallingServices().Find(ctx, ecs.ID, svcParams)
 		if err != nil {
 			log.Fatal("Failed to fetch emergency calling service: ", err)
@@ -279,9 +277,7 @@ func main() {
 		if service.Country != nil {
 			fmt.Printf("  Country:        %s\n", service.Country.Name)
 		}
-		if service.DIDGroupType != nil {
-			fmt.Printf("  DID Group Type: %s\n", service.DIDGroupType.Name)
-		}
+		fmt.Printf("  Number Type:    %s\n", service.NumberType)
 		if service.DIDs != nil {
 			numbers := make([]string, len(service.DIDs))
 			for i, d := range service.DIDs {

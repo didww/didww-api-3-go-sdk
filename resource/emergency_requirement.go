@@ -1,5 +1,7 @@
 package resource
 
+import "github.com/didww/didww-api-3-go-sdk/v3/resource/enums"
+
 // EmergencyRequirement represents the regulatory requirements for ordering
 // an emergency calling service. Introduced in API 2026-04-16.
 type EmergencyRequirement struct {
@@ -24,9 +26,10 @@ type EmergencyRequirement struct {
 	EstimateSetupTime string `json:"estimate_setup_time" api:"readonly"`
 	// RequirementRestrictionMessage is a human-readable restriction message. May be empty.
 	RequirementRestrictionMessage string `json:"requirement_restriction_message" api:"readonly"`
+	// NumberType is the kind of number the requirement applies to.
+	NumberType enums.NumberType `json:"number_type" api:"readonly"`
 	// ResourceMeta.Meta holds setup_price and monthly_price, decimal strings.
 	ResourceMeta
 	// Resolved relationships
-	Country      *Country      `json:"-" rel:"country"`
-	DIDGroupType *DIDGroupType `json:"-" rel:"did_group_type"`
+	Country *Country `json:"-" rel:"country"`
 }

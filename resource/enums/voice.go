@@ -9,6 +9,18 @@ const (
 	CliFormatLocal CliFormat = "local"
 )
 
+// Points of presence a voice in trunk can be pinned to (VoiceInTrunk.Pop).
+// A nil Pop lets DIDWW choose.
+const (
+	PopNYC = "NYC"
+	PopFRA = "FRA"
+	PopLAC = "LAC"
+	PopMIA = "MIA"
+	PopSG  = "SG"
+	PopHK  = "HK"
+	PopAMS = "AMS"
+)
+
 // OnCliMismatchAction defines the action taken when CLI does not match any DID.
 type OnCliMismatchAction string
 
