@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/didww/didww-api-3-go-sdk/v3/jsonapi"
+	"github.com/didww/didww-api-3-go-sdk/v4/jsonapi"
 )
 
 // Proof represents a proof document.

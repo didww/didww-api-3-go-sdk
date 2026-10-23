@@ -4,62 +4,264 @@ import (
 	"bytes"
 	"compress/gzip"
 	"context"
+	"errors"
 	"fmt"
 	"io"
+	"log/slog"
+	"net"
 	"net/http"
+	"net/url"
+	"strings"
+	"sync"
 	"time"
 
-	"github.com/didww/didww-api-3-go-sdk/v3/resource"
+	"github.com/didww/didww-api-3-go-sdk/v4/resource"
 )
 
-// Client is the DIDWW API client.
+// Client is the DIDWW API client. It is safe for concurrent use.
+//
+// Every request is authenticated with a short-lived bearer token minted from
+// the API key by the token service; the API key itself is sent to the token
+// service only.
 type Client struct {
-	apiKey     string
-	baseURL    string
-	httpClient *http.Client
+	apiKey            string
+	env               Environment
+	baseURL           string
+	authURL           string
+	voiceInPricesURL  string
+	voiceOutPricesURL string
+	smsPricesURL      string
+	apiVersion        string
+	scope             Scope
+	httpClient        *http.Client
+	noRedirectClient  *http.Client
+	tokenStore        TokenStore
+	logger            *slog.Logger
+	tokens            *tokenProvider
 }
 
 // ClientOption configures the Client.
 type ClientOption func(*Client)
 
-// WithEnvironment sets the API environment.
+// WithEnvironment sets the API environment, Sandbox or Production. The JSON:API
+// base URL, the token service and the price hosts follow it unless overridden.
 func WithEnvironment(env Environment) ClientOption {
 	return func(c *Client) {
+		c.env = env
 		c.baseURL = string(env)
 	}
 }
 
-// WithBaseURL sets a custom base URL.
+// WithBaseURL sets a custom JSON:API base URL. The token service and the price
+// hosts are not affected, and DownloadExport still accepts export URLs on the
+// environment's host.
 func WithBaseURL(url string) ClientOption {
 	return func(c *Client) {
 		c.baseURL = url
 	}
 }
 
-// WithHTTPClient sets a custom HTTP client.
+// WithHTTPClient sets a custom HTTP client. It is used as given: configure
+// proxies, TLS and timeouts on it. Note that a total Timeout also bounds the
+// download of large files.
 func WithHTTPClient(httpClient *http.Client) ClientOption {
 	return func(c *Client) {
 		c.httpClient = httpClient
 	}
 }
 
+// WithAPIVersion sets the API version requested for access tokens. It must be
+// a YYYY-MM-DD date not earlier than DefaultAPIVersion; NewClient returns an
+// error otherwise.
+func WithAPIVersion(v string) ClientOption {
+	return func(c *Client) {
+		c.apiVersion = v
+	}
+}
+
+// WithScope sets the scope requested for access tokens (ScopeRead or
+// ScopeFull). Without it no scope is requested and the token service grants
+// full access.
+func WithScope(s Scope) ClientOption {
+	return func(c *Client) {
+		c.scope = s
+	}
+}
+
+// WithTokenStore sets the store that caches access tokens, for example one
+// shared by several processes. The store holds live bearer tokens and must be
+// protected accordingly. The default is NewMemoryTokenStore.
+func WithTokenStore(s TokenStore) ClientOption {
+	return func(c *Client) {
+		c.tokenStore = s
+	}
+}
+
+// WithLogger sets the logger for token warnings and debug events. The default
+// is slog.Default(); nil disables logging. Tokens and API keys are never logged.
+func WithLogger(l *slog.Logger) ClientOption {
+	return func(c *Client) {
+		if l == nil {
+			l = slog.New(discardHandler{})
+		}
+		c.logger = l
+	}
+}
+
+// WithAuthURL sets a custom token service base URL.
+func WithAuthURL(url string) ClientOption {
+	return func(c *Client) {
+		c.authURL = url
+	}
+}
+
+// WithVoiceInPricesURL sets a custom Voice IN prices base URL (with or without /v3).
+func WithVoiceInPricesURL(url string) ClientOption {
+	return func(c *Client) {
+		c.voiceInPricesURL = url
+	}
+}
+
+// WithVoiceOutPricesURL sets a custom Voice OUT prices base URL (with or without /v3).
+func WithVoiceOutPricesURL(url string) ClientOption {
+	return func(c *Client) {
+		c.voiceOutPricesURL = url
+	}
+}
+
+// WithSMSPricesURL sets a custom SMS prices base URL (with or without /v3).
+func WithSMSPricesURL(url string) ClientOption {
+	return func(c *Client) {
+		c.smsPricesURL = url
+	}
+}
+
 // NewClient creates a new DIDWW API client.
 func NewClient(apiKey string, opts ...ClientOption) (*Client, error) {
-	if apiKey == "" {
-		return nil, fmt.Errorf("API key is required")
+	if err := validateAPIKey(apiKey); err != nil {
+		return nil, err
 	}
 
 	c := &Client{
 		apiKey:     apiKey,
+		env:        Sandbox,
 		baseURL:    string(Sandbox),
-		httpClient: &http.Client{Timeout: 30 * time.Second},
+		apiVersion: DefaultAPIVersion,
 	}
 
 	for _, opt := range opts {
 		opt(c)
 	}
 
+	if err := c.validateOptions(); err != nil {
+		return nil, err
+	}
+	if err := c.resolveEndpoints(); err != nil {
+		return nil, err
+	}
+	if c.httpClient == nil {
+		c.httpClient = defaultHTTPClient()
+	}
+	noRedirect := *c.httpClient
+	noRedirect.CheckRedirect = func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }
+	c.noRedirectClient = &noRedirect
+	if c.tokenStore == nil {
+		c.tokenStore = NewMemoryTokenStore()
+	}
+	c.tokens = newTokenProvider(c)
+
 	return c, nil
+}
+
+func validateAPIKey(apiKey string) error {
+	if apiKey == "" {
+		return fmt.Errorf("API key is required")
+	}
+	if strings.ContainsFunc(apiKey, func(r rune) bool { return (r < 0x20 && r != '\t') || r == 0x7f }) {
+		return fmt.Errorf("API key contains characters not allowed in an HTTP header")
+	}
+	return nil
+}
+
+// validateOptions checks the API version and the scope set by the options.
+func (c *Client) validateOptions() error {
+	if !apiVersionPattern.MatchString(c.apiVersion) {
+		return fmt.Errorf("API version must be a YYYY-MM-DD date, got %q", c.apiVersion)
+	}
+	if c.apiVersion < DefaultAPIVersion {
+		return fmt.Errorf("API version %s is not supported: this SDK requires %s or later; "+
+			"use module github.com/didww/didww-api-3-go-sdk/v3 (branch release-3) for 2026-04-16", c.apiVersion, DefaultAPIVersion)
+	}
+	switch c.scope {
+	case "", ScopeRead, ScopeFull:
+		return nil
+	default:
+		return fmt.Errorf("scope must be %q or %q, got %q", ScopeRead, ScopeFull, c.scope)
+	}
+}
+
+// resolveEndpoints fills the service URLs not set by an option from the
+// environment and checks that each one is an http or https URL.
+func (c *Client) resolveEndpoints() error {
+	e, ok := environmentEndpoints[c.env]
+	if !ok {
+		return fmt.Errorf("environment must be didww.Sandbox or didww.Production, got %q; "+
+			"use WithBaseURL, WithAuthURL and the prices URL options for other hosts", c.env)
+	}
+	if c.authURL == "" {
+		c.authURL = e.auth
+	}
+	if c.voiceInPricesURL == "" {
+		c.voiceInPricesURL = e.voiceIn
+	}
+	if c.voiceOutPricesURL == "" {
+		c.voiceOutPricesURL = e.voiceOut
+	}
+	if c.smsPricesURL == "" {
+		c.smsPricesURL = e.sms
+	}
+	for name, u := range map[string]string{
+		"token service": c.authURL, "Voice IN prices": c.voiceInPricesURL,
+		"Voice OUT prices": c.voiceOutPricesURL, "SMS prices": c.smsPricesURL,
+	} {
+		if !isHTTPURL(u) {
+			return fmt.Errorf("%s URL must be an http or https URL, got %q", name, u)
+		}
+	}
+	return nil
+}
+
+func isHTTPURL(s string) bool {
+	u, err := url.Parse(s)
+	return err == nil && (u.Scheme == schemeHTTP || u.Scheme == schemeHTTPS) && u.Host != ""
+}
+
+// defaultHTTPClient returns a client without a total timeout, so that large
+// files can be downloaded, but with connect, TLS handshake and response header
+// timeouts.
+func defaultHTTPClient() *http.Client {
+	return &http.Client{Transport: defaultTransport()}
+}
+
+// defaultTransport is built once, so that clients created without
+// WithHTTPClient share one connection pool.
+var defaultTransport = sync.OnceValue(func() http.RoundTripper {
+	return newDefaultTransport(http.DefaultTransport)
+})
+
+// newDefaultTransport clones base with the SDK timeouts. When base is not an
+// *http.Transport, for example a mock that replaced http.DefaultTransport, it
+// returns nil, so that every request reads http.DefaultTransport as it is then.
+func newDefaultTransport(base http.RoundTripper) http.RoundTripper {
+	t, ok := base.(*http.Transport)
+	if !ok {
+		return nil
+	}
+	transport := t.Clone()
+	transport.DialContext = (&net.Dialer{Timeout: 10 * time.Second, KeepAlive: 30 * time.Second}).DialContext
+	transport.TLSHandshakeTimeout = 10 * time.Second
+	transport.ResponseHeaderTimeout = 60 * time.Second
+	return transport
 }
 
 // BaseURL returns the base URL of the client.
@@ -72,34 +274,115 @@ func (c *Client) APIKey() string {
 	return c.apiKey
 }
 
-// DownloadExport downloads an export file from the given URL and writes it to the destination writer.
+// DownloadExport downloads an export file from the given URL and writes it to
+// the destination writer unchanged (gzip-compressed CSV).
+//
+// The token is sent only to the origin (scheme, host and port) of the JSON:API
+// base URL or of the environment, as the API builds export URLs on the
+// environment's host even when WithBaseURL points elsewhere: a downloadURL on
+// any other origin returns a *ClientError without a request.
+//
+// Only a 200 answer is written; redirects are not followed. Any other status,
+// including 3xx and 204, returns an *APIError. An error from dest is returned
+// as is.
 func (c *Client) DownloadExport(ctx context.Context, downloadURL string, dest io.Writer) error {
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, downloadURL, http.NoBody)
-	if err != nil {
-		return &ClientError{Message: fmt.Sprintf("failed to create download request: %v", err)}
+	if err := c.checkExportURL(downloadURL); err != nil {
+		return err
 	}
-	req.Header.Set("Api-Key", c.apiKey)
-	req.Header.Set("X-DIDWW-API-Version", apiVersion)
-	req.Header.Set("User-Agent", "didww-go-sdk/"+sdkVersion)
-
-	resp, err := c.httpClient.Do(req)
+	resp, err := c.send(ctx, c.noRedirectClient, audienceAPI, func() (*http.Request, error) {
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, downloadURL, http.NoBody)
+		if err != nil {
+			return nil, &ClientError{Message: fmt.Sprintf("failed to create download request: %v", err)}
+		}
+		return req, nil
+	})
 	if err != nil {
-		return &ClientError{Message: fmt.Sprintf("download request failed: %v", err)}
+		return wrapSendError("download request failed", err)
 	}
 	defer resp.Body.Close() //nolint:errcheck // best-effort close
 
-	if resp.StatusCode >= 400 {
-		body, _ := io.ReadAll(resp.Body)
-		return &ClientError{Message: fmt.Sprintf("download failed: HTTP %d %s", resp.StatusCode, string(body))}
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(io.LimitReader(resp.Body, maxErrorBodySize))
+		return unexpectedStatusError(resp.StatusCode, body)
 	}
 
-	if _, err := io.Copy(dest, resp.Body); err != nil {
-		return &ClientError{Message: fmt.Sprintf("failed to write export data: %v", err)}
+	w := &writeRecorder{w: dest}
+	if _, err := io.Copy(w, resp.Body); err != nil {
+		if w.err != nil || errors.Is(err, io.ErrShortWrite) {
+			return err
+		}
+		return &ClientError{Message: fmt.Sprintf("failed to read export data: %v", err)}
 	}
 	return nil
 }
 
+// checkExportURL refuses a download URL whose origin is neither the origin of
+// the JSON:API base URL nor that of the environment, so that the token is not
+// sent elsewhere.
+func (c *Client) checkExportURL(downloadURL string) error {
+	u, err := url.Parse(downloadURL)
+	if err != nil {
+		return &ClientError{Message: fmt.Sprintf("invalid export URL: %v", err)}
+	}
+	base, err := url.Parse(c.baseURL)
+	if err != nil {
+		return &ClientError{Message: fmt.Sprintf("invalid base URL: %v", err)}
+	}
+	if sameOrigin(u, base) {
+		return nil
+	}
+	if env, err := url.Parse(string(c.env)); err == nil && sameOrigin(u, env) {
+		return nil
+	}
+	return &ClientError{Message: fmt.Sprintf("export URL %s://%s does not match the API base URL %s://%s or the environment URL %s",
+		u.Scheme, u.Host, base.Scheme, base.Host, c.env)}
+}
+
+// sameOrigin reports whether a and b have the same scheme, host name (ignoring
+// case and a trailing dot) and port (the scheme's default port when none is
+// given).
+func sameOrigin(a, b *url.URL) bool {
+	return strings.EqualFold(a.Scheme, b.Scheme) &&
+		strings.EqualFold(strings.TrimSuffix(a.Hostname(), "."), strings.TrimSuffix(b.Hostname(), ".")) &&
+		effectivePort(a) == effectivePort(b)
+}
+
+const (
+	schemeHTTP  = "http"
+	schemeHTTPS = "https"
+)
+
+// effectivePort returns the port of u, or the default port of its scheme.
+func effectivePort(u *url.URL) string {
+	if p := u.Port(); p != "" {
+		return p
+	}
+	switch strings.ToLower(u.Scheme) {
+	case schemeHTTPS:
+		return "443"
+	case schemeHTTP:
+		return "80"
+	}
+	return ""
+}
+
+// writeRecorder remembers the error of the underlying writer, so that write
+// failures can be told apart from read failures after io.Copy.
+type writeRecorder struct {
+	w   io.Writer
+	err error
+}
+
+func (r *writeRecorder) Write(p []byte) (int, error) {
+	n, err := r.w.Write(p)
+	if err != nil {
+		r.err = err
+	}
+	return n, err
+}
+
 // DownloadAndDecompressExport downloads a gzip-compressed export file (.csv.gz) and writes the decompressed CSV to dest.
+// downloadURL is checked as in DownloadExport.
 func (c *Client) DownloadAndDecompressExport(ctx context.Context, downloadURL string, dest io.Writer) error {
 	var buf bytes.Buffer
 	if err := c.DownloadExport(ctx, downloadURL, &buf); err != nil {
@@ -129,7 +412,6 @@ func (c *Client) Countries() *Repository[resource.Country] { return NewRepositor
 func (c *Client) Regions() *Repository[resource.Region]    { return NewRepository[resource.Region](c) }
 func (c *Client) Cities() *Repository[resource.City]       { return NewRepository[resource.City](c) }
 func (c *Client) Areas() *Repository[resource.Area]        { return NewRepository[resource.Area](c) }
-func (c *Client) Pops() *Repository[resource.Pop]          { return NewRepository[resource.Pop](c) }
 func (c *Client) VoiceInTrunks() *Repository[resource.VoiceInTrunk] {
 	return NewRepository[resource.VoiceInTrunk](c)
 }
@@ -142,9 +424,6 @@ func (c *Client) VoiceOutTrunks() *Repository[resource.VoiceOutTrunk] {
 func (c *Client) DIDs() *Repository[resource.DID] { return NewRepository[resource.DID](c) }
 func (c *Client) DIDGroups() *Repository[resource.DIDGroup] {
 	return NewRepository[resource.DIDGroup](c)
-}
-func (c *Client) DIDGroupTypes() *Repository[resource.DIDGroupType] {
-	return NewRepository[resource.DIDGroupType](c)
 }
 func (c *Client) DIDReservations() *Repository[resource.DIDReservation] {
 	return NewRepository[resource.DIDReservation](c)
@@ -209,4 +488,18 @@ func (c *Client) DIDHistory() *Repository[resource.DIDHistory] {
 }
 func (c *Client) VoiceOutTrunkRegenerateCredentials() *Repository[resource.VoiceOutTrunkRegenerateCredential] {
 	return NewRepository[resource.VoiceOutTrunkRegenerateCredential](c)
+}
+func (c *Client) SmsTrunks() *Repository[resource.SmsTrunk] {
+	return NewRepository[resource.SmsTrunk](c)
+}
+func (c *Client) SmsTrunkGroups() *Repository[resource.SmsTrunkGroup] {
+	return NewRepository[resource.SmsTrunkGroup](c)
+}
+func (c *Client) SmsTrunkRegenerateCredentials() *Repository[resource.SmsTrunkRegenerateCredential] {
+	return NewRepository[resource.SmsTrunkRegenerateCredential](c)
+}
+
+// SenderIDVerifications supports List, Find and Update only.
+func (c *Client) SenderIDVerifications() *Repository[resource.SenderIDVerification] {
+	return NewRepository[resource.SenderIDVerification](c)
 }

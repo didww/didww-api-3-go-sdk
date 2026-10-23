@@ -8,11 +8,20 @@
         "address_area_level": "city",
         "personal_area_level": "world_wide",
         "business_area_level": "country",
-        "address_mandatory_fields": ["city", "postal_code"],
-        "personal_mandatory_fields": ["first_name", "last_name"],
-        "business_mandatory_fields": ["company_name"],
+        "address_mandatory_fields": [
+          "city",
+          "postal_code"
+        ],
+        "personal_mandatory_fields": [
+          "first_name",
+          "last_name"
+        ],
+        "business_mandatory_fields": [
+          "company_name"
+        ],
         "estimate_setup_time": "7-14 days",
-        "requirement_restriction_message": null
+        "requirement_restriction_message": null,
+        "number_type": "local"
       },
       "meta": {
         "setup_price": "0.0",
@@ -20,10 +29,10 @@
       },
       "relationships": {
         "country": {
-          "data": { "type": "countries", "id": "abc-country" }
-        },
-        "did_group_type": {
-          "data": { "type": "did_group_types", "id": "abc-dgt" }
+          "data": {
+            "type": "countries",
+            "id": "abc-country"
+          }
         }
       }
     },
@@ -35,11 +44,17 @@
         "address_area_level": "area",
         "personal_area_level": null,
         "business_area_level": "world_wide",
-        "address_mandatory_fields": ["city", "postal_code"],
+        "address_mandatory_fields": [
+          "city",
+          "postal_code"
+        ],
         "personal_mandatory_fields": [],
-        "business_mandatory_fields": ["company_name"],
+        "business_mandatory_fields": [
+          "company_name"
+        ],
         "estimate_setup_time": "3-5 business days",
-        "requirement_restriction_message": null
+        "requirement_restriction_message": null,
+        "number_type": "national"
       },
       "meta": {
         "setup_price": "0.0",
@@ -47,10 +62,10 @@
       },
       "relationships": {
         "country": {
-          "data": { "type": "countries", "id": "def-country" }
-        },
-        "did_group_type": {
-          "data": { "type": "did_group_types", "id": "abc-dgt" }
+          "data": {
+            "type": "countries",
+            "id": "def-country"
+          }
         }
       }
     }

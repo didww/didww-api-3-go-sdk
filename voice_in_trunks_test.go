@@ -7,9 +7,9 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/didww/didww-api-3-go-sdk/v3/resource"
-	"github.com/didww/didww-api-3-go-sdk/v3/resource/enums"
-	"github.com/didww/didww-api-3-go-sdk/v3/resource/trunkconfiguration"
+	"github.com/didww/didww-api-3-go-sdk/v4/resource"
+	"github.com/didww/didww-api-3-go-sdk/v4/resource/enums"
+	"github.com/didww/didww-api-3-go-sdk/v4/resource/trunkconfiguration"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -33,6 +33,7 @@ func TestVoiceInTrunksList(t *testing.T) {
 	pstnCfg, ok := pstn.Configuration.(*trunkconfiguration.PSTNConfiguration)
 	require.True(t, ok, "expected PSTN configuration")
 	assert.Equal(t, "442080995011", pstnCfg.Dst)
+	assert.Nil(t, pstn.Pop)
 
 	// Second trunk is SIP
 	sip := trunks[1]
@@ -40,6 +41,8 @@ func TestVoiceInTrunksList(t *testing.T) {
 	sipCfg, ok := sip.Configuration.(*trunkconfiguration.SIPConfiguration)
 	require.True(t, ok, "expected SIP configuration")
 	assert.Equal(t, "203.0.113.78", sipCfg.Host)
+	require.NotNil(t, sip.Pop)
+	assert.Equal(t, enums.PopFRA, *sip.Pop)
 }
 
 func TestVoiceInTrunksCreate(t *testing.T) {
@@ -515,4 +518,41 @@ func TestVoiceInTrunksDelete(t *testing.T) {
 
 	err := client.VoiceInTrunks().Delete(context.Background(), "2b4b1fcf-fe6a-4de9-8a58-7df46820ba13")
 	require.NoError(t, err)
+}
+
+func TestVoiceInTrunksCreateWithPop(t *testing.T) {
+	server, capturedBodyPtr := captureRequestBody(t, map[string]testRoute{
+		"POST /v3/voice_in_trunks": {status: http.StatusCreated, fixture: "voice_in_trunks/create_with_pop.json"},
+	})
+
+	trunk, err := server.client.VoiceInTrunks().Create(context.Background(), &resource.VoiceInTrunk{
+		Name: "hello, test pstn trunk",
+		Pop:  Ptr(enums.PopFRA),
+		Configuration: &trunkconfiguration.PSTNConfiguration{
+			Dst: "558540420024",
+		},
+	})
+	require.NoError(t, err)
+
+	assertRequestJSON(t, *capturedBodyPtr, "voice_in_trunks/create_with_pop_request.json")
+	require.NotNil(t, trunk.Pop)
+	assert.Equal(t, enums.PopFRA, *trunk.Pop)
+}
+
+func TestVoiceInTrunksUpdateFromLoadedClearsPop(t *testing.T) {
+	server, capturedBodyPtr := captureRequestBody(t, map[string]testRoute{
+		"GET /v3/voice_in_trunks/41b94706-325e-4704-a433-d65105758836":   {status: http.StatusOK, fixture: "voice_in_trunks/create_with_pop.json"},
+		"PATCH /v3/voice_in_trunks/41b94706-325e-4704-a433-d65105758836": {status: http.StatusOK, fixture: "voice_in_trunks/update_pstn.json"},
+	})
+
+	trunk, err := server.client.VoiceInTrunks().Find(context.Background(), "41b94706-325e-4704-a433-d65105758836")
+	require.NoError(t, err)
+	require.NotNil(t, trunk.Pop)
+
+	trunk.Pop = nil
+	updated, err := server.client.VoiceInTrunks().Update(context.Background(), trunk)
+	require.NoError(t, err)
+
+	assertRequestJSON(t, *capturedBodyPtr, "voice_in_trunks/update_clear_pop_request.json")
+	assert.Nil(t, updated.Pop)
 }

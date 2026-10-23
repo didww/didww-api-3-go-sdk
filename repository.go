@@ -8,8 +8,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/didww/didww-api-3-go-sdk/v3/jsonapi"
-	"github.com/didww/didww-api-3-go-sdk/v3/resource"
+	"github.com/didww/didww-api-3-go-sdk/v4/jsonapi"
+	"github.com/didww/didww-api-3-go-sdk/v4/resource"
 )
 
 // Repository provides CRUD operations for a JSON:API resource.
@@ -111,13 +111,13 @@ func (r *BalanceRepository) Find(ctx context.Context) (*resource.Balance, error)
 
 const (
 	jsonapiMediaType = "application/vnd.api+json"
-	apiVersion       = "2026-04-16"
-	sdkVersion       = "3.1.0"
+	sdkVersion       = "4.0.0"
+	userAgent        = "didww-go-sdk/" + sdkVersion
+	maxErrorBodySize = 1 << 20
 )
 
 // doRequest executes an HTTP request and returns the response body.
 func (c *Client) doRequest(ctx context.Context, method, path string, params *QueryParams, reqBody []byte) ([]byte, error) {
-	// Build URL
 	u := c.buildURL(path)
 	if params != nil {
 		encoded := params.Encode()
@@ -126,30 +126,26 @@ func (c *Client) doRequest(ctx context.Context, method, path string, params *Que
 		}
 	}
 
-	var bodyReader io.Reader
-	if reqBody != nil {
-		bodyReader = bytes.NewReader(reqBody)
+	audience := audienceAPI
+	if isPublicEndpoint(path) {
+		audience = ""
 	}
 
-	req, err := http.NewRequestWithContext(ctx, method, u, bodyReader)
+	resp, err := c.send(ctx, c.httpClient, audience, func() (*http.Request, error) {
+		var bodyReader io.Reader
+		if reqBody != nil {
+			bodyReader = bytes.NewReader(reqBody)
+		}
+		req, err := http.NewRequestWithContext(ctx, method, u, bodyReader)
+		if err != nil {
+			return nil, &ClientError{Message: fmt.Sprintf("failed to create request: %v", err)}
+		}
+		req.Header.Set("Content-Type", jsonapiMediaType)
+		req.Header.Set("Accept", jsonapiMediaType)
+		return req, nil
+	})
 	if err != nil {
-		return nil, &ClientError{Message: fmt.Sprintf("failed to create request: %v", err)}
-	}
-
-	// Set headers
-	req.Header.Set("Content-Type", jsonapiMediaType)
-	req.Header.Set("Accept", jsonapiMediaType)
-	req.Header.Set("User-Agent", "didww-go-sdk/"+sdkVersion)
-	req.Header.Set("X-DIDWW-API-Version", apiVersion)
-
-	// Set API key header for non-public endpoints
-	if !isPublicEndpoint(path) {
-		req.Header.Set("Api-Key", c.apiKey)
-	}
-
-	resp, err := c.httpClient.Do(req)
-	if err != nil {
-		return nil, &ClientError{Message: fmt.Sprintf("request failed: %v", err)}
+		return nil, wrapSendError("request failed", err)
 	}
 	defer resp.Body.Close() //nolint:errcheck // best-effort close
 
@@ -178,7 +174,7 @@ func (c *Client) doRequest(ctx context.Context, method, path string, params *Que
 	return body, nil
 }
 
-// publicEndpoints lists resource paths that do not require API key authentication.
+// publicEndpoints lists resource paths that are called without authentication.
 var publicEndpoints = map[string]bool{
 	"public_keys": true,
 }
@@ -193,11 +189,7 @@ func isPublicEndpoint(path string) bool {
 	return publicEndpoints[base]
 }
 
-// buildURL constructs the full URL for a resource path.
+// buildURL constructs the full JSON:API URL for a resource path.
 func (c *Client) buildURL(resource string) string {
-	base := c.baseURL
-	if !strings.HasSuffix(base, "/v3") {
-		base += "/v3"
-	}
-	return base + "/" + resource
+	return joinV3(c.baseURL, resource)
 }

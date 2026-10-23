@@ -119,15 +119,13 @@ func TestEncryptWithKeysProducesUniqueOutput(t *testing.T) {
 func TestUploadEncryptedFile(t *testing.T) {
 	var capturedContentType string
 	var capturedBody []byte
-	var capturedAuth string
-	var capturedAPIVersion string
+	var capturedHeader http.Header
 
 	server := newTestServerWithInspector(t, map[string]testRoute{
 		"POST /v3/encrypted_files": {status: http.StatusCreated, fixture: "encrypted_files/create.json"},
 	}, func(r *http.Request) {
 		capturedContentType = r.Header.Get("Content-Type")
-		capturedAuth = r.Header.Get("Api-Key")
-		capturedAPIVersion = r.Header.Get("X-DIDWW-API-Version")
+		capturedHeader = r.Header.Clone()
 		capturedBody, _ = io.ReadAll(r.Body)
 	})
 
@@ -145,15 +143,63 @@ func TestUploadEncryptedFile(t *testing.T) {
 	// Verify multipart content type
 	assert.Contains(t, capturedContentType, "multipart/form-data")
 
-	// Verify API key is sent
-	assert.Equal(t, "test-api-key", capturedAuth)
-	assert.Equal(t, apiVersion, capturedAPIVersion)
+	// Verify the bearer token is sent instead of the API key
+	assert.Equal(t, "Bearer "+testAccessToken, capturedHeader.Get("Authorization"))
+	assert.NotContains(t, capturedHeader, "Api-Key")
+	assert.NotContains(t, capturedHeader, "X-Didww-Api-Version")
+	assert.Equal(t, "didww-go-sdk/"+sdkVersion, capturedHeader.Get("User-Agent"))
 
 	// Verify form fields are present in the body
 	bodyStr := string(capturedBody)
 	assert.Contains(t, bodyStr, "fingerprint-123")
 	assert.Contains(t, bodyStr, "sample.pdf")
 	assert.Contains(t, bodyStr, "sample.pdf.enc")
+}
+
+func TestUploadEncryptedFileRetriedAfter401(t *testing.T) {
+	var log requestLog
+	srv := newAuthTestServer(t, nil, func(w http.ResponseWriter, r *http.Request) {
+		log.record(r)
+		if r.Header.Get("Authorization") == "Bearer token-1" {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+		w.Header().Set("Content-Type", "application/vnd.api+json")
+		w.WriteHeader(http.StatusCreated)
+		w.Write(loadFixture(t, "encrypted_files/create.json"))
+	})
+	client := newTestClient(t, srv.URL)
+
+	id, err := client.UploadEncryptedFile(context.Background(), []byte("encrypted-content"), "sample.pdf.enc", "fingerprint-123", "sample.pdf")
+	require.NoError(t, err)
+
+	assert.Equal(t, "6eed102c-66a9-4a9b-a95f-4312d70ec12a", id)
+	requests := log.all()
+	require.Len(t, requests, 2)
+	assert.Contains(t, requests[0].body, "encrypted-content")
+	assert.Equal(t, requests[0].body, requests[1].body)
+	assert.Equal(t, "Bearer token-1", requests[0].authorization)
+	assert.Equal(t, "Bearer token-2", requests[1].authorization)
+	assert.Equal(t, 2, srv.mints())
+	assert.JSONEq(t, `{"aud":["api.didww.com"],"api_version":"2026-10-22"}`, string(srv.mintBody(0)))
+	assert.JSONEq(t, `{"aud":["api.didww.com"],"api_version":"2026-10-22"}`, string(srv.mintBody(1)))
+}
+
+func TestUploadEncryptedFileSecond401(t *testing.T) {
+	var log requestLog
+	srv := newAuthTestServer(t, nil, func(w http.ResponseWriter, r *http.Request) {
+		log.record(r)
+		w.WriteHeader(http.StatusUnauthorized)
+	})
+	client := newTestClient(t, srv.URL)
+
+	_, err := client.UploadEncryptedFile(context.Background(), []byte("encrypted-content"), "sample.pdf.enc", "fingerprint-123", "sample.pdf")
+
+	var clientErr *ClientError
+	require.ErrorAs(t, err, &clientErr)
+	assert.Contains(t, clientErr.Message, "HTTP 401")
+	assert.Len(t, log.all(), 2)
+	assert.Equal(t, 2, srv.mints())
 }
 
 func TestNewEncrypt(t *testing.T) {

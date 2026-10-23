@@ -117,6 +117,9 @@ func CalculateFingerprint(publicKeyA, publicKeyB string) string {
 
 // UploadEncryptedFile uploads a single encrypted file via multipart/form-data POST.
 // Returns the created encrypted file ID.
+//
+// The multipart body is built in memory, so the upload is retried once with a
+// new access token when the API refuses the current one.
 func (c *Client) UploadEncryptedFile(ctx context.Context, encryptedData []byte, fileName, fingerprint, description string) (string, error) {
 	var buf bytes.Buffer
 	w := multipart.NewWriter(&buf)
@@ -138,19 +141,20 @@ func (c *Client) UploadEncryptedFile(ctx context.Context, encryptedData []byte, 
 		return "", fmt.Errorf("failed to close multipart writer: %w", closeErr)
 	}
 
+	payload := buf.Bytes()
+	contentType := w.FormDataContentType()
 	u := c.buildURL("encrypted_files")
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, u, &buf)
+	resp, err := c.send(ctx, c.httpClient, audienceAPI, func() (*http.Request, error) {
+		req, reqErr := http.NewRequestWithContext(ctx, http.MethodPost, u, bytes.NewReader(payload))
+		if reqErr != nil {
+			return nil, &ClientError{Message: fmt.Sprintf("failed to create request: %v", reqErr)}
+		}
+		req.Header.Set("Content-Type", contentType)
+		req.Header.Set("Accept", "application/json")
+		return req, nil
+	})
 	if err != nil {
-		return "", &ClientError{Message: fmt.Sprintf("failed to create request: %v", err)}
-	}
-	req.Header.Set("Content-Type", w.FormDataContentType())
-	req.Header.Set("Accept", "application/json")
-	req.Header.Set("Api-Key", c.apiKey)
-	req.Header.Set("X-DIDWW-API-Version", apiVersion)
-
-	resp, err := c.httpClient.Do(req)
-	if err != nil {
-		return "", &ClientError{Message: fmt.Sprintf("request failed: %v", err)}
+		return "", wrapSendError("request failed", err)
 	}
 	defer resp.Body.Close() //nolint:errcheck // best-effort close
 

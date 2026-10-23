@@ -7,6 +7,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/didww/didww-api-3-go-sdk/v4/resource/enums"
 )
 
 func TestEmergencyCallingServicesList(t *testing.T) {
@@ -26,6 +28,7 @@ func TestEmergencyCallingServicesList(t *testing.T) {
 	require.NotNil(t, services[0].ActivatedAt)
 	assert.Nil(t, services[0].CanceledAt)
 	assert.Equal(t, "2026-05-01", services[0].RenewDate)
+	assert.Equal(t, enums.NumberTypeLocal, services[0].NumberType)
 
 	// Meta fields
 	require.NotNil(t, services[0].Meta)
@@ -45,6 +48,7 @@ func TestEmergencyCallingServicesFindWithIncludes(t *testing.T) {
 	assert.Equal(t, "ecs-001-id", svc.ID)
 	assert.Equal(t, "E911 Service US", svc.Name)
 	assert.Equal(t, "active", svc.Status)
+	assert.Equal(t, enums.NumberTypeLocal, svc.NumberType)
 
 	// Meta fields
 	require.NotNil(t, svc.Meta)

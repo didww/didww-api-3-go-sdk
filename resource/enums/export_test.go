@@ -10,6 +10,8 @@ func TestExportType(t *testing.T) {
 	}{
 		{"CDR In", ExportTypeCdrIn, "cdr_in"},
 		{"CDR Out", ExportTypeCdrOut, "cdr_out"},
+		{"SMS In", ExportTypeSmsIn, "sms_in"},
+		{"SMS Out", ExportTypeSmsOut, "sms_out"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -52,6 +54,26 @@ func TestCallbackMethod(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if string(tt.value) != tt.expected {
 				t.Errorf("expected %q, got %q", tt.expected, string(tt.value))
+			}
+		})
+	}
+}
+
+func TestExportTrunkType(t *testing.T) {
+	tests := []struct {
+		name     string
+		value    string
+		expected string
+	}{
+		{"SMPP SMSC", ExportTrunkTypeSmppSmsc, "SMPP SMSC"},
+		{"SMPP ESME", ExportTrunkTypeSmppEsme, "SMPP ESME"},
+		{"Email", ExportTrunkTypeEmail, "Email"},
+		{"HTTP IN", ExportTrunkTypeHTTPIn, "HTTP IN"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.value != tt.expected {
+				t.Errorf("expected %q, got %q", tt.expected, tt.value)
 			}
 		})
 	}

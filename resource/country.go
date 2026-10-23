@@ -36,9 +36,3 @@ type Area struct {
 	// Resolved relationships
 	Country *Country `json:"-" rel:"country"`
 }
-
-// Pop represents a Point of Presence.
-type Pop struct {
-	ID   string `json:"-" jsonapi:"pops"`
-	Name string `json:"name"`
-}

@@ -9,8 +9,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/didww/didww-api-3-go-sdk/v3/resource"
-	"github.com/didww/didww-api-3-go-sdk/v3/resource/enums"
+	"github.com/didww/didww-api-3-go-sdk/v4/resource"
+	"github.com/didww/didww-api-3-go-sdk/v4/resource/enums"
+	"github.com/didww/didww-api-3-go-sdk/v4/resource/smstrunkconfiguration"
 )
 
 func TestDIDsFind(t *testing.T) {
@@ -229,6 +230,32 @@ func TestDIDsUpdateUnassignEmergencyCallingService(t *testing.T) {
 	assert.Nil(t, did.EmergencyCallingService)
 }
 
+func TestDIDsUpdateUnassignSms(t *testing.T) {
+	tests := []struct {
+		name    string
+		did     resource.DID
+		fixture string
+	}{
+		{"sms trunk", resource.DID{NullifySmsTrunk: true}, "dids/update_unassign_sms_trunk_request.json"},
+		{"sms trunk group", resource.DID{NullifySmsTrunkGroup: true}, "dids/update_unassign_sms_trunk_group_request.json"},
+		{"both", resource.DID{NullifySmsTrunk: true, NullifySmsTrunkGroup: true}, "dids/update_unassign_sms_request.json"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			server, capturedBodyPtr := captureRequestBody(t, map[string]testRoute{
+				"PATCH /v3/dids/9df99644-f1a5-4a3c-99a4-559d758eb96b": {status: http.StatusOK, fixture: "dids/show.json"},
+			})
+
+			did := tt.did
+			did.ID = "9df99644-f1a5-4a3c-99a4-559d758eb96b"
+			_, err := server.client.DIDs().Update(context.Background(), &did)
+			require.NoError(t, err)
+
+			assertRequestJSON(t, *capturedBodyPtr, tt.fixture)
+		})
+	}
+}
+
 func TestDIDsFindWithTrunkResolved(t *testing.T) {
 	_, client := newTestServer(t, map[string]testRoute{
 		"GET /v3/dids/9df99644-f1a5-4a3c-99a4-559d758eb96b": {status: http.StatusOK, fixture: "dids/show_with_trunk.json"},
@@ -257,4 +284,58 @@ func TestDIDsFindWithTrunkGroupResolved(t *testing.T) {
 	assert.Equal(t, "b2319703-ce6c-480d-bb53-614e7abcfc96", did.VoiceInTrunkGroup.ID)
 	assert.Equal(t, "trunk group sample with 2 trunks", did.VoiceInTrunkGroup.Name)
 	assert.Nil(t, did.VoiceInTrunk)
+}
+
+func TestDIDsUpdateAssignSmsTrunk(t *testing.T) {
+	server, capturedBodyPtr := captureRequestBody(t, map[string]testRoute{
+		"PATCH /v3/dids/9df99644-f1a5-4a3c-99a4-559d758eb96b": {status: http.StatusOK, fixture: "dids/show_with_sms_trunk.json"},
+	})
+
+	did, err := server.client.DIDs().Update(context.Background(), &resource.DID{
+		ID:         "9df99644-f1a5-4a3c-99a4-559d758eb96b",
+		SmsTrunkID: "1a2b3c4d-0002-4a5b-8c6d-7e8f9a0b1c02",
+	})
+	require.NoError(t, err)
+
+	assertRequestJSON(t, *capturedBodyPtr, "dids/update_assign_sms_trunk_request.json")
+
+	require.NotNil(t, did.SmsTrunk)
+	assert.Equal(t, "1a2b3c4d-0002-4a5b-8c6d-7e8f9a0b1c02", did.SmsTrunk.ID)
+	assert.Equal(t, "http_in trunk", did.SmsTrunk.Name)
+	assert.Nil(t, did.SmsTrunkGroup)
+}
+
+func TestDIDsUpdateAssignSmsTrunkGroup(t *testing.T) {
+	server, capturedBodyPtr := captureRequestBody(t, map[string]testRoute{
+		"PATCH /v3/dids/9df99644-f1a5-4a3c-99a4-559d758eb96b": {status: http.StatusOK, fixture: "dids/show_with_sms_trunk_group.json"},
+	})
+
+	did, err := server.client.DIDs().Update(context.Background(), &resource.DID{
+		ID:              "9df99644-f1a5-4a3c-99a4-559d758eb96b",
+		SmsTrunkGroupID: "2b3c4d5e-0001-4b6c-9d7e-8f9a0b1c2d01",
+	})
+	require.NoError(t, err)
+
+	assertRequestJSON(t, *capturedBodyPtr, "dids/update_assign_sms_trunk_group_request.json")
+
+	require.NotNil(t, did.SmsTrunkGroup)
+	assert.Equal(t, "2b3c4d5e-0001-4b6c-9d7e-8f9a0b1c2d01", did.SmsTrunkGroup.ID)
+	assert.Equal(t, "Inbound SMS", did.SmsTrunkGroup.Name)
+	assert.Nil(t, did.SmsTrunk)
+}
+
+func TestDIDsFindWithSmsTrunkResolved(t *testing.T) {
+	_, client := newTestServer(t, map[string]testRoute{
+		"GET /v3/dids/9df99644-f1a5-4a3c-99a4-559d758eb96b": {status: http.StatusOK, fixture: "dids/show_with_sms_trunk.json"},
+	})
+
+	params := NewQueryParams().Include("sms_trunk")
+	did, err := client.DIDs().Find(context.Background(), "9df99644-f1a5-4a3c-99a4-559d758eb96b", params)
+	require.NoError(t, err)
+
+	require.NotNil(t, did.SmsTrunk)
+	cfg, ok := did.SmsTrunk.Configuration.(*smstrunkconfiguration.HTTPIn)
+	require.True(t, ok, "expected http_in configuration")
+	assert.Equal(t, "https://example.com/sms", cfg.URL)
+	assert.Nil(t, did.SmsTrunkGroup)
 }

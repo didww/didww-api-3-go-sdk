@@ -9,7 +9,8 @@
       "activated_at": "2026-04-01T10:00:00.000Z",
       "canceled_at": null,
       "created_at": "2026-03-15T08:00:00.000Z",
-      "renew_date": "2026-05-01"
+      "renew_date": "2026-05-01",
+      "number_type": "local"
     },
     "meta": {
       "setup_price": "0.0",
@@ -17,16 +18,22 @@
     },
     "relationships": {
       "country": {
-        "data": { "type": "countries", "id": "us-country" }
-      },
-      "did_group_type": {
-        "data": { "type": "did_group_types", "id": "local-dgt" }
+        "data": {
+          "type": "countries",
+          "id": "us-country"
+        }
       },
       "emergency_requirement": {
-        "data": { "type": "emergency_requirements", "id": "ereq-001-id" }
+        "data": {
+          "type": "emergency_requirements",
+          "id": "ereq-001-id"
+        }
       },
       "emergency_verification": {
-        "data": { "type": "emergency_verifications", "id": "ever-001-id" }
+        "data": {
+          "type": "emergency_verifications",
+          "id": "ever-001-id"
+        }
       }
     }
   },
@@ -39,16 +46,23 @@
         "address_area_level": "city",
         "personal_area_level": "country",
         "business_area_level": null,
-        "address_mandatory_fields": ["city", "postal_code"],
-        "personal_mandatory_fields": ["first_name", "last_name"],
-        "business_mandatory_fields": []
+        "address_mandatory_fields": [
+          "city",
+          "postal_code"
+        ],
+        "personal_mandatory_fields": [
+          "first_name",
+          "last_name"
+        ],
+        "business_mandatory_fields": [],
+        "number_type": "local"
       },
       "relationships": {
         "country": {
-          "data": { "type": "countries", "id": "us-country" }
-        },
-        "did_group_type": {
-          "data": { "type": "did_group_types", "id": "local-dgt" }
+          "data": {
+            "type": "countries",
+            "id": "us-country"
+          }
         }
       }
     },
@@ -67,10 +81,16 @@
       },
       "relationships": {
         "address": {
-          "data": { "type": "addresses", "id": "addr-001-id" }
+          "data": {
+            "type": "addresses",
+            "id": "addr-001-id"
+          }
         },
         "emergency_calling_service": {
-          "data": { "type": "emergency_calling_services", "id": "ecs-001-id" }
+          "data": {
+            "type": "emergency_calling_services",
+            "id": "ecs-001-id"
+          }
         }
       }
     }

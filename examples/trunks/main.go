@@ -7,11 +7,11 @@ import (
 	"context"
 	"fmt"
 
-	didww "github.com/didww/didww-api-3-go-sdk/v3"
-	"github.com/didww/didww-api-3-go-sdk/v3/examples"
-	"github.com/didww/didww-api-3-go-sdk/v3/resource"
-	"github.com/didww/didww-api-3-go-sdk/v3/resource/enums"
-	"github.com/didww/didww-api-3-go-sdk/v3/resource/trunkconfiguration"
+	didww "github.com/didww/didww-api-3-go-sdk/v4"
+	"github.com/didww/didww-api-3-go-sdk/v4/examples"
+	"github.com/didww/didww-api-3-go-sdk/v4/resource"
+	"github.com/didww/didww-api-3-go-sdk/v4/resource/enums"
+	"github.com/didww/didww-api-3-go-sdk/v4/resource/trunkconfiguration"
 )
 
 func main() {
@@ -20,14 +20,18 @@ func main() {
 
 	// List voice in trunks with included relationships
 	params := didww.NewQueryParams().
-		Include("pop", "voice_in_trunk_group").
+		Include("voice_in_trunk_group").
 		Page(1, 10)
 	trunks, err := client.VoiceInTrunks().List(ctx, params)
 	if err != nil {
 		panic(err)
 	}
 	for _, trunk := range trunks {
-		fmt.Printf("%s [%T]\n", trunk.Name, trunk.Configuration)
+		pop := "auto"
+		if trunk.Pop != nil {
+			pop = *trunk.Pop
+		}
+		fmt.Printf("%s [%T] pop=%s\n", trunk.Name, trunk.Configuration, pop)
 	}
 
 	// Create a SIP trunk

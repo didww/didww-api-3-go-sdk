@@ -3,17 +3,25 @@ package resource
 import (
 	"time"
 
-	"github.com/didww/didww-api-3-go-sdk/v3/resource/enums"
+	"github.com/didww/didww-api-3-go-sdk/v4/resource/enums"
 )
 
-// Export represents a CDR export.
+// Export represents a CDR or SMS export.
 //
-// Filters map keys for cdr_in / cdr_out exports:
+// Filters map keys (dotted keys are sent as written):
 //
-//   - "from": ISO 8601 / "YYYY-MM-DD HH:MM:SS" lower bound, INCLUSIVE (time_start >= from).
-//   - "to":   ISO 8601 / "YYYY-MM-DD HH:MM:SS" upper bound, EXCLUSIVE (time_start < to).
-//   - "did_number": only for cdr_in exports.
-//   - "voice_out_trunk_id": only for cdr_out exports.
+//   - every type, required: "from" and "to", "YYYY-MM-DD HH:MM:SS" UTC;
+//     "from" is INCLUSIVE (time_start >= from), "to" is EXCLUSIVE (time_start < to).
+//   - cdr_in: "did_number", "source_number", "source_number_out", "source_country_iso".
+//   - cdr_out: "voice_out_trunk.id", "source", "cli", "destination".
+//   - sms_in and sms_out: "source_address_eq", "source_address_cont",
+//     "destination_address_eq", "destination_address_cont", "status", "sms_id",
+//     "sms_trunk.id" (one id or a slice of ids).
+//   - sms_in only: "trunk_type", one of the enums.ExportTrunkType* values or a slice of them.
+//   - sms_out only: "service_type" ("a2p" or "p2p", any letter case),
+//     "sender_id_verification.id" (one id or a slice of ids).
+//
+// Exports created at earlier API versions may also return "year", "month" and "day".
 type Export struct {
 	ID                  string                 `json:"-" jsonapi:"exports"`
 	Status              enums.ExportStatus     `json:"status" api:"readonly"`

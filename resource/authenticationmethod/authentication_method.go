@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/didww/didww-api-3-go-sdk/v3/internal/redact"
+	"github.com/didww/didww-api-3-go-sdk/v4/internal/redact"
 )
 
 // AuthenticationMethod is the interface for polymorphic authentication methods

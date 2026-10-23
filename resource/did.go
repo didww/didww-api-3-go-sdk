@@ -3,7 +3,7 @@ package resource
 import (
 	"time"
 
-	"github.com/didww/didww-api-3-go-sdk/v3/jsonapi"
+	"github.com/didww/didww-api-3-go-sdk/v4/jsonapi"
 )
 
 // DID represents a DID (phone number) resource.
@@ -29,9 +29,17 @@ type DID struct {
 	EmergencyCallingServiceID string `json:"-" rel:"emergency_calling_service,emergency_calling_services"`
 	EmergencyVerificationID   string `json:"-" rel:"emergency_verification,emergency_verifications"`
 	IdentityID                string `json:"-" rel:"identity,identities"`
+	SmsTrunkID                string `json:"-" rel:"sms_trunk,sms_trunks"`
+	SmsTrunkGroupID           string `json:"-" rel:"sms_trunk_group,sms_trunk_groups"`
 	// NullifyEmergencyCallingService, when true, sends {"data": null} for the
 	// emergency_calling_service relationship (unassign the service from this DID).
 	NullifyEmergencyCallingService bool `json:"-"`
+	// NullifySmsTrunk and NullifySmsTrunkGroup, when true, send {"data": null}
+	// for the sms_trunk and sms_trunk_group relationships, which stops routing
+	// the DID's inbound messages there. An SMS trunk or group cannot be deleted
+	// while DIDs are routed to it.
+	NullifySmsTrunk      bool `json:"-"`
+	NullifySmsTrunkGroup bool `json:"-"`
 	// Resolved relationships
 	Order                   *Order                   `json:"-" rel:"order"`
 	AddressVerification     *AddressVerification     `json:"-" rel:"address_verification"`
@@ -43,10 +51,13 @@ type DID struct {
 	EmergencyCallingService *EmergencyCallingService `json:"-" rel:"emergency_calling_service"`
 	EmergencyVerification   *EmergencyVerification   `json:"-" rel:"emergency_verification"`
 	Identity                *Identity                `json:"-" rel:"identity"`
+	SmsTrunk                *SmsTrunk                `json:"-" rel:"sms_trunk"`
+	SmsTrunkGroup           *SmsTrunkGroup           `json:"-" rel:"sms_trunk_group"`
 }
 
 // MarshalRelationships implements RelationshipMarshaler for DID.
-// Ensures mutual exclusivity: setting a trunk nullifies the trunk group and vice versa.
+// Ensures mutual exclusivity: setting a trunk nullifies the trunk group and vice versa,
+// for both the voice and the SMS routing pair.
 func (d *DID) MarshalRelationships() (map[string]any, error) {
 	rels := make(map[string]any)
 	if d.VoiceInTrunkID != "" {
@@ -54,6 +65,12 @@ func (d *DID) MarshalRelationships() (map[string]any, error) {
 	}
 	if d.VoiceInTrunkGroupID != "" {
 		rels["voice_in_trunk"] = jsonapi.NullRelationship()
+	}
+	if d.SmsTrunkID != "" {
+		rels["sms_trunk_group"] = jsonapi.NullRelationship()
+	}
+	if d.SmsTrunkGroupID != "" {
+		rels["sms_trunk"] = jsonapi.NullRelationship()
 	}
 	if d.CapacityPoolID != "" {
 		rels["shared_capacity_group"] = jsonapi.NullRelationship()
@@ -63,6 +80,12 @@ func (d *DID) MarshalRelationships() (map[string]any, error) {
 	}
 	if d.NullifyEmergencyCallingService {
 		rels["emergency_calling_service"] = jsonapi.NullRelationship()
+	}
+	if d.NullifySmsTrunk {
+		rels["sms_trunk"] = jsonapi.NullRelationship()
+	}
+	if d.NullifySmsTrunkGroup {
+		rels["sms_trunk_group"] = jsonapi.NullRelationship()
 	}
 	return rels, nil
 }
