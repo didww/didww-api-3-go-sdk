@@ -221,7 +221,7 @@ func (c *Client) resolveEndpoints() error {
 		c.smsPricesURL = e.sms
 	}
 	for name, u := range map[string]string{
-		"token service": c.authURL, "Voice IN prices": c.voiceInPricesURL,
+		"API base": c.baseURL, "token service": c.authURL, "Voice IN prices": c.voiceInPricesURL,
 		"Voice OUT prices": c.voiceOutPricesURL, "SMS prices": c.smsPricesURL,
 	} {
 		if !isHTTPURL(u) {

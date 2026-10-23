@@ -273,6 +273,7 @@ func TestNewClientEndpoints(t *testing.T) {
 	}
 
 	for name, opt := range map[string]func(string) ClientOption{
+		"API base":      WithBaseURL,
 		"token service": WithAuthURL,
 		"SMS prices":    WithSMSPricesURL,
 	} {
