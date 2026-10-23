@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/didww/didww-api-3-go-sdk/v4/resource"
@@ -301,6 +302,99 @@ func TestDownloadExportRetriedAfter401(t *testing.T) {
 	assert.Equal(t, 2, srv.mints())
 	assert.JSONEq(t, `{"aud":["api.didww.com"],"api_version":"2026-10-22"}`, string(srv.mintBody(0)))
 	assert.JSONEq(t, `{"aud":["api.didww.com"],"api_version":"2026-10-22"}`, string(srv.mintBody(1)))
+}
+
+func TestDownloadExportRefusesURLOutsideBaseURL(t *testing.T) {
+	var otherHits int
+	other := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		otherHits++
+		w.Write(loadFixture(t, "exports/download.csv.gz"))
+	}))
+	defer other.Close()
+
+	var apiHits int
+	srv := newAuthTestServer(t, nil, func(w http.ResponseWriter, r *http.Request) {
+		apiHits++
+		w.Write(loadFixture(t, "exports/download.csv.gz"))
+	})
+	httpsBase := "https://" + strings.TrimPrefix(srv.URL, "http://")
+
+	tests := []struct {
+		name    string
+		baseURL string
+		url     string
+		call    func(c *Client, u string, w io.Writer) error
+	}{
+		{"other host", srv.URL, other.URL + "/v3/exports/02bf6df4.csv.gz", downloadExport},
+		{"other host decompressed", srv.URL, other.URL + "/v3/exports/02bf6df4.csv.gz", downloadAndDecompressExport},
+		{"http on an https base URL", httpsBase, srv.URL + "/v3/exports/02bf6df4.csv.gz", downloadExport},
+		{"relative URL", srv.URL, "/v3/exports/02bf6df4.csv.gz", downloadExport},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			client := newTestClient(t, srv.URL, WithBaseURL(tt.baseURL))
+			var buf bytes.Buffer
+
+			err := tt.call(client, tt.url, &buf)
+
+			var clientErr *ClientError
+			require.ErrorAs(t, err, &clientErr)
+			assert.Contains(t, clientErr.Message, "does not match the API base URL")
+			assert.Empty(t, buf.Bytes())
+		})
+	}
+	assert.Equal(t, 0, otherHits)
+	assert.Equal(t, 0, apiHits)
+	assert.Equal(t, 0, srv.mints())
+}
+
+func TestCheckExportURLOrigin(t *testing.T) {
+	const proxy = "https://proxy.example.com/v3"
+	tests := []struct {
+		name    string
+		baseURL string
+		url     string
+		allowed bool
+	}{
+		{"base URL host", proxy, "https://proxy.example.com/v3/exports/1.csv.gz", true},
+		{"environment host through a proxy base URL", proxy, "https://api.didww.com/v3/exports/1.csv.gz", true},
+		{"environment host with the default port", proxy, "https://api.didww.com:443/v3/exports/1.csv.gz", true},
+		{"environment host in upper case with a trailing dot", proxy, "https://API.didww.com./v3/exports/1.csv.gz", true},
+		{"base URL with the default port", "https://proxy.example.com:443/v3", "https://proxy.example.com/v3/exports/1.csv.gz", true},
+		{"base URL with a trailing dot", "https://proxy.example.com./v3", "https://proxy.example.com/v3/exports/1.csv.gz", true},
+		{"http base URL with the default port", "http://proxy.example.com/v3", "http://proxy.example.com:80/v3/exports/1.csv.gz", true},
+		{"third host", proxy, "https://other.example.com/v3/exports/1.csv.gz", false},
+		{"other environment host", proxy, "https://sandbox-api.didww.com/v3/exports/1.csv.gz", false},
+		{"environment host over http", proxy, "http://api.didww.com/v3/exports/1.csv.gz", false},
+		{"environment host on another port", proxy, "https://api.didww.com:8443/v3/exports/1.csv.gz", false},
+		{"base URL host on another port", proxy, "https://proxy.example.com:8443/v3/exports/1.csv.gz", false},
+		{"default https port over http", proxy, "http://proxy.example.com:443/v3/exports/1.csv.gz", false},
+		{"relative URL", proxy, "/v3/exports/1.csv.gz", false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			client, err := NewClient("test-api-key", WithEnvironment(Production), WithBaseURL(tt.baseURL), WithLogger(nil))
+			require.NoError(t, err)
+
+			err = client.checkExportURL(tt.url)
+
+			if tt.allowed {
+				assert.NoError(t, err)
+				return
+			}
+			var clientErr *ClientError
+			require.ErrorAs(t, err, &clientErr)
+			assert.Contains(t, clientErr.Message, "does not match the API base URL")
+		})
+	}
+}
+
+func downloadExport(c *Client, u string, w io.Writer) error {
+	return c.DownloadExport(context.Background(), u, w)
+}
+
+func downloadAndDecompressExport(c *Client, u string, w io.Writer) error {
+	return c.DownloadAndDecompressExport(context.Background(), u, w)
 }
 
 type failingWriter struct{ err error }

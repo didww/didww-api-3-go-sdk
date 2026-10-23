@@ -73,8 +73,11 @@ var (
 	ErrInvalidClient = errors.New("didww: token service refused the API key")
 	// ErrInvalidRequest means the token service rejected the request (400), e.g. an unknown scope.
 	ErrInvalidRequest = errors.New("didww: token service rejected the request")
-	// ErrRateLimited means the token service rate-limited the API key (429).
-	// Further mints fail without a request until AuthError.RetryAfter has passed.
+	// ErrRateLimited means the token service answered 429 (too many token requests).
+	// Further mints fail without a request until AuthError.RetryAfter plus a
+	// small random delay has passed; such a refusal reports the time still left
+	// in RetryAfter, so callers should loop on ErrRateLimited rather than retry
+	// once.
 	ErrRateLimited = errors.New("didww: token service rate limit exceeded")
 	// ErrAuthServer means the last attempt to reach the token service was
 	// answered with a 5xx.

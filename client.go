@@ -53,7 +53,8 @@ func WithEnvironment(env Environment) ClientOption {
 }
 
 // WithBaseURL sets a custom JSON:API base URL. The token service and the price
-// hosts are not affected.
+// hosts are not affected, and DownloadExport still accepts export URLs on the
+// environment's host.
 func WithBaseURL(url string) ClientOption {
 	return func(c *Client) {
 		c.baseURL = url
@@ -232,7 +233,7 @@ func (c *Client) resolveEndpoints() error {
 
 func isHTTPURL(s string) bool {
 	u, err := url.Parse(s)
-	return err == nil && (u.Scheme == "http" || u.Scheme == "https") && u.Host != ""
+	return err == nil && (u.Scheme == schemeHTTP || u.Scheme == schemeHTTPS) && u.Host != ""
 }
 
 // defaultHTTPClient returns a client without a total timeout, so that large
@@ -276,10 +277,18 @@ func (c *Client) APIKey() string {
 // DownloadExport downloads an export file from the given URL and writes it to
 // the destination writer unchanged (gzip-compressed CSV).
 //
+// The token is sent only to the origin (scheme, host and port) of the JSON:API
+// base URL or of the environment, as the API builds export URLs on the
+// environment's host even when WithBaseURL points elsewhere: a downloadURL on
+// any other origin returns a *ClientError without a request.
+//
 // Only a 200 answer is written; redirects are not followed. Any other status,
 // including 3xx and 204, returns an *APIError. An error from dest is returned
 // as is.
 func (c *Client) DownloadExport(ctx context.Context, downloadURL string, dest io.Writer) error {
+	if err := c.checkExportURL(downloadURL); err != nil {
+		return err
+	}
 	resp, err := c.send(ctx, c.noRedirectClient, audienceAPI, func() (*http.Request, error) {
 		req, err := http.NewRequestWithContext(ctx, http.MethodGet, downloadURL, http.NoBody)
 		if err != nil {
@@ -307,6 +316,56 @@ func (c *Client) DownloadExport(ctx context.Context, downloadURL string, dest io
 	return nil
 }
 
+// checkExportURL refuses a download URL whose origin is neither the origin of
+// the JSON:API base URL nor that of the environment, so that the token is not
+// sent elsewhere.
+func (c *Client) checkExportURL(downloadURL string) error {
+	u, err := url.Parse(downloadURL)
+	if err != nil {
+		return &ClientError{Message: fmt.Sprintf("invalid export URL: %v", err)}
+	}
+	base, err := url.Parse(c.baseURL)
+	if err != nil {
+		return &ClientError{Message: fmt.Sprintf("invalid base URL: %v", err)}
+	}
+	if sameOrigin(u, base) {
+		return nil
+	}
+	if env, err := url.Parse(string(c.env)); err == nil && sameOrigin(u, env) {
+		return nil
+	}
+	return &ClientError{Message: fmt.Sprintf("export URL %s://%s does not match the API base URL %s://%s or the environment URL %s",
+		u.Scheme, u.Host, base.Scheme, base.Host, c.env)}
+}
+
+// sameOrigin reports whether a and b have the same scheme, host name (ignoring
+// case and a trailing dot) and port (the scheme's default port when none is
+// given).
+func sameOrigin(a, b *url.URL) bool {
+	return strings.EqualFold(a.Scheme, b.Scheme) &&
+		strings.EqualFold(strings.TrimSuffix(a.Hostname(), "."), strings.TrimSuffix(b.Hostname(), ".")) &&
+		effectivePort(a) == effectivePort(b)
+}
+
+const (
+	schemeHTTP  = "http"
+	schemeHTTPS = "https"
+)
+
+// effectivePort returns the port of u, or the default port of its scheme.
+func effectivePort(u *url.URL) string {
+	if p := u.Port(); p != "" {
+		return p
+	}
+	switch strings.ToLower(u.Scheme) {
+	case schemeHTTPS:
+		return "443"
+	case schemeHTTP:
+		return "80"
+	}
+	return ""
+}
+
 // writeRecorder remembers the error of the underlying writer, so that write
 // failures can be told apart from read failures after io.Copy.
 type writeRecorder struct {
@@ -323,6 +382,7 @@ func (r *writeRecorder) Write(p []byte) (int, error) {
 }
 
 // DownloadAndDecompressExport downloads a gzip-compressed export file (.csv.gz) and writes the decompressed CSV to dest.
+// downloadURL is checked as in DownloadExport.
 func (c *Client) DownloadAndDecompressExport(ctx context.Context, downloadURL string, dest io.Writer) error {
 	var buf bytes.Buffer
 	if err := c.DownloadExport(ctx, downloadURL, &buf); err != nil {

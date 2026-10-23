@@ -46,7 +46,7 @@ DIDWW_API_KEY=your_api_key go run ./examples/balance/
 | [`sms_trunk_groups`](sms_trunk_groups/) | Creates two inbound SMS trunks, groups them by priority, lists groups and deletes the group with its trunks. |
 | [`sender_id_verifications`](sender_id_verifications/) | Lists Sender ID verifications with their SMS trunks, routes an active one through an SMS trunk that sends messages and restores its original trunk. |
 | [`prices_lookup`](prices_lookup/) | Looks up Voice IN, Voice OUT, SMS OUT (A2P, P2P, OTP) and SMS IN prices for a number. |
-| [`prices_download`](prices_download/) | Downloads the gzipped Voice IN price file, re-checks it with If-Modified-Since and reads a few rows. |
+| [`prices_download`](prices_download/) | Downloads the gzipped Voice IN price file to the directory given as argument, or to `didww-prices` in the user cache directory, re-checks it with If-Modified-Since and reads a few rows. |
 | [`capacity_pools`](capacity_pools/) | Lists capacity pools with included shared capacity groups. |
 | [`did_history`](did_history/) | Lists DID ownership history. |
 | [`identities`](identities/) | Lists identities with country and birth_country. |

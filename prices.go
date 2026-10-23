@@ -5,12 +5,15 @@ import (
 	"bytes"
 	"compress/gzip"
 	"context"
+	"crypto/rand"
 	"encoding/csv"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"io/fs"
+	mathrand "math/rand/v2"
 	"mime"
 	"net/http"
 	"net/url"
@@ -32,7 +35,7 @@ const (
 	codePriceNotFound        = "price_not_found"
 	maxUnavailableRetries    = 2
 	maxUnavailableRetryAfter = 60 * time.Second
-	priceFileMode            = 0o644
+	tempFileAttempts         = 10
 )
 
 // priceFilters lists the lookup filters a prices service accepts.
@@ -62,7 +65,7 @@ var (
 // arguments. Lookup returns a *ClientError when a 200 answer is not a JSON:API
 // document it can parse or holds no prices, and Download a *ClientError for a
 // nil io.Writer. DownloadToFile and Fetch also return the os and io/fs errors of
-// the file at the path (stat, temp file, file mode and times, rename) as is,
+// the file at the path (stat, temp file, times, rename) as is,
 // and Download returns an error of its io.Writer as is. When ctx ends while a
 // 503 Retry-After is being waited out, ctx's error is returned as is.
 type PricesService[T any] struct {
@@ -72,6 +75,7 @@ type PricesService[T any] struct {
 	prefix   string
 	filters  priceFilters
 	sleep    func(ctx context.Context, d time.Duration) error
+	random   func() float64
 }
 
 func newPricesService[T any](c *Client, baseURL, audience, prefix string, filters priceFilters) *PricesService[T] {
@@ -82,6 +86,7 @@ func newPricesService[T any](c *Client, baseURL, audience, prefix string, filter
 		prefix:   prefix,
 		filters:  filters,
 		sleep:    sleepContext,
+		random:   mathrand.Float64,
 	}
 }
 
@@ -264,8 +269,8 @@ func (s *PricesService[T]) Download(ctx context.Context, w io.Writer, ifModified
 // DownloadToFile downloads the price file to path. The file is written to a
 // temporary file next to path, which replaces path only when the download
 // succeeds, so a failed download leaves an existing file as it was. The new
-// file gets mode 0644 and the Last-Modified of the answer as its
-// modification time.
+// file gets the default mode of a new file (0666 minus the umask) and the
+// Last-Modified of the answer as its modification time.
 func (s *PricesService[T]) DownloadToFile(ctx context.Context, path string) (*PriceFile, error) {
 	return s.downloadToFile(ctx, path, time.Time{})
 }
@@ -287,7 +292,7 @@ func (s *PricesService[T]) Fetch(ctx context.Context, path string) (*PriceFile, 
 }
 
 func (s *PricesService[T]) downloadToFile(ctx context.Context, path string, ifModifiedSince time.Time) (*PriceFile, error) {
-	tmp, err := os.CreateTemp(filepath.Dir(path), filepath.Base(path)+".*.tmp")
+	tmp, err := createTempFile(path)
 	if err != nil {
 		return nil, err
 	}
@@ -307,9 +312,6 @@ func (s *PricesService[T]) downloadToFile(ctx context.Context, path string, ifMo
 	if file.NotModified() {
 		return file, nil
 	}
-	if err := os.Chmod(tmpPath, priceFileMode); err != nil {
-		return nil, err
-	}
 	if !file.LastModified.IsZero() {
 		if err := os.Chtimes(tmpPath, file.LastModified, file.LastModified); err != nil {
 			return nil, err
@@ -321,8 +323,29 @@ func (s *PricesService[T]) downloadToFile(ctx context.Context, path string, ifMo
 	return file, nil
 }
 
+// createTempFile creates a new file next to path with a random suffix. Unlike
+// os.CreateTemp, which uses mode 0600, the file gets 0666 minus the umask, the
+// mode of a file created by os.Create.
+func createTempFile(path string) (*os.File, error) {
+	var err error
+	for range tempFileAttempts {
+		var suffix [8]byte
+		if _, err = rand.Read(suffix[:]); err != nil {
+			return nil, err
+		}
+		name := filepath.Join(filepath.Dir(path), filepath.Base(path)+"."+hex.EncodeToString(suffix[:])+".tmp")
+		var f *os.File
+		f, err = os.OpenFile(name, os.O_RDWR|os.O_CREATE|os.O_EXCL, 0o666) //nolint:gosec // the umask decides the mode, as with os.Create
+		if !errors.Is(err, fs.ErrExist) {
+			return f, err
+		}
+	}
+	return nil, err
+}
+
 // requestFile sends a HEAD or GET for the price file, retrying a 503 whose
-// Retry-After is at most a minute up to maxUnavailableRetries times.
+// Retry-After is at most a minute up to maxUnavailableRetries times, after
+// that Retry-After (at least a second) plus a random extra.
 func (s *PricesService[T]) requestFile(ctx context.Context, method string, ifModifiedSince time.Time, w io.Writer) (*PriceFile, error) {
 	for attempt := 1; ; attempt++ {
 		file, wait, err := s.fileAttempt(ctx, method, ifModifiedSince, w, attempt)
@@ -366,7 +389,7 @@ func (s *PricesService[T]) fileAttempt(ctx context.Context, method string, ifMod
 	case http.StatusServiceUnavailable:
 		if d, ok := retryAfterSeconds(resp.Header); ok && attempt <= maxUnavailableRetries && d <= maxUnavailableRetryAfter {
 			drainAndClose(resp.Body)
-			return nil, d, nil
+			return nil, spreadRetryAfter(max(d, time.Second), s.random), nil
 		}
 	}
 	return nil, 0, newPricesError(resp.StatusCode, resp.Header, readErrorBody(resp.Body))

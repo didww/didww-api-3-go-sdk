@@ -438,7 +438,7 @@ func (p *tokenProvider) tokenFrom(r *tokenResponse, audience string) (Token, err
 		authErr.kind = ErrRateLimited
 		authErr.RetryAfter = parseTokenRetryAfter(r.header.Get("Retry-After"))
 		rateLimits.Lock()
-		rateLimits.until[p.rateLimitKey()] = p.now().Add(authErr.RetryAfter)
+		rateLimits.until[p.rateLimitKey()] = p.now().Add(spreadRetryAfter(authErr.RetryAfter, p.random))
 		rateLimits.Unlock()
 	case r.status >= 500 && r.status <= 599:
 		authErr.kind = ErrAuthServer
@@ -524,6 +524,13 @@ func sleepContext(ctx context.Context, d time.Duration) error {
 	case <-ctx.Done():
 		return ctx.Err()
 	}
+}
+
+// spreadRetryAfter returns retryAfter plus a random extra of up to a fifth of
+// it, or up to a second when that is more, so that clients told the same
+// Retry-After do not come back in step.
+func spreadRetryAfter(retryAfter time.Duration, random func() float64) time.Duration {
+	return retryAfter + time.Duration(random()*float64(max(time.Second, retryAfter/5)))
 }
 
 func sha256Hex(s string) string {

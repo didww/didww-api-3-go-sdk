@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"runtime"
 	"strconv"
 	"strings"
 	"testing"
@@ -59,9 +58,10 @@ func writeServingFailure(t *testing.T, w http.ResponseWriter, retryAfter string)
 	writePricesJSON(w, http.StatusServiceUnavailable, loadFixture(t, "prices/errors/serving_failure.json"))
 }
 
-// stubPricesSleep replaces the 503 sleep of s, returning the recorded delays.
-func stubPricesSleep[T any](s *PricesService[T]) *[]time.Duration {
+// stubPricesSleep replaces the 503 sleep and jitter of s, returning the recorded delays.
+func stubPricesSleep[T any](s *PricesService[T], jitter float64) *[]time.Duration {
 	sleeps := []time.Duration{}
+	s.random = func() float64 { return jitter }
 	s.sleep = func(_ context.Context, d time.Duration) error {
 		sleeps = append(sleeps, d)
 		return nil
@@ -86,6 +86,24 @@ func readFile(t *testing.T, path string) []byte {
 	data, err := os.ReadFile(path)
 	require.NoError(t, err)
 	return data
+}
+
+// fileMode returns the permission bits of the file at path.
+func fileMode(t *testing.T, path string) os.FileMode {
+	t.Helper()
+	info, err := os.Stat(path)
+	require.NoError(t, err)
+	return info.Mode().Perm()
+}
+
+// newFileMode returns the permission bits os.Create gives a new file.
+func newFileMode(t *testing.T) os.FileMode {
+	t.Helper()
+	path := filepath.Join(t.TempDir(), "new")
+	f, err := os.Create(path)
+	require.NoError(t, err)
+	require.NoError(t, f.Close())
+	return fileMode(t, path)
 }
 
 func modTime(t *testing.T, path string) time.Time {
@@ -274,7 +292,7 @@ func TestPriceFileHeadRetriesServiceUnavailable(t *testing.T) {
 		writePriceFile(w, r, gzipFixture, lastModifiedHeader)
 	})
 	prices := client.VoiceInPrices()
-	sleeps := stubPricesSleep(prices)
+	sleeps := stubPricesSleep(prices, 0)
 
 	file, err := prices.Head(context.Background(), time.Time{})
 	require.NoError(t, err)
@@ -295,7 +313,7 @@ func TestPriceFileDownloadRetriesServiceUnavailable(t *testing.T) {
 		writePriceFile(w, r, gzipFixture, lastModifiedHeader)
 	})
 	prices := client.VoiceInPrices()
-	sleeps := stubPricesSleep(prices)
+	sleeps := stubPricesSleep(prices, 0)
 	var buf bytes.Buffer
 
 	_, err := prices.Download(context.Background(), &buf, time.Time{})
@@ -311,7 +329,7 @@ func TestPriceFileDownloadServiceUnavailableAfterTwoRetries(t *testing.T) {
 		writeServingFailure(t, w, "1")
 	})
 	prices := client.VoiceInPrices()
-	sleeps := stubPricesSleep(prices)
+	sleeps := stubPricesSleep(prices, 0)
 	var buf bytes.Buffer
 
 	_, err := prices.Download(context.Background(), &buf, time.Time{})
@@ -326,6 +344,42 @@ func TestPriceFileDownloadServiceUnavailableAfterTwoRetries(t *testing.T) {
 	assert.Equal(t, 3, s.requestCount())
 	assert.Equal(t, []time.Duration{time.Second, time.Second}, *sleeps)
 	assert.Empty(t, buf.Bytes())
+}
+
+func TestPriceFileServiceUnavailableWaitIsSpread(t *testing.T) {
+	tests := []struct {
+		name       string
+		retryAfter string
+		jitter     float64
+		wait       time.Duration
+	}{
+		{"Retry-After 0 without jitter", "0", 0, time.Second},
+		{"Retry-After 0 with full jitter", "0", 1, 2 * time.Second},
+		{"Retry-After 2 without jitter", "2", 0, 2 * time.Second},
+		{"Retry-After 2 with full jitter", "2", 1, 3 * time.Second},
+		{"Retry-After 30 without jitter", "30", 0, 30 * time.Second},
+		{"Retry-After 30 with full jitter", "30", 1, 36 * time.Second},
+		{"Retry-After 60 with full jitter", "60", 1, 72 * time.Second},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gzipFixture := loadFixture(t, "prices/voice_in_prices.csv.gz")
+			_, client := newPricesTestServer(t, func(n int, w http.ResponseWriter, r *http.Request) {
+				if n == 1 {
+					writeServingFailure(t, w, tt.retryAfter)
+					return
+				}
+				writePriceFile(w, r, gzipFixture, lastModifiedHeader)
+			})
+			prices := client.VoiceInPrices()
+			sleeps := stubPricesSleep(prices, tt.jitter)
+
+			_, err := prices.Head(context.Background(), time.Time{})
+			require.NoError(t, err)
+
+			assert.Equal(t, []time.Duration{tt.wait}, *sleeps)
+		})
+	}
 }
 
 func TestPriceFileDownloadServiceUnavailableNotRetried(t *testing.T) {
@@ -344,7 +398,7 @@ func TestPriceFileDownloadServiceUnavailableNotRetried(t *testing.T) {
 				writeServingFailure(t, w, tt.retryAfter)
 			})
 			prices := client.VoiceInPrices()
-			sleeps := stubPricesSleep(prices)
+			sleeps := stubPricesSleep(prices, 0)
 
 			_, err := prices.Download(context.Background(), io.Discard, time.Time{})
 
@@ -377,7 +431,7 @@ func TestPriceFileDownloadTooManyRequestsNotRetried(t *testing.T) {
 		w.WriteHeader(http.StatusTooManyRequests)
 	})
 	prices := client.VoiceInPrices()
-	sleeps := stubPricesSleep(prices)
+	sleeps := stubPricesSleep(prices, 0)
 
 	_, err := prices.Download(context.Background(), io.Discard, time.Time{})
 
@@ -548,11 +602,7 @@ func TestPriceFileDownloadToFile(t *testing.T) {
 	assert.Equal(t, []string{"voice_in_prices.csv.gz"}, dirEntries(t, dir))
 	assert.Equal(t, int64(len(gzipFixture)), file.BytesWritten)
 	assert.Equal(t, "voice_in_prices.csv.gz", file.Filename)
-	if runtime.GOOS != "windows" {
-		info, err := os.Stat(path)
-		require.NoError(t, err)
-		assert.Equal(t, os.FileMode(0o644), info.Mode().Perm())
-	}
+	assert.Equal(t, newFileMode(t), fileMode(t, path), "mode of a new file, not of the old copy")
 }
 
 func TestPriceFileDownloadToFileLeavesOtherTempFiles(t *testing.T) {

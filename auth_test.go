@@ -485,43 +485,93 @@ func TestTokenInvalidRequest(t *testing.T) {
 }
 
 func TestTokenRateLimited(t *testing.T) {
-	srv := newAuthTestServer(t, func(n int, w http.ResponseWriter, r *http.Request) {
-		if n == 1 {
-			w.Header().Set("Retry-After", "30")
-			writeTokenError(t, w, http.StatusTooManyRequests, "token/rate_limit_exceeded.json")
-			return
-		}
-		writeTestToken(w, r, fmt.Sprintf("token-%d", n))
-	}, nil)
-	client := newTestClient(t, srv.URL)
-	forgetRateLimit(t, client)
-	clock := newFakeClock()
-	client.tokens.now = clock.Now
-	sleeps := stubBackoff(client, 1)
+	for _, tc := range []struct {
+		jitter float64
+		window time.Duration
+	}{
+		{jitter: 0, window: 30 * time.Second},
+		{jitter: 1, window: 36 * time.Second},
+	} {
+		t.Run(fmt.Sprintf("jitter %v", tc.jitter), func(t *testing.T) {
+			srv := newAuthTestServer(t, func(n int, w http.ResponseWriter, r *http.Request) {
+				if n == 1 {
+					w.Header().Set("Retry-After", "30")
+					writeTokenError(t, w, http.StatusTooManyRequests, "token/rate_limit_exceeded.json")
+					return
+				}
+				writeTestToken(w, r, fmt.Sprintf("token-%d", n))
+			}, nil)
+			client := newTestClient(t, srv.URL)
+			forgetRateLimit(t, client)
+			clock := newFakeClock()
+			client.tokens.now = clock.Now
+			sleeps := stubBackoff(client, tc.jitter)
 
-	_, err := client.tokens.token(context.Background(), audienceAPI)
-	require.ErrorIs(t, err, ErrRateLimited)
-	var authErr *AuthError
-	require.ErrorAs(t, err, &authErr)
-	assert.Equal(t, http.StatusTooManyRequests, authErr.StatusCode)
-	assert.Equal(t, 30*time.Second, authErr.RetryAfter)
+			_, err := client.tokens.token(context.Background(), audienceAPI)
+			require.ErrorIs(t, err, ErrRateLimited)
+			var authErr *AuthError
+			require.ErrorAs(t, err, &authErr)
+			assert.Equal(t, http.StatusTooManyRequests, authErr.StatusCode)
+			assert.Equal(t, 30*time.Second, authErr.RetryAfter, "the server value, without the spread")
 
-	clock.Advance(29*time.Second + 500*time.Millisecond)
-	_, err = client.tokens.token(context.Background(), audienceAPI)
-	require.ErrorIs(t, err, ErrRateLimited)
-	require.ErrorAs(t, err, &authErr)
-	assert.Equal(t, time.Second, authErr.RetryAfter)
+			clock.Advance(tc.window - 500*time.Millisecond)
+			_, err = client.tokens.token(context.Background(), audienceAPI)
+			require.ErrorIs(t, err, ErrRateLimited)
+			require.ErrorAs(t, err, &authErr)
+			assert.Equal(t, time.Second, authErr.RetryAfter)
 
-	_, err = client.tokens.token(context.Background(), audienceVoiceIn)
-	require.ErrorIs(t, err, ErrRateLimited)
-	assert.Equal(t, 1, srv.mints())
+			_, err = client.tokens.token(context.Background(), audienceVoiceIn)
+			require.ErrorIs(t, err, ErrRateLimited)
+			assert.Equal(t, 1, srv.mints())
 
-	clock.Advance(500 * time.Millisecond)
-	tok, err := client.tokens.token(context.Background(), audienceAPI)
-	require.NoError(t, err)
-	assert.Equal(t, "token-2", tok.AccessToken)
-	assert.Equal(t, 2, srv.mints())
-	assert.Empty(t, *sleeps)
+			clock.Advance(500 * time.Millisecond)
+			tok, err := client.tokens.token(context.Background(), audienceAPI)
+			require.NoError(t, err)
+			assert.Equal(t, "token-2", tok.AccessToken)
+			assert.Equal(t, 2, srv.mints())
+			assert.Empty(t, *sleeps)
+		})
+	}
+}
+
+func TestTokenRateLimitedWindowForZeroRetryAfter(t *testing.T) {
+	for _, tc := range []struct {
+		jitter float64
+		window time.Duration
+	}{
+		{jitter: 0, window: time.Second},
+		{jitter: 1, window: 2 * time.Second},
+	} {
+		t.Run(fmt.Sprintf("jitter %v", tc.jitter), func(t *testing.T) {
+			srv := newAuthTestServer(t, func(n int, w http.ResponseWriter, r *http.Request) {
+				if n == 1 {
+					w.Header().Set("Retry-After", "0")
+					writeTokenError(t, w, http.StatusTooManyRequests, "token/rate_limit_exceeded.json")
+					return
+				}
+				writeTestToken(w, r, "token-ok")
+			}, nil)
+			client := newTestClient(t, srv.URL)
+			forgetRateLimit(t, client)
+			clock := newFakeClock()
+			client.tokens.now = clock.Now
+			stubBackoff(client, tc.jitter)
+
+			_, err := client.tokens.token(context.Background(), audienceAPI)
+			var authErr *AuthError
+			require.ErrorAs(t, err, &authErr)
+			assert.Equal(t, time.Second, authErr.RetryAfter)
+
+			clock.Advance(tc.window - time.Millisecond)
+			_, err = client.tokens.token(context.Background(), audienceAPI)
+			require.ErrorIs(t, err, ErrRateLimited)
+
+			clock.Advance(time.Millisecond)
+			_, err = client.tokens.token(context.Background(), audienceAPI)
+			require.NoError(t, err)
+			assert.Equal(t, 2, srv.mints())
+		})
+	}
 }
 
 func TestTokenRateLimitedWithoutRetryAfter(t *testing.T) {
@@ -577,6 +627,17 @@ func TestTokenBackoffCap(t *testing.T) {
 	assert.Equal(t, 4*time.Second, client.tokens.backoff(3))
 	assert.Equal(t, 8*time.Second, client.tokens.backoff(4))
 	assert.Equal(t, 8*time.Second, client.tokens.backoff(5))
+}
+
+func TestSpreadRetryAfter(t *testing.T) {
+	one := func() float64 { return 1 }
+	zero := func() float64 { return 0 }
+
+	assert.Equal(t, time.Second, spreadRetryAfter(time.Second, zero))
+	assert.Equal(t, 2*time.Second, spreadRetryAfter(time.Second, one))
+	assert.Equal(t, 30*time.Second, spreadRetryAfter(30*time.Second, zero))
+	assert.Equal(t, 36*time.Second, spreadRetryAfter(30*time.Second, one))
+	assert.Equal(t, 33*time.Second, spreadRetryAfter(30*time.Second, func() float64 { return 0.5 }))
 }
 
 func TestTokenServerErrorExhausted(t *testing.T) {

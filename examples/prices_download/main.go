@@ -7,6 +7,9 @@
 // the second call, and any later run against the same file, is answered 304
 // and keeps it.
 //
+// The file goes to dir, or to didww-prices in the user cache directory, created
+// for the current user only when missing.
+//
 // Usage: DIDWW_API_KEY=your_api_key go run ./examples/prices_download/ [dir]
 package main
 
@@ -33,13 +36,14 @@ func main() {
 	client := examples.ClientFromEnv()
 	ctx := context.Background()
 
-	dir := os.TempDir()
-	if len(os.Args) > 1 {
-		dir = os.Args[1]
+	dir, err := priceDir()
+	if err != nil {
+		panic(err)
 	}
 	path := filepath.Join(dir, "voice_in_prices.csv.gz")
+	fmt.Println("Price files go to", dir)
 
-	err := run(ctx, client.VoiceInPrices(), path)
+	err = run(ctx, client.VoiceInPrices(), path)
 	var pricesErr *didww.PricesError
 	switch {
 	case err == nil:
@@ -50,6 +54,20 @@ func main() {
 	default:
 		panic(err)
 	}
+}
+
+// priceDir returns the directory given as the first argument, or didww-prices
+// in the user cache directory, creating it with mode 0700 when missing.
+func priceDir() (string, error) {
+	if len(os.Args) > 1 {
+		return os.Args[1], nil
+	}
+	cache, err := os.UserCacheDir()
+	if err != nil {
+		return "", err
+	}
+	dir := filepath.Join(cache, "didww-prices")
+	return dir, os.MkdirAll(dir, 0o700)
 }
 
 func run(ctx context.Context, prices *didww.PricesService[resource.VoiceInPrice], path string) error {
