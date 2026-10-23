@@ -272,6 +272,19 @@ func TestNewClientEndpoints(t *testing.T) {
 		})
 	}
 
+	for name, opt := range map[string]func(string) ClientOption{
+		"token service": WithAuthURL,
+		"SMS prices":    WithSMSPricesURL,
+	} {
+		for _, u := range []string{"https://auth.example.com#custom", "https://api-prices.example.com/v3?region=eu", "https://api-prices.example.com/v3?"} {
+			t.Run(name+" URL with a query or fragment "+u, func(t *testing.T) {
+				_, err := NewClient("test-api-key", opt(u))
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), name+" URL must be an http or https URL")
+			})
+		}
+	}
+
 	t.Run("token service URL without a scheme", func(t *testing.T) {
 		_, err := NewClient("test-api-key", WithAuthURL("auth.didww.com"))
 		require.Error(t, err)

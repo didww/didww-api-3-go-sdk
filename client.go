@@ -225,15 +225,18 @@ func (c *Client) resolveEndpoints() error {
 		"Voice OUT prices": c.voiceOutPricesURL, "SMS prices": c.smsPricesURL,
 	} {
 		if !isHTTPURL(u) {
-			return fmt.Errorf("%s URL must be an http or https URL, got %q", name, u)
+			return fmt.Errorf("%s URL must be an http or https URL without a query or fragment, got %q", name, u)
 		}
 	}
 	return nil
 }
 
+// isHTTPURL reports whether s is an http or https URL with a host and without a
+// query or fragment, which would swallow the paths appended to it.
 func isHTTPURL(s string) bool {
 	u, err := url.Parse(s)
-	return err == nil && (u.Scheme == schemeHTTP || u.Scheme == schemeHTTPS) && u.Host != ""
+	return err == nil && (u.Scheme == schemeHTTP || u.Scheme == schemeHTTPS) && u.Host != "" &&
+		!strings.ContainsAny(s, "?#")
 }
 
 // defaultHTTPClient returns a client without a total timeout, so that large

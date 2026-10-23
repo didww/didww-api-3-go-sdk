@@ -110,7 +110,7 @@ client, err := didww.NewClient("YOUR_API_KEY",
 | `WithAuthURL(url)` | Token service of the environment | Token service base URL. |
 | `WithVoiceInPricesURL(url)`, `WithVoiceOutPricesURL(url)`, `WithSMSPricesURL(url)` | Price hosts of the environment | Price service base URLs, with or without the `/v3` suffix. |
 
-The API key is sent only to the token service. An overridden URL, for example to send the traffic through a proxy, does not change the token audiences (see [Authentication](#authentication)). `NewClient` returns an error for an empty API key or one with control characters (such as a trailing newline), a token service or prices URL that is not http or https, an invalid API version, an unknown scope or an environment other than `didww.Sandbox` and `didww.Production`.
+The API key is sent only to the token service. An overridden URL, for example to send the traffic through a proxy, does not change the token audiences (see [Authentication](#authentication)). `NewClient` returns an error for an empty API key or one with control characters (such as a trailing newline), a token service or prices URL that is not http or https or has a query or fragment, an invalid API version, an unknown scope or an environment other than `didww.Sandbox` and `didww.Production`.
 
 ### Custom HTTP Client (Proxy, SSL, etc.)
 
