@@ -22,5 +22,6 @@ func TestProofTypesList(t *testing.T) {
 	first := proofTypes[0]
 	assert.NotEmpty(t, first.ID)
 	assert.NotEmpty(t, first.Name)
-	assert.NotEmpty(t, first.EntityType)
+	assert.Equal(t, "address", first.EntityType)
+	assert.Equal(t, "personal", proofTypes[3].EntityType)
 }

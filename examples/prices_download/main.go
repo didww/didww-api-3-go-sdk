@@ -97,7 +97,7 @@ func run(ctx context.Context, prices *didww.PricesService[resource.VoiceInPrice]
 
 	n := 0
 	err = didww.EachPriceRow(f, func(row map[string]string) error {
-		fmt.Printf("  %s %s %s: %s\n", row["Country"], row["Destination"], row["Source type"], row["Rate (USD, excl. VAT)"])
+		fmt.Printf("  %s %s %s: %s\n", row["Country"], row["Destination"], row["Source type"], row["Rate"])
 		n++
 		if n == firstRows {
 			return errEnoughRows

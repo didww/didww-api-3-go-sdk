@@ -16,11 +16,17 @@ type EmergencyRequirement struct {
 	// BusinessAreaLevel is the minimum geographic precision for business identity addresses.
 	// Empty when the country does not accept a business identity for emergency calling.
 	BusinessAreaLevel string `json:"business_area_level" api:"readonly"`
-	// AddressMandatoryFields lists address fields required for this requirement.
+	// AddressMandatoryFields lists the address fields that must be filled in
+	// ("area"). Empty when none are.
 	AddressMandatoryFields []string `json:"address_mandatory_fields" api:"readonly"`
-	// PersonalMandatoryFields lists identity fields required for personal identities.
+	// PersonalMandatoryFields lists the fields that must be filled in for a
+	// personal identity, among "birth_date", "country", "id_number",
+	// "personal_tax_id" and "contact_email". Empty when none are.
 	PersonalMandatoryFields []string `json:"personal_mandatory_fields" api:"readonly"`
-	// BusinessMandatoryFields lists identity fields required for business identities.
+	// BusinessMandatoryFields lists the fields that must be filled in for a
+	// business identity, among "id_number", "tax_id" (Identity.VatID),
+	// "country", "company_reg_number", "personal_tax_id", "contact_email" and
+	// "birth_date". Empty when none are.
 	BusinessMandatoryFields []string `json:"business_mandatory_fields" api:"readonly"`
 	// EstimateSetupTime is the estimated time before emergency calling is enabled (e.g. "7-14 days").
 	EstimateSetupTime string `json:"estimate_setup_time" api:"readonly"`

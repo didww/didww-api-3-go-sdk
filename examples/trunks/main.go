@@ -32,6 +32,9 @@ func main() {
 			pop = *trunk.Pop
 		}
 		fmt.Printf("%s [%T] pop=%s\n", trunk.Name, trunk.Configuration, pop)
+		if sip, ok := trunk.Configuration.(*trunkconfiguration.SIPConfiguration); ok {
+			fmt.Printf("  codecs=%v ice=%s rtcp_mux=%s rtcp_feedback=%s\n", sip.Codecs, sip.IceMode, sip.RtcpMuxMode, sip.RtcpFeedbackMode)
+		}
 	}
 
 	// Create a SIP trunk
@@ -45,7 +48,8 @@ func main() {
 		Configuration: &trunkconfiguration.SIPConfiguration{
 			Host:                "sip.example.com",
 			Port:                5060,
-			CodecIDs:            []enums.Codec{enums.CodecPCMU, enums.CodecPCMA},
+			Codecs:              []enums.Codec{enums.CodecPCMU, enums.CodecPCMA, enums.CodecTelephoneEvent},
+			IceMode:             enums.IceModeAccept,
 			TransportProtocolID: enums.TransportProtocolUDP,
 			RxDtmfFormatID:      enums.RxDtmfFormatRFC2833,
 			TxDtmfFormatID:      enums.TxDtmfFormatRFC2833,

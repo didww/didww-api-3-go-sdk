@@ -60,7 +60,7 @@ func TestEmergencyCallingServicesFindWithIncludes(t *testing.T) {
 	assert.Equal(t, "ereq-001-id", svc.EmergencyRequirement.ID)
 	assert.Equal(t, "personal", svc.EmergencyRequirement.IdentityType)
 	assert.Equal(t, "city", svc.EmergencyRequirement.AddressAreaLevel)
-	assert.Equal(t, []string{"city", "postal_code"}, svc.EmergencyRequirement.AddressMandatoryFields)
+	assert.Equal(t, []string{"area"}, svc.EmergencyRequirement.AddressMandatoryFields)
 
 	// Verify included emergency_verification
 	require.NotNil(t, svc.EmergencyVerification)

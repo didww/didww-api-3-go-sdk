@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 	"testing"
@@ -612,14 +613,38 @@ func TestPriceFileDownloadToFileLeavesOtherTempFiles(t *testing.T) {
 	})
 	dir := t.TempDir()
 	path := filepath.Join(dir, "voice_in_prices.csv.gz")
-	require.NoError(t, os.WriteFile(path+".tmp", []byte("concurrent download"), 0o600))
+	other := filepath.Join(dir, ".didww-0123456789abcdef.tmp")
+	require.NoError(t, os.WriteFile(other, []byte("concurrent download"), 0o600))
 
 	_, err := client.VoiceInPrices().DownloadToFile(context.Background(), path)
 	require.NoError(t, err)
 
 	assert.Equal(t, gzipFixture, readFile(t, path))
-	assert.Equal(t, []byte("concurrent download"), readFile(t, path+".tmp"))
-	assert.ElementsMatch(t, []string{"voice_in_prices.csv.gz", "voice_in_prices.csv.gz.tmp"}, dirEntries(t, dir))
+	assert.Equal(t, []byte("concurrent download"), readFile(t, other))
+	assert.ElementsMatch(t, []string{"voice_in_prices.csv.gz", ".didww-0123456789abcdef.tmp"}, dirEntries(t, dir))
+}
+
+func TestPriceFileDownloadToFileLongName(t *testing.T) {
+	gzipFixture := loadFixture(t, "prices/voice_in_prices.csv.gz")
+	dir := t.TempDir()
+	name := strings.Repeat("p", 243) + ".csv.gz"
+	require.Len(t, name, 250)
+	duringDownload := make(chan []os.DirEntry, 1)
+	_, client := newPricesTestServer(t, func(_ int, w http.ResponseWriter, r *http.Request) {
+		entries, _ := os.ReadDir(dir)
+		duringDownload <- entries
+		writePriceFile(w, r, gzipFixture, lastModifiedHeader)
+	})
+	path := filepath.Join(dir, name)
+
+	_, err := client.VoiceInPrices().DownloadToFile(context.Background(), path)
+	require.NoError(t, err)
+
+	temp := <-duringDownload
+	require.Len(t, temp, 1)
+	assert.Regexp(t, regexp.MustCompile(`^\.didww-[0-9a-f]{16}\.tmp$`), temp[0].Name())
+	assert.Equal(t, gzipFixture, readFile(t, path))
+	assert.Equal(t, []string{name}, dirEntries(t, dir))
 }
 
 func TestPriceFileDownloadToFileErrorKeepsExistingFile(t *testing.T) {
@@ -727,16 +752,17 @@ func TestEachPriceRowVoiceIn(t *testing.T) {
 
 	require.Len(t, rows, 4)
 	assert.Equal(t, map[string]string{
-		"Country":                         "United Kingdom",
-		"Src country name":                "",
-		"Source type":                     "cellular",
-		"Destination":                     "44800",
-		"Rate (USD, excl. VAT)":           "",
-		"Connection fee (USD, excl. VAT)": "",
-		"Initial interval":                "60",
-		"Next interval":                   "60",
-		"Reject calls":                    "true",
+		"Country":          "United Kingdom",
+		"Src country name": "",
+		"Source type":      "cellular",
+		"Destination":      "44800",
+		"Rate":             "",
+		"Connection fee":   "",
+		"Initial interval": "60",
+		"Next interval":    "60",
+		"Reject calls":     "true",
 	}, rows[0])
+	assert.Equal(t, "0.0125", rows[1]["Rate"])
 	destinations := []string{}
 	for _, row := range rows {
 		destinations = append(destinations, row["Destination"])
@@ -753,7 +779,7 @@ func TestEachPriceRowVoiceOut(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	require.Len(t, rows, 4)
+	require.Len(t, rows, 5)
 	assert.Equal(t, map[string]string{
 		"Category":                 "International",
 		"Country":                  "Germany",
@@ -761,8 +787,8 @@ func TestEachPriceRowVoiceOut(t *testing.T) {
 		"Prefix":                   "4930",
 		"Rate":                     "0.0045",
 		"Connection fee":           "0.0",
-		"Initial Increment":        "1",
-		"Recurring Increment":      "1",
+		"Initial increment":        "1",
+		"Recurring increment":      "1",
 		"Reject calls":             "false",
 		"Next rate":                "0.005",
 		"Next connection fee":      "0.0",
@@ -772,10 +798,11 @@ func TestEachPriceRowVoiceOut(t *testing.T) {
 		"Comment":                  "Increase and Billing increment change",
 	}, rows[0])
 	assert.Equal(t, "Origin based", rows[1]["Category"])
-	assert.Equal(t, "99950,99951,99952", rows[2]["Prefix"])
-	assert.Equal(t, "New Breakout", rows[3]["Network"])
-	assert.Equal(t, "", rows[3]["Rate"])
-	assert.Equal(t, "true", rows[3]["Reject calls"])
+	assert.Equal(t, "99950", rows[2]["Prefix"])
+	assert.Equal(t, "99951", rows[3]["Prefix"])
+	assert.Equal(t, "New Breakout", rows[4]["Network"])
+	assert.Equal(t, "", rows[4]["Rate"])
+	assert.Equal(t, "true", rows[4]["Reject calls"])
 }
 
 func TestEachPriceRowReturnsCallbackError(t *testing.T) {

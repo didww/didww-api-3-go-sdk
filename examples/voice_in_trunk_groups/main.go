@@ -24,7 +24,7 @@ func main() {
 		return &trunkconfiguration.SIPConfiguration{
 			Host:                host,
 			Port:                5060,
-			CodecIDs:            []enums.Codec{enums.CodecPCMU, enums.CodecPCMA},
+			Codecs:              []enums.Codec{enums.CodecPCMU, enums.CodecPCMA},
 			TransportProtocolID: enums.TransportProtocolUDP,
 			RxDtmfFormatID:      enums.RxDtmfFormatRFC2833,
 			TxDtmfFormatID:      enums.TxDtmfFormatRFC2833,

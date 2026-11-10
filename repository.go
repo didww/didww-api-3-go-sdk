@@ -158,11 +158,12 @@ func (c *Client) doRequest(ctx context.Context, method, path string, params *Que
 	if resp.StatusCode >= 400 {
 		apiErr, parseErr := ParseAPIErrors(body, resp.StatusCode)
 		if parseErr != nil {
-			return nil, &APIError{
+			apiErr = &APIError{
 				HTTPStatus: resp.StatusCode,
 				Errors:     []ErrorDetail{{Title: "Unknown error", Detail: string(body)}},
 			}
 		}
+		apiErr.RetryAfter, _ = retryAfterSeconds(resp.Header)
 		return nil, apiErr
 	}
 

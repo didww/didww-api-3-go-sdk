@@ -116,7 +116,8 @@ func CalculateFingerprint(publicKeyA, publicKeyB string) string {
 }
 
 // UploadEncryptedFile uploads a single encrypted file via multipart/form-data POST.
-// Returns the created encrypted file ID.
+// Returns the created encrypted file ID. An error status returns an *APIError
+// (see APIError.RetryAfter); a 429 is not retried.
 //
 // The multipart body is built in memory, so the upload is retried once with a
 // new access token when the API refuses the current one.
@@ -164,7 +165,7 @@ func (c *Client) UploadEncryptedFile(ctx context.Context, encryptedData []byte, 
 	}
 
 	if resp.StatusCode >= 400 {
-		return "", &ClientError{Message: fmt.Sprintf("upload failed: HTTP %d %s", resp.StatusCode, string(body))}
+		return "", unexpectedStatusError(resp, body)
 	}
 
 	var result struct {

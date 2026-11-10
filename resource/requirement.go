@@ -3,6 +3,13 @@ package resource
 import "github.com/didww/didww-api-3-go-sdk/v4/resource/enums"
 
 // AddressRequirement represents a regulatory address requirement.
+//
+// PersonalMandatoryFields and BusinessMandatoryFields list the identity fields
+// that must be filled in for a personal and a business identity; they are
+// empty when none are. Personal: "birth_date", "country", "birth_country",
+// "id_number", "personal_tax_id", "contact_email". Business: "id_number",
+// "tax_id" (Identity.VatID), "country", "company_reg_number",
+// "personal_tax_id", "contact_email".
 type AddressRequirement struct {
 	ID                         string           `json:"-" jsonapi:"address_requirements"`
 	IdentityType               string           `json:"identity_type"`

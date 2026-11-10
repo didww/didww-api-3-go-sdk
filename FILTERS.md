@@ -217,7 +217,7 @@ Pass values URL-encoded as strings. Where the server accepts arrays, comma-separ
 
 ## ProofType — `GET /v3/proof_types`
 
-- `filter[entity_type]`
+- `filter[entity_type]` — `address`, `business` or `personal`
 
 ## Region — `GET /v3/regions`
 
