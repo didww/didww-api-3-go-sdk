@@ -195,9 +195,9 @@ func TestUploadEncryptedFileSecond401(t *testing.T) {
 
 	_, err := client.UploadEncryptedFile(context.Background(), []byte("encrypted-content"), "sample.pdf.enc", "fingerprint-123", "sample.pdf")
 
-	var clientErr *ClientError
-	require.ErrorAs(t, err, &clientErr)
-	assert.Contains(t, clientErr.Message, "HTTP 401")
+	var apiErr *APIError
+	require.ErrorAs(t, err, &apiErr)
+	assert.Equal(t, http.StatusUnauthorized, apiErr.HTTPStatus)
 	assert.Len(t, log.all(), 2)
 	assert.Equal(t, 2, srv.mints())
 }

@@ -65,10 +65,28 @@ func TestExportTrunkType(t *testing.T) {
 		value    string
 		expected string
 	}{
-		{"SMPP SMSC", ExportTrunkTypeSmppSmsc, "SMPP SMSC"},
-		{"SMPP ESME", ExportTrunkTypeSmppEsme, "SMPP ESME"},
-		{"Email", ExportTrunkTypeEmail, "Email"},
-		{"HTTP IN", ExportTrunkTypeHTTPIn, "HTTP IN"},
+		{"SmppSmsc", ExportTrunkTypeSmppSmsc, "smpp_smsc"},
+		{"SmppEsme", ExportTrunkTypeSmppEsme, "smpp_esme"},
+		{"SmsToEmail", ExportTrunkTypeSmsToEmail, "sms_to_email"},
+		{"HTTPIn", ExportTrunkTypeHTTPIn, "http_in"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.value != tt.expected {
+				t.Errorf("expected %q, got %q", tt.expected, tt.value)
+			}
+		})
+	}
+}
+
+func TestExportServiceType(t *testing.T) {
+	tests := []struct {
+		name     string
+		value    string
+		expected string
+	}{
+		{"A2P", ExportServiceTypeA2P, "a2p"},
+		{"P2P", ExportServiceTypeP2P, "p2p"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

@@ -58,6 +58,12 @@ func TestVoiceOutTrunksFindWithIncludedDids(t *testing.T) {
 	assert.False(t, trunk.EmergencyEnableAll)
 	require.NotNil(t, trunk.RtpTimeout)
 	assert.Equal(t, 30, *trunk.RtpTimeout)
+	assert.Equal(t, []enums.VoiceOutCodec{
+		enums.VoiceOutCodecOpus, enums.VoiceOutCodecG722, enums.VoiceOutCodecPCMA, enums.VoiceOutCodecTelephoneEvent,
+	}, trunk.Codecs)
+	assert.Equal(t, enums.IceModeInitiate, trunk.IceMode)
+	assert.Equal(t, enums.RtcpMuxModeDisabled, trunk.RtcpMuxMode)
+	assert.Equal(t, enums.RtcpFeedbackModeInitiate, trunk.RtcpFeedbackMode)
 
 	// Verify authentication_method
 	require.NotNil(t, trunk.AuthenticationMethod)
@@ -156,6 +162,12 @@ func TestVoiceOutTrunksCreate(t *testing.T) {
 		},
 		DefaultDIDID: "7a028c32-e6b6-4c86-bf01-90f901b37012",
 		DIDIDs:       []string{"7a028c32-e6b6-4c86-bf01-90f901b37012"},
+		Codecs: []enums.VoiceOutCodec{
+			enums.VoiceOutCodecOpus, enums.VoiceOutCodecG722, enums.VoiceOutCodecTelephoneEvent,
+		},
+		IceMode:          enums.IceModeInitiate,
+		RtcpMuxMode:      enums.RtcpMuxModeDisabled,
+		RtcpFeedbackMode: enums.RtcpFeedbackModeAccept,
 	})
 	require.NoError(t, err)
 
@@ -189,6 +201,25 @@ func TestVoiceOutTrunksUpdate(t *testing.T) {
 	assert.Equal(t, 123, *trunk.CapacityLimit)
 	assert.True(t, trunk.ForceSymmetricRtp)
 	assert.True(t, trunk.RtpPing)
+}
+
+func TestVoiceOutTrunksUpdateCodecsAndModes(t *testing.T) {
+	server, capturedBodyPtr := captureRequestBody(t, map[string]testRoute{
+		"PATCH /v3/voice_out_trunks/425ce763-a3a9-49b4-af5b-ada1a65c8864": {status: http.StatusOK, fixture: "voice_out_trunks/update.json"},
+	})
+
+	trunk, err := server.client.VoiceOutTrunks().Update(context.Background(), &resource.VoiceOutTrunk{
+		ID:               "425ce763-a3a9-49b4-af5b-ada1a65c8864",
+		Codecs:           []enums.VoiceOutCodec{enums.VoiceOutCodecAMRWB, enums.VoiceOutCodecPCMU},
+		IceMode:          enums.IceModeDisabled,
+		RtcpMuxMode:      enums.RtcpMuxModeInitiate,
+		RtcpFeedbackMode: enums.RtcpFeedbackModeDisabled,
+	})
+	require.NoError(t, err)
+
+	assertRequestJSON(t, *capturedBodyPtr, "voice_out_trunks/update_codecs_request.json")
+	assert.Equal(t, []enums.VoiceOutCodec{enums.VoiceOutCodecPCMA, enums.VoiceOutCodecPCMU, enums.VoiceOutCodecTelephoneEvent}, trunk.Codecs)
+	assert.Equal(t, enums.IceModeAccept, trunk.IceMode)
 }
 
 func TestVoiceOutTrunksUpdateAuthenticationMethod(t *testing.T) {

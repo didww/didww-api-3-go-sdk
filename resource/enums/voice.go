@@ -12,13 +12,13 @@ const (
 // Points of presence a voice in trunk can be pinned to (VoiceInTrunk.Pop).
 // A nil Pop lets DIDWW choose.
 const (
-	PopNYC = "NYC"
-	PopFRA = "FRA"
-	PopLAC = "LAC"
-	PopMIA = "MIA"
-	PopSG  = "SG"
-	PopHK  = "HK"
-	PopAMS = "AMS"
+	PopNYC = "nyc"
+	PopFRA = "fra"
+	PopLAC = "lac"
+	PopMIA = "mia"
+	PopSG  = "sg"
+	PopHK  = "hk"
+	PopAMS = "ams"
 )
 
 // OnCliMismatchAction defines the action taken when CLI does not match any DID.
@@ -107,21 +107,67 @@ const (
 	SstRefreshMethodUpdateFallbackInvite SstRefreshMethod = 3
 )
 
-// Codec defines audio codec identifiers for voice trunks.
-type Codec int
+// Codec is a codec of an inbound SIP trunk (SIPConfiguration.Codecs).
+// Voice OUT trunks have their own list, VoiceOutCodec.
+type Codec string
 
 const (
-	CodecTelephoneEvent Codec = 6
-	CodecG723           Codec = 7
-	CodecG729           Codec = 8
-	CodecPCMU           Codec = 9
-	CodecPCMA           Codec = 10
-	CodecSpeex          Codec = 12
-	CodecGSM            Codec = 13
-	CodecG726_32        Codec = 14
-	CodecG721           Codec = 15
-	CodecG726_24        Codec = 16
-	CodecG726_40        Codec = 17
-	CodecG726_16        Codec = 18
-	CodecL16            Codec = 19
+	CodecTelephoneEvent Codec = "telephone_event"
+	CodecG723           Codec = "g723"
+	CodecG729           Codec = "g729"
+	CodecPCMU           Codec = "pcmu"
+	CodecPCMA           Codec = "pcma"
+	CodecSpeex          Codec = "speex"
+	CodecGSM            Codec = "gsm"
+	CodecG726_32        Codec = "g726_32"
+	CodecG721           Codec = "g721"
+	CodecG726_24        Codec = "g726_24"
+	CodecG726_40        Codec = "g726_40"
+	CodecG726_16        Codec = "g726_16"
+	CodecL16            Codec = "l16"
+	CodecAMR            Codec = "amr"
+	CodecAMRWB          Codec = "amr_wb"
+)
+
+// VoiceOutCodec is a codec of a Voice OUT trunk (VoiceOutTrunk.Codecs).
+type VoiceOutCodec string
+
+const (
+	VoiceOutCodecTelephoneEvent VoiceOutCodec = "telephone_event"
+	VoiceOutCodecG723           VoiceOutCodec = "g723"
+	VoiceOutCodecG729           VoiceOutCodec = "g729"
+	VoiceOutCodecPCMU           VoiceOutCodec = "pcmu"
+	VoiceOutCodecPCMA           VoiceOutCodec = "pcma"
+	VoiceOutCodecGSM            VoiceOutCodec = "gsm"
+	VoiceOutCodecG722           VoiceOutCodec = "g722"
+	VoiceOutCodecOpus           VoiceOutCodec = "opus"
+	VoiceOutCodecAMR            VoiceOutCodec = "amr"
+	VoiceOutCodecAMRWB          VoiceOutCodec = "amr_wb"
+)
+
+// IceMode defines ICE (Interactive Connectivity Establishment) on the calls of a trunk.
+type IceMode string
+
+const (
+	IceModeDisabled IceMode = "disabled"
+	IceModeAccept   IceMode = "accept"
+	IceModeInitiate IceMode = "initiate"
+)
+
+// RtcpMuxMode defines RTP and RTCP multiplexed on one port on the calls of a trunk.
+type RtcpMuxMode string
+
+const (
+	RtcpMuxModeDisabled RtcpMuxMode = "disabled"
+	RtcpMuxModeAccept   RtcpMuxMode = "accept"
+	RtcpMuxModeInitiate RtcpMuxMode = "initiate"
+)
+
+// RtcpFeedbackMode defines RTCP feedback (AVPF) on the calls of a trunk.
+type RtcpFeedbackMode string
+
+const (
+	RtcpFeedbackModeDisabled RtcpFeedbackMode = "disabled"
+	RtcpFeedbackModeAccept   RtcpFeedbackMode = "accept"
+	RtcpFeedbackModeInitiate RtcpFeedbackMode = "initiate"
 )

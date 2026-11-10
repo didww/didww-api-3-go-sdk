@@ -25,8 +25,9 @@ func TestEmergencyRequirementsList(t *testing.T) {
 	assert.Equal(t, "city", reqs[0].AddressAreaLevel)
 	assert.Equal(t, "world_wide", reqs[0].PersonalAreaLevel)
 	assert.Equal(t, "country", reqs[0].BusinessAreaLevel)
-	assert.Equal(t, []string{"city", "postal_code"}, reqs[0].AddressMandatoryFields)
-	assert.Equal(t, []string{"first_name", "last_name"}, reqs[0].PersonalMandatoryFields)
+	assert.Equal(t, []string{"area"}, reqs[0].AddressMandatoryFields)
+	assert.Equal(t, []string{"birth_date", "contact_email"}, reqs[0].PersonalMandatoryFields)
+	assert.Equal(t, []string{"tax_id", "company_reg_number"}, reqs[0].BusinessMandatoryFields)
 	assert.Equal(t, "7-14 days", reqs[0].EstimateSetupTime)
 	assert.Equal(t, enums.NumberTypeLocal, reqs[0].NumberType)
 

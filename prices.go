@@ -267,10 +267,11 @@ func (s *PricesService[T]) Download(ctx context.Context, w io.Writer, ifModified
 }
 
 // DownloadToFile downloads the price file to path. The file is written to a
-// temporary file next to path, which replaces path only when the download
-// succeeds, so a failed download leaves an existing file as it was. The new
-// file gets the default mode of a new file (0666 minus the umask) and the
-// Last-Modified of the answer as its modification time.
+// temporary file .didww-<16 hex digits>.tmp in the directory of path, which
+// replaces path only when the download succeeds, so a failed download leaves
+// an existing file as it was. The new file gets the default mode of a new file
+// (0666 minus the umask) and the Last-Modified of the answer as its
+// modification time.
 func (s *PricesService[T]) DownloadToFile(ctx context.Context, path string) (*PriceFile, error) {
 	return s.downloadToFile(ctx, path, time.Time{})
 }
@@ -323,7 +324,8 @@ func (s *PricesService[T]) downloadToFile(ctx context.Context, path string, ifMo
 	return file, nil
 }
 
-// createTempFile creates a new file next to path with a random suffix. Unlike
+// createTempFile creates a new file .didww-<16 hex digits>.tmp in the directory
+// of path, a name that fits any file system whatever the length of path. Unlike
 // os.CreateTemp, which uses mode 0600, the file gets 0666 minus the umask, the
 // mode of a file created by os.Create.
 func createTempFile(path string) (*os.File, error) {
@@ -333,7 +335,7 @@ func createTempFile(path string) (*os.File, error) {
 		if _, err = rand.Read(suffix[:]); err != nil {
 			return nil, err
 		}
-		name := filepath.Join(filepath.Dir(path), filepath.Base(path)+"."+hex.EncodeToString(suffix[:])+".tmp")
+		name := filepath.Join(filepath.Dir(path), ".didww-"+hex.EncodeToString(suffix[:])+".tmp")
 		var f *os.File
 		f, err = os.OpenFile(name, os.O_RDWR|os.O_CREATE|os.O_EXCL, 0o666) //nolint:gosec // the umask decides the mode, as with os.Create
 		if !errors.Is(err, fs.ErrExist) {

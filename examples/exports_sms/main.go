@@ -4,10 +4,13 @@
 // Filters on SMS exports (Export.Filters):
 //   - "from", "to" (required): "YYYY-MM-DD HH:MM:SS" UTC; from inclusive, to exclusive
 //   - "source_address_eq" / "source_address_cont", "destination_address_eq" /
-//     "destination_address_cont", "status", "sms_id"
+//     "destination_address_cont", "status", "sms_id"; "status" is "success",
+//     "failed" or "queued" for sms_in, and "routing_error", "in_progress",
+//     "queued", "failed" or "success" for sms_out
 //   - "sms_trunk.id": one id or a slice of ids
 //   - sms_in only: "trunk_type", one or more of the enums.ExportTrunkType* values
-//   - sms_out only: "service_type" ("a2p" or "p2p"), "sender_id_verification.id"
+//   - sms_out only: "service_type", one of the enums.ExportServiceType* values,
+//     "sender_id_verification.id"
 //
 // Usage: DIDWW_API_KEY=your_api_key go run ./examples/exports_sms/
 package main
@@ -41,7 +44,7 @@ func main() {
 		Filters: map[string]interface{}{
 			"from":         from,
 			"to":           to,
-			"service_type": "a2p",
+			"service_type": enums.ExportServiceTypeA2P,
 		},
 		ExternalReferenceID: didww.Ptr("go-sms-out-" + suffix),
 	})
@@ -51,7 +54,7 @@ func main() {
 		fmt.Printf("Created SMS-Out export: %s (status: %s)\n", smsOut.ID, smsOut.Status)
 	}
 
-	fmt.Println("\n=== Creating SMS-In Export (HTTP IN and email trunks, yesterday) ===")
+	fmt.Println("\n=== Creating SMS-In Export (HTTP IN and SMS to email trunks, yesterday) ===")
 	smsIn, err := client.Exports().Create(ctx, &resource.Export{
 		ExportType: enums.ExportTypeSmsIn,
 		Filters: map[string]interface{}{
@@ -59,7 +62,7 @@ func main() {
 			"to":   to,
 			"trunk_type": []string{
 				enums.ExportTrunkTypeHTTPIn,
-				enums.ExportTrunkTypeEmail,
+				enums.ExportTrunkTypeSmsToEmail,
 			},
 		},
 		ExternalReferenceID: didww.Ptr("go-sms-in-" + suffix),

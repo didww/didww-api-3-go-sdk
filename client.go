@@ -286,8 +286,8 @@ func (c *Client) APIKey() string {
 // any other origin returns a *ClientError without a request.
 //
 // Only a 200 answer is written; redirects are not followed. Any other status,
-// including 3xx and 204, returns an *APIError. An error from dest is returned
-// as is.
+// including 3xx and 204, returns an *APIError (see APIError.RetryAfter). An
+// error from dest is returned as is.
 func (c *Client) DownloadExport(ctx context.Context, downloadURL string, dest io.Writer) error {
 	if err := c.checkExportURL(downloadURL); err != nil {
 		return err
@@ -306,7 +306,7 @@ func (c *Client) DownloadExport(ctx context.Context, downloadURL string, dest io
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(io.LimitReader(resp.Body, maxErrorBodySize))
-		return unexpectedStatusError(resp.StatusCode, body)
+		return unexpectedStatusError(resp, body)
 	}
 
 	w := &writeRecorder{w: dest}

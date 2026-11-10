@@ -210,65 +210,107 @@ func TestCodecValues(t *testing.T) {
 	tests := []struct {
 		name     string
 		value    Codec
-		expected int
+		expected string
 	}{
-		{"TelephoneEvent", CodecTelephoneEvent, 6},
-		{"G723", CodecG723, 7},
-		{"G729", CodecG729, 8},
-		{"PCMU", CodecPCMU, 9},
-		{"PCMA", CodecPCMA, 10},
-		{"Speex", CodecSpeex, 12},
-		{"GSM", CodecGSM, 13},
-		{"G726_32", CodecG726_32, 14},
-		{"G721", CodecG721, 15},
-		{"G726_24", CodecG726_24, 16},
-		{"G726_40", CodecG726_40, 17},
-		{"G726_16", CodecG726_16, 18},
-		{"L16", CodecL16, 19},
+		{"TelephoneEvent", CodecTelephoneEvent, "telephone_event"},
+		{"G723", CodecG723, "g723"},
+		{"G729", CodecG729, "g729"},
+		{"PCMU", CodecPCMU, "pcmu"},
+		{"PCMA", CodecPCMA, "pcma"},
+		{"Speex", CodecSpeex, "speex"},
+		{"GSM", CodecGSM, "gsm"},
+		{"G726_32", CodecG726_32, "g726_32"},
+		{"G721", CodecG721, "g721"},
+		{"G726_24", CodecG726_24, "g726_24"},
+		{"G726_40", CodecG726_40, "g726_40"},
+		{"G726_16", CodecG726_16, "g726_16"},
+		{"L16", CodecL16, "l16"},
+		{"AMR", CodecAMR, "amr"},
+		{"AMRWB", CodecAMRWB, "amr_wb"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if int(tt.value) != tt.expected {
-				t.Errorf("expected %d, got %d", tt.expected, int(tt.value))
+			if string(tt.value) != tt.expected {
+				t.Errorf("expected %q, got %q", tt.expected, string(tt.value))
 			}
 		})
 	}
 }
 
-func TestCodecJSONMarshal(t *testing.T) {
-	testIntEnumJSON(t, CodecPCMU, `9`)
+func TestCodecJSON(t *testing.T) {
+	testStringEnumJSON(t, CodecAMRWB, `"amr_wb"`)
 }
 
-func TestCodecJSONArrayMarshal(t *testing.T) {
-	codecs := []Codec{CodecPCMU, CodecPCMA, CodecG729}
+func TestCodecJSONArray(t *testing.T) {
+	codecs := []Codec{CodecPCMU, CodecPCMA, CodecTelephoneEvent}
 	data, err := json.Marshal(codecs)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	expected := `[9,10,8]`
-	if string(data) != expected {
-		t.Errorf("expected %s, got %s", expected, string(data))
+	if string(data) != `["pcmu","pcma","telephone_event"]` {
+		t.Errorf("unexpected JSON %s", data)
+	}
+	var decoded []Codec
+	if err := json.Unmarshal(data, &decoded); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(decoded) != 3 || decoded[0] != CodecPCMU || decoded[1] != CodecPCMA || decoded[2] != CodecTelephoneEvent {
+		t.Errorf("unexpected codecs %v", decoded)
 	}
 }
 
-func TestCodecJSONArrayUnmarshal(t *testing.T) {
-	input := `[9,10,8]`
-	var codecs []Codec
-	err := json.Unmarshal([]byte(input), &codecs)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
+func TestVoiceOutCodecValues(t *testing.T) {
+	tests := []struct {
+		name     string
+		value    VoiceOutCodec
+		expected string
+	}{
+		{"TelephoneEvent", VoiceOutCodecTelephoneEvent, "telephone_event"},
+		{"G723", VoiceOutCodecG723, "g723"},
+		{"G729", VoiceOutCodecG729, "g729"},
+		{"PCMU", VoiceOutCodecPCMU, "pcmu"},
+		{"PCMA", VoiceOutCodecPCMA, "pcma"},
+		{"GSM", VoiceOutCodecGSM, "gsm"},
+		{"G722", VoiceOutCodecG722, "g722"},
+		{"Opus", VoiceOutCodecOpus, "opus"},
+		{"AMR", VoiceOutCodecAMR, "amr"},
+		{"AMRWB", VoiceOutCodecAMRWB, "amr_wb"},
 	}
-	if len(codecs) != 3 {
-		t.Fatalf("expected 3 codecs, got %d", len(codecs))
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if string(tt.value) != tt.expected {
+				t.Errorf("expected %q, got %q", tt.expected, string(tt.value))
+			}
+		})
 	}
-	if codecs[0] != CodecPCMU {
-		t.Errorf("expected CodecPCMU, got %d", codecs[0])
+}
+
+func TestVoiceOutCodecJSON(t *testing.T) {
+	testStringEnumJSON(t, VoiceOutCodecOpus, `"opus"`)
+}
+
+func TestTrunkMediaModes(t *testing.T) {
+	tests := []struct {
+		name     string
+		value    string
+		expected string
+	}{
+		{"IceModeDisabled", string(IceModeDisabled), "disabled"},
+		{"IceModeAccept", string(IceModeAccept), "accept"},
+		{"IceModeInitiate", string(IceModeInitiate), "initiate"},
+		{"RtcpMuxModeDisabled", string(RtcpMuxModeDisabled), "disabled"},
+		{"RtcpMuxModeAccept", string(RtcpMuxModeAccept), "accept"},
+		{"RtcpMuxModeInitiate", string(RtcpMuxModeInitiate), "initiate"},
+		{"RtcpFeedbackModeDisabled", string(RtcpFeedbackModeDisabled), "disabled"},
+		{"RtcpFeedbackModeAccept", string(RtcpFeedbackModeAccept), "accept"},
+		{"RtcpFeedbackModeInitiate", string(RtcpFeedbackModeInitiate), "initiate"},
 	}
-	if codecs[1] != CodecPCMA {
-		t.Errorf("expected CodecPCMA, got %d", codecs[1])
-	}
-	if codecs[2] != CodecG729 {
-		t.Errorf("expected CodecG729, got %d", codecs[2])
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.value != tt.expected {
+				t.Errorf("expected %q, got %q", tt.expected, tt.value)
+			}
+		})
 	}
 }
 
@@ -278,13 +320,13 @@ func TestPop(t *testing.T) {
 		value    string
 		expected string
 	}{
-		{"NYC", PopNYC, "NYC"},
-		{"FRA", PopFRA, "FRA"},
-		{"LAC", PopLAC, "LAC"},
-		{"MIA", PopMIA, "MIA"},
-		{"SG", PopSG, "SG"},
-		{"HK", PopHK, "HK"},
-		{"AMS", PopAMS, "AMS"},
+		{"NYC", PopNYC, "nyc"},
+		{"FRA", PopFRA, "fra"},
+		{"LAC", PopLAC, "lac"},
+		{"MIA", PopMIA, "mia"},
+		{"SG", PopSG, "sg"},
+		{"HK", PopHK, "hk"},
+		{"AMS", PopAMS, "ams"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

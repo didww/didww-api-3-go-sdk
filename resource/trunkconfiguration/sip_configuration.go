@@ -19,7 +19,6 @@ type SIPConfiguration struct {
 	Username                   string                          `json:"username,omitempty"`
 	Host                       string                          `json:"host,omitempty"`
 	Port                       int                             `json:"port,omitempty"`
-	CodecIDs                   []enums.Codec                   `json:"codec_ids,omitempty"`
 	RxDtmfFormatID             enums.RxDtmfFormat              `json:"rx_dtmf_format_id,omitempty"`
 	TxDtmfFormatID             enums.TxDtmfFormat              `json:"tx_dtmf_format_id,omitempty"`
 	ResolveRuri                bool                            `json:"resolve_ruri,omitempty"`
@@ -48,6 +47,15 @@ type SIPConfiguration struct {
 	StirShakenMode             enums.StirShakenMode            `json:"stir_shaken_mode,omitempty"`
 	AllowedRtpIPs              []string                        `json:"allowed_rtp_ips,omitempty"`
 	DiversionRelayPolicy       enums.DiversionRelayPolicy      `json:"diversion_relay_policy,omitempty"`
+
+	// Codecs offered on calls to the trunk, in priority order: the first has
+	// the highest priority. Left empty, a new trunk offers pcmu, pcma, g729,
+	// g723 and telephone_event.
+	Codecs []enums.Codec `json:"codecs,omitempty"`
+	// IceMode, RtcpMuxMode and RtcpFeedbackMode default to disabled.
+	IceMode          enums.IceMode          `json:"ice_mode,omitempty"`
+	RtcpMuxMode      enums.RtcpMuxMode      `json:"rtcp_mux_mode,omitempty"`
+	RtcpFeedbackMode enums.RtcpFeedbackMode `json:"rtcp_feedback_mode,omitempty"`
 
 	// API 2026-04-16 writable attributes.
 	//

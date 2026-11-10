@@ -315,20 +315,25 @@ An SMS trunk cannot be deleted while DIDs are routed to it, nor an SMS trunk gro
 ### Voice In Trunks
 
 ```go
-import "github.com/didww/didww-api-3-go-sdk/v4/resource/enums"
+import (
+    "github.com/didww/didww-api-3-go-sdk/v4/resource"
+    "github.com/didww/didww-api-3-go-sdk/v4/resource/enums"
+    "github.com/didww/didww-api-3-go-sdk/v4/resource/trunkconfiguration"
+)
 
 // Create SIP trunk
 ringingTimeout := 30
-trunk := &didww.VoiceInTrunk{
+trunk := &resource.VoiceInTrunk{
     Name:           "My SIP Trunk",
     Priority:       1,
     Weight:         100,
     CliFormat:      enums.CliFormatE164,
     RingingTimeout: &ringingTimeout,
-    Configuration: &didww.SIPConfiguration{
+    Configuration: &trunkconfiguration.SIPConfiguration{
         Host:                "sip.example.com",
         Port:                5060,
-        CodecIDs:            []enums.Codec{enums.CodecPCMU, enums.CodecPCMA},
+        Codecs:              []enums.Codec{enums.CodecPCMA, enums.CodecPCMU, enums.CodecTelephoneEvent},
+        IceMode:             enums.IceModeAccept,
         TransportProtocolID: enums.TransportProtocolUDP,
     },
 }
@@ -343,7 +348,9 @@ updated, _ := client.VoiceInTrunks().Update(ctx, created)
 client.VoiceInTrunks().Delete(ctx, created.ID)
 ```
 
-`Pop` is a plain `*string` attribute, one of the `enums.Pop*` values (`PopNYC`, `PopFRA`, `PopLAC`, `PopMIA`, `PopSG`, `PopHK`, `PopAMS`). Leave it `nil` to let DIDWW choose; setting it to `nil` on a fetched trunk sends `null`. It is no longer a relationship and cannot be included.
+`Codecs` lists the codecs offered on calls to the trunk by name, in priority order: the first has the highest priority. It replaces `codec_ids`; the names are the `enums.Codec*` values. Left out, the trunk offers `pcmu`, `pcma`, `g729`, `g723` and `telephone_event`. `IceMode`, `RtcpMuxMode` and `RtcpFeedbackMode` take `disabled` (the default), `accept` or `initiate` (`enums.IceMode*`, `enums.RtcpMuxMode*` and `enums.RtcpFeedbackMode*`).
+
+`Pop` is a plain `*string` attribute, one of the `enums.Pop*` values (`PopNYC`, `PopFRA`, `PopLAC`, `PopMIA`, `PopSG`, `PopHK`, `PopAMS`: `nyc`, `fra`, `lac`, `mia`, `sg`, `hk`, `ams`). Leave it `nil` to let DIDWW choose; setting it to `nil` on a fetched trunk sends `null`. It is no longer a relationship and cannot be included.
 
 ```go
 trunk, _ := client.VoiceInTrunks().Find(ctx, "trunk-uuid")
@@ -372,16 +379,16 @@ The server generates `IncomingAuthUsername` and `IncomingAuthPassword`
 and surfaces them in the response when SIP registration is enabled.
 
 ```go
-trunk := &didww.VoiceInTrunk{
+trunk := &resource.VoiceInTrunk{
     Name: "Office (registered)",
-    Configuration: &didww.SIPConfiguration{
+    Configuration: &trunkconfiguration.SIPConfiguration{
         EnabledSipRegistration: didww.Ptr(true),
         UseDIDInRuri:           didww.Ptr(true),
         CnamLookup:             didww.Ptr(true),
     },
 }
 created, _ := client.VoiceInTrunks().Create(ctx, trunk)
-sip := created.Configuration.(*didww.SIPConfiguration)
+sip := created.Configuration.(*trunkconfiguration.SIPConfiguration)
 // sip.IncomingAuthUsername — server-generated
 // sip.IncomingAuthPassword — server-generated
 ```
@@ -391,9 +398,9 @@ To disable SIP registration on an existing trunk, just set `Host` —
 `false` on the wire automatically:
 
 ```go
-update := &didww.VoiceInTrunk{
+update := &resource.VoiceInTrunk{
     ID: "trunk-uuid",
-    Configuration: &didww.SIPConfiguration{
+    Configuration: &trunkconfiguration.SIPConfiguration{
         Host: "sip.example.com",
     },
 }
@@ -404,7 +411,7 @@ client.VoiceInTrunks().Update(ctx, update)
 
 ```go
 capacityLimit := 50
-group := &didww.VoiceInTrunkGroup{
+group := &resource.VoiceInTrunkGroup{
     Name:            "Primary Group",
     CapacityLimit:   &capacityLimit,
     VoiceInTrunkIDs: []string{trunkA.ID, trunkB.ID},
@@ -425,13 +432,14 @@ Voice Out Trunks use a polymorphic `AuthenticationMethod` (2026-04-16). Three ty
 
 ```go
 import (
+    "github.com/didww/didww-api-3-go-sdk/v4/resource"
     "github.com/didww/didww-api-3-go-sdk/v4/resource/authenticationmethod"
     "github.com/didww/didww-api-3-go-sdk/v4/resource/enums"
 )
 
 // NOTE: 203.0.113.0/24 is RFC 5737 TEST-NET-3 documentation space.
 // Replace with the real CIDR of your SIP infrastructure.
-trunk := &didww.VoiceOutTrunk{
+trunk := &resource.VoiceOutTrunk{
     Name: "My Outbound Trunk",
     AuthenticationMethod: &authenticationmethod.CredentialsAndIp{
         AllowedSipIPs: []string{"203.0.113.0/24"},
@@ -439,11 +447,18 @@ trunk := &didww.VoiceOutTrunk{
     DefaultDstAction:    enums.DefaultDstActionAllowAll,
     OnCliMismatchAction: enums.OnCliMismatchActionRejectCall,
     MediaEncryptionMode: enums.MediaEncryptionModeDisabled,
+    Codecs: []enums.VoiceOutCodec{
+        enums.VoiceOutCodecOpus,
+        enums.VoiceOutCodecPCMA,
+        enums.VoiceOutCodecTelephoneEvent,
+    },
 }
 created, _ := client.VoiceOutTrunks().Create(ctx, trunk)
 // created.AuthenticationMethod.(*authenticationmethod.CredentialsAndIp).Username -- server-generated
 // created.AuthenticationMethod.(*authenticationmethod.CredentialsAndIp).Password -- server-generated
 ```
+
+`Codecs` lists the codecs offered on calls from the trunk by name, in priority order: the first has the highest priority. The names are the `enums.VoiceOutCodec*` values, which differ from those of an inbound SIP trunk. Left out, the trunk offers `pcma`, `pcmu` and `telephone_event`. `IceMode`, `RtcpMuxMode` and `RtcpFeedbackMode` take `disabled`, `accept` (the default) or `initiate`.
 
 ### SMS Trunks
 
@@ -697,7 +712,7 @@ smsOut, _ := client.Exports().Create(ctx, &resource.Export{
     Filters: map[string]interface{}{
         "from":         "2026-10-01 00:00:00", // inclusive
         "to":           "2026-10-02 00:00:00", // exclusive
-        "service_type": "a2p",
+        "service_type": enums.ExportServiceTypeA2P,
         "sms_trunk.id": []string{"sms-trunk-uuid"},
     },
 })
@@ -718,7 +733,9 @@ if done.URL != nil {
 
 - `sms_in` and `sms_out`: `source_address_eq`, `source_address_cont`, `destination_address_eq`, `destination_address_cont`, `status`, `sms_id`, `sms_trunk.id` (one id or a slice of ids);
 - `sms_in` only: `trunk_type`, one or more of the `enums.ExportTrunkType*` values;
-- `sms_out` only: `service_type` (`a2p` or `p2p`) and `sender_id_verification.id` (one id or a slice of ids).
+- `sms_out` only: `service_type`, one of the `enums.ExportServiceType*` values, and `sender_id_verification.id` (one id or a slice of ids).
+
+Filter values are lowercase: `service_type` is `a2p` or `p2p`, `trunk_type` is one or more of `smpp_smsc`, `smpp_esme`, `sms_to_email` and `http_in`, and `status` is `success`, `failed` or `queued` for `sms_in`, and `routing_error`, `in_progress`, `queued`, `failed` or `success` for `sms_out`.
 
 The doc comment of `resource.Export` lists the keys of every type.
 
@@ -811,10 +828,10 @@ file, err = prices.Download(ctx, w, time.Time{}) // any io.Writer
 ```
 
 - `Fetch(ctx, path)` sends the modification time of the file at `path` as `If-Modified-Since`, when the file is there; an unchanged price file is answered 304 and the file is kept. A file written by `DownloadToFile` or `Fetch` gets the `Last-Modified` of the response as its modification time, so the date matches the copy on disk. `Fetch` trusts the modification time of any file at `path`: a file copied or changed by other means can be answered 304 and kept, so replace such a file with `DownloadToFile`.
-- `DownloadToFile` and `Fetch` stream the body into a temp file next to `path`, unique to the call, which gets the mode of a new file (`0666` minus the umask) and replaces `path` atomically only on a 200. A 304 or an error leaves an existing file untouched, the temp file is always removed, and concurrent downloads to one path do not mix their bytes.
+- `DownloadToFile` and `Fetch` stream the body into a temp file `.didww-<16 hex digits>.tmp` in the directory of `path`, unique to the call, which gets the mode of a new file (`0666` minus the umask) and replaces `path` atomically only on a 200. A 304 or an error leaves an existing file untouched, the temp file is always removed, and concurrent downloads to one path do not mix their bytes.
 - `Download(ctx, w, ifModifiedSince)` writes the body into `w` only on a 200, as it arrives, so after a transfer error `w` may hold part of it. An error returned by `w` is returned as is.
 - `Head` and the downloads return a `*didww.PriceFile`: `StatusCode`, `LastModified` (zero when absent), `ContentLength`, `Filename`, `BytesWritten` and `NotModified()`.
-- `EachPriceRow(r, fn)` gunzips a downloaded file and calls `fn` with each row keyed by the header line. The Voice OUT file has 15 columns. The SMS OUT files have 9: `Source prefix`, `Destination prefix`, `Country`, `MCC`, `MCC name`, `MNC`, `MNC name`, `Reject SMS` (`Yes` or `No`) and `Price (USD, excl. VAT)` with 6 decimals.
+- `EachPriceRow(r, fn)` gunzips a downloaded file and calls `fn` with each row keyed by the header line. Prices are in USD with VAT excluded. Voice IN: `Country`, `Src country name`, `Source type`, `Destination`, `Rate`, `Connection fee`, `Initial interval`, `Next interval` and `Reject calls`. Voice OUT: `Category`, `Country`, `Network`, `Prefix` (one prefix per row), `Rate`, `Connection fee`, `Initial increment`, `Recurring increment`, `Reject calls`, `Next rate`, `Next connection fee`, `Next initial increment`, `Next recurring increment`, `Effective date` and `Comment`. SMS OUT: `Source prefix`, `Destination prefix`, `Country`, `MCC`, `MCC name`, `MNC`, `MNC name`, `Reject SMS` (`true` or `false`) and `Price`. SMS IN: `Source prefix`, `Source number length min`, `Source number length max`, `Destination prefix`, `Destination number length min`, `Destination number length max`, `Country` and `Price`.
 - Only `Last-Modified` and `If-Modified-Since` are used. The service sends no `ETag`, and the SDK never sends `If-None-Match`, which would make the service ignore `If-Modified-Since`.
 - A 503 on a price file is retried up to 2 times when its `Retry-After` is 60 seconds or less, after waiting that long (at least 1 s) plus a small random delay so that clients do not retry in step. Otherwise it returns `didww.ErrPricesServiceUnavailable` with `RetryAfter`. Lookups are not retried.
 - A 404 `price_not_found` returns `didww.ErrPriceNotFound`; any other 404, `price_plan_not_assigned` included, and any 404 on `Head`, which has no body, returns `didww.ErrPricePlanNotAssigned`. `PricesError.Code` holds the code of the answer, or `price_plan_not_assigned` for a 404 without one.
@@ -943,7 +960,16 @@ if err != nil {
 }
 ```
 
-For the JSON:API repositories and `DownloadExport`, `APIError` also reports the authentication failures of the API: a 401 still answered after the token was replaced once (`HTTPStatus` 401), and a 403 such as `insufficient_scope` for a write with a `read` token, which is never retried. `UploadEncryptedFile` reports any error status, including a 401 after the retry and a 403, as a `*ClientError` whose `Message` holds the HTTP status. `DownloadExport` does not follow redirects: any status other than 200, such as a 3xx or 204, returns an `*APIError`.
+For the JSON:API repositories, `DownloadExport` and `UploadEncryptedFile`, `APIError` also reports the authentication failures of the API: a 401 still answered after the token was replaced once (`HTTPStatus` 401), and a 403 such as `insufficient_scope` for a write with a `read` token, which is never retried. `DownloadExport` does not follow redirects: any status other than 200, such as a 3xx or 204, returns an `*APIError`.
+
+A 429 (`too_many_requests`) means the request budget of the account for the current window is spent. The repositories, `DownloadExport` and `UploadEncryptedFile` return it as an `*APIError` with `HTTPStatus` 429 and `RetryAfter`, the `Retry-After` of the response (zero when it is missing or not a number of seconds). The SDK does not retry it, as a write may not be safe to send twice: wait `RetryAfter` before sending the request again.
+
+```go
+var apiErr *didww.APIError
+if errors.As(err, &apiErr) && apiErr.HTTPStatus == http.StatusTooManyRequests {
+    fmt.Println("API rate limit, retry after", apiErr.RetryAfter)
+}
+```
 
 Errors of the token service and of the prices services are told apart with `errors.Is` and their sentinels, and their details read with `errors.As`:
 
@@ -1091,13 +1117,16 @@ The SDK provides enum types in `github.com/didww/didww-api-3-go-sdk/v4/resource/
 `CallbackMethod`, `IdentityType`, `OrderStatus`, `ExportType`, `ExportStatus`, `CliFormat`,
 `OnCliMismatchAction`\*, `MediaEncryptionMode`, `DefaultDstAction`, `VoiceOutTrunkStatus`,
 `EmergencyCallingServiceStatus`, `EmergencyVerificationStatus`, `DiversionRelayPolicy`,
-`TransportProtocol`, `Codec`, `RxDtmfFormat`, `TxDtmfFormat`, `SstRefreshMethod`,
-`ReroutingDisconnectCode`, `Feature`, `AreaLevel`, `AddressVerificationStatus`, `StirShakenMode`,
-`NumberType`, `SenderIDVerificationStatus`, `SenderType`, `VoiceOutPriceCategory`
+`TransportProtocol`, `Codec`, `VoiceOutCodec`, `IceMode`, `RtcpMuxMode`, `RtcpFeedbackMode`,
+`RxDtmfFormat`, `TxDtmfFormat`, `SstRefreshMethod`, `ReroutingDisconnectCode`, `Feature`, `AreaLevel`,
+`AddressVerificationStatus`, `StirShakenMode`, `NumberType`, `SenderIDVerificationStatus`, `SenderType`,
+`VoiceOutPriceCategory`
 
 \* `replace_cli` and `randomize_cli` require account configuration.
 
-The same package holds the `Pop*` values of `VoiceInTrunk.Pop` and the `ExportTrunkType*` values of the `trunk_type` filter of `sms_in` exports. The SMS trunk configuration values are constants of package `github.com/didww/didww-api-3-go-sdk/v4/resource/smstrunkconfiguration`: `Type*`, `HTTPMethod*`, `BodyType*` and `ServerLocation*`.
+`Codec` holds the codecs of an inbound SIP trunk (`SIPConfiguration.Codecs`) and `VoiceOutCodec` those of a Voice OUT trunk (`VoiceOutTrunk.Codecs`); the two lists differ. `IceMode`, `RtcpMuxMode` and `RtcpFeedbackMode` serve both.
+
+The same package holds the `Pop*` values of `VoiceInTrunk.Pop`, the `ExportTrunkType*` values of the `trunk_type` filter of `sms_in` exports and the `ExportServiceType*` values of the `service_type` filter of `sms_out` exports. The SMS trunk configuration values are constants of package `github.com/didww/didww-api-3-go-sdk/v4/resource/smstrunkconfiguration`: `Type*`, `HTTPMethod*`, `BodyType*` and `ServerLocation*`.
 
 ## Webhook Signature Validation
 

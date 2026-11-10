@@ -16,9 +16,11 @@ import (
 //   - cdr_out: "voice_out_trunk.id", "source", "cli", "destination".
 //   - sms_in and sms_out: "source_address_eq", "source_address_cont",
 //     "destination_address_eq", "destination_address_cont", "status", "sms_id",
-//     "sms_trunk.id" (one id or a slice of ids).
+//     "sms_trunk.id" (one id or a slice of ids). "status" is "success", "failed"
+//     or "queued" for sms_in, and "routing_error", "in_progress", "queued",
+//     "failed" or "success" for sms_out.
 //   - sms_in only: "trunk_type", one of the enums.ExportTrunkType* values or a slice of them.
-//   - sms_out only: "service_type" ("a2p" or "p2p", any letter case),
+//   - sms_out only: "service_type", one of the enums.ExportServiceType* values,
 //     "sender_id_verification.id" (one id or a slice of ids).
 //
 // Exports created at earlier API versions may also return "year", "month" and "day".

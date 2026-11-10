@@ -41,6 +41,10 @@ func TestVoiceInTrunksList(t *testing.T) {
 	sipCfg, ok := sip.Configuration.(*trunkconfiguration.SIPConfiguration)
 	require.True(t, ok, "expected SIP configuration")
 	assert.Equal(t, "203.0.113.78", sipCfg.Host)
+	assert.Equal(t, []enums.Codec{enums.CodecAMRWB, enums.CodecPCMU, enums.CodecPCMA, enums.CodecG729}, sipCfg.Codecs)
+	assert.Equal(t, enums.IceModeAccept, sipCfg.IceMode)
+	assert.Equal(t, enums.RtcpMuxModeInitiate, sipCfg.RtcpMuxMode)
+	assert.Equal(t, enums.RtcpFeedbackModeAccept, sipCfg.RtcpFeedbackMode)
 	require.NotNil(t, sip.Pop)
 	assert.Equal(t, enums.PopFRA, *sip.Pop)
 }
@@ -79,9 +83,11 @@ func TestVoiceInTrunksCreateSipWithReroutingCodes(t *testing.T) {
 			Host:               "203.0.113.110",
 			SstRefreshMethodID: enums.SstRefreshMethodInvite,
 			Port:               5060,
-			CodecIDs: []enums.Codec{
+			Codecs: []enums.Codec{
 				enums.CodecPCMU, enums.CodecPCMA, enums.CodecG729, enums.CodecG723, enums.CodecTelephoneEvent,
 			},
+			IceMode:     enums.IceModeAccept,
+			RtcpMuxMode: enums.RtcpMuxModeInitiate,
 			ReroutingDisconnectCodeIDs: []enums.ReroutingDisconnectCode{
 				enums.DCSIP400BadRequest, enums.DCSIP402PaymentRequired, enums.DCSIP403Forbidden,
 				enums.DCSIP404NotFound, enums.DCSIP408RequestTimeout, enums.DCSIP409Conflict,
@@ -114,6 +120,7 @@ func TestVoiceInTrunksCreateSipWithReroutingCodes(t *testing.T) {
 			DiversionInjectMode:     enums.DiversionInjectModeDIDNumber,
 			NetworkProtocolPriority: enums.NetworkProtocolPriorityForceIPv4,
 			CnamLookup:              Ptr(true),
+			RtcpFeedbackMode:        enums.RtcpFeedbackModeDisabled,
 		},
 	})
 	require.NoError(t, err)
@@ -190,6 +197,29 @@ func TestVoiceInTrunksUpdateSip(t *testing.T) {
 	require.True(t, ok, "expected SIP configuration")
 	assert.Equal(t, "new-username", sipCfg.Username)
 	assert.Equal(t, 5, sipCfg.MaxTransfers)
+}
+
+func TestVoiceInTrunksUpdateSipCodecsAndModes(t *testing.T) {
+	server, capturedBodyPtr := captureRequestBody(t, map[string]testRoute{
+		"PATCH /v3/voice_in_trunks/a80006b6-4183-4865-8b99-7ebbd359a762": {status: http.StatusOK, fixture: "voice_in_trunks/update_sip.json"},
+	})
+
+	trunk, err := server.client.VoiceInTrunks().Update(context.Background(), &resource.VoiceInTrunk{
+		ID: "a80006b6-4183-4865-8b99-7ebbd359a762",
+		Configuration: &trunkconfiguration.SIPConfiguration{
+			Codecs:           []enums.Codec{enums.CodecAMRWB, enums.CodecAMR, enums.CodecPCMA},
+			IceMode:          enums.IceModeInitiate,
+			RtcpMuxMode:      enums.RtcpMuxModeAccept,
+			RtcpFeedbackMode: enums.RtcpFeedbackModeInitiate,
+		},
+	})
+	require.NoError(t, err)
+
+	assertRequestJSON(t, *capturedBodyPtr, "voice_in_trunks/update_sip_codecs_request.json")
+	sipCfg, ok := trunk.Configuration.(*trunkconfiguration.SIPConfiguration)
+	require.True(t, ok, "expected SIP configuration")
+	assert.Equal(t, []enums.Codec{enums.CodecPCMU, enums.CodecPCMA, enums.CodecG729, enums.CodecG723, enums.CodecTelephoneEvent}, sipCfg.Codecs)
+	assert.Equal(t, enums.IceModeDisabled, sipCfg.IceMode)
 }
 
 // API 2026-04-16 SIP-registration attributes.

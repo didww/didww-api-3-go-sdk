@@ -49,6 +49,8 @@ func main() {
 		if t.RtpTimeout != nil {
 			fmt.Printf("    RTP Timeout: %d\n", *t.RtpTimeout)
 		}
+		fmt.Printf("    Codecs: %v\n", t.Codecs)
+		fmt.Printf("    ICE / RTCP-mux / RTCP feedback: %s / %s / %s\n", t.IceMode, t.RtcpMuxMode, t.RtcpFeedbackMode)
 	}
 
 	// Create a voice out trunk with credentials_and_ip authentication
@@ -70,6 +72,13 @@ func main() {
 		ThresholdAmount:     didww.Ptr("100.00"),
 		ExternalReferenceID: &extRef,
 		RtpTimeout:          &rtpTimeout,
+		// Codecs in priority order: the first has the highest priority.
+		Codecs: []enums.VoiceOutCodec{
+			enums.VoiceOutCodecOpus,
+			enums.VoiceOutCodecPCMA,
+			enums.VoiceOutCodecTelephoneEvent,
+		},
+		IceMode: enums.IceModeAccept,
 	}
 	created, err := client.VoiceOutTrunks().Create(ctx, trunk)
 	if err != nil {
@@ -82,6 +91,7 @@ func main() {
 		fmt.Println("  username:", cam.Username)
 	}
 	fmt.Println("  status:", created.Status)
+	fmt.Println("  codecs:", created.Codecs)
 	if created.ExternalReferenceID != nil {
 		fmt.Println("  external reference:", *created.ExternalReferenceID)
 	}

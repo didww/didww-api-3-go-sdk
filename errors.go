@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
 	"strings"
 	"time"
 )
@@ -23,9 +24,14 @@ type ErrorDetail struct {
 }
 
 // APIError represents an error response from the DIDWW API.
+//
+// A 429 (too_many_requests) means the request budget of the account is spent;
+// RetryAfter says how long to wait before sending the request again. The SDK
+// does not retry it.
 type APIError struct {
 	HTTPStatus int
 	Errors     []ErrorDetail
+	RetryAfter time.Duration // Retry-After of the answer, when given in seconds
 }
 
 func (e *APIError) Error() string {
@@ -140,14 +146,16 @@ func wrapSendError(msg string, err error) error {
 
 // unexpectedStatusError builds the *APIError for a response with a status the
 // caller does not accept.
-func unexpectedStatusError(status int, body []byte) *APIError {
-	if apiErr, err := ParseAPIErrors(body, status); err == nil && len(apiErr.Errors) > 0 {
-		return apiErr
+func unexpectedStatusError(resp *http.Response, body []byte) *APIError {
+	apiErr, err := ParseAPIErrors(body, resp.StatusCode)
+	if err != nil || len(apiErr.Errors) == 0 {
+		apiErr = &APIError{
+			HTTPStatus: resp.StatusCode,
+			Errors:     []ErrorDetail{{Title: "Unexpected status", Detail: string(body)}},
+		}
 	}
-	return &APIError{
-		HTTPStatus: status,
-		Errors:     []ErrorDetail{{Title: "Unexpected status", Detail: string(body)}},
-	}
+	apiErr.RetryAfter, _ = retryAfterSeconds(resp.Header)
+	return apiErr
 }
 
 // Sentinel errors of the prices services, matched by *PricesError with errors.Is.

@@ -39,7 +39,7 @@ func main() {
 			EnabledSipRegistration: didww.Ptr(true),
 			UseDIDInRuri:           didww.Ptr(true),
 			CnamLookup:             didww.Ptr(false),
-			CodecIDs:               []enums.Codec{enums.CodecPCMU, enums.CodecPCMA},
+			Codecs:                 []enums.Codec{enums.CodecPCMU, enums.CodecPCMA},
 			TransportProtocolID:    enums.TransportProtocolUDP,
 		},
 	})

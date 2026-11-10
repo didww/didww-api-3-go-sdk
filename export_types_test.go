@@ -33,7 +33,7 @@ func TestExportsCreateSmsIn(t *testing.T) {
 	assert.Equal(t, "5a2d3e4f-6b7c-4d8e-9f0a-1b2c3d4e5f60", export.ID)
 	assert.Equal(t, enums.ExportTypeSmsIn, export.ExportType)
 	assert.Equal(t, enums.ExportStatusPending, export.Status)
-	assert.Equal(t, []interface{}{"SMPP SMSC", "HTTP IN"}, export.Filters["trunk_type"])
+	assert.Equal(t, []interface{}{"smpp_smsc", "http_in"}, export.Filters["trunk_type"])
 }
 
 func TestExportsCreateSmsOut(t *testing.T) {
@@ -50,7 +50,7 @@ func TestExportsCreateSmsOut(t *testing.T) {
 				"b2c3d4e5-0000-4000-8000-000000000001",
 				"b2c3d4e5-0000-4000-8000-000000000003",
 			},
-			"service_type":              "a2p",
+			"service_type":              enums.ExportServiceTypeA2P,
 			"sender_id_verification.id": "c3d4e5f6-0000-4000-8000-000000000002",
 		},
 	})

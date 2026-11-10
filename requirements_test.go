@@ -22,6 +22,9 @@ func TestAddressRequirementsList(t *testing.T) {
 	require.Len(t, requirements, 5)
 	assert.Equal(t, enums.NumberTypeLocal, requirements[0].NumberType)
 	assert.Equal(t, enums.NumberTypeMobile, requirements[1].NumberType)
+	assert.Equal(t, []string{"birth_date", "country"}, requirements[0].PersonalMandatoryFields)
+	assert.Equal(t, []string{}, requirements[0].BusinessMandatoryFields)
+	assert.Equal(t, []string{"tax_id", "country"}, requirements[1].BusinessMandatoryFields)
 }
 
 func TestAddressRequirementsFindWithIncludes(t *testing.T) {
@@ -36,6 +39,8 @@ func TestAddressRequirementsFindWithIncludes(t *testing.T) {
 	assert.Equal(t, "25d12afe-1ec6-4fe3-9621-b250dd1fb959", req.ID)
 	assert.Equal(t, "any", req.IdentityType)
 	assert.Equal(t, 1, req.PersonalProofQty)
+	assert.Equal(t, []string{"birth_date", "country", "personal_tax_id"}, req.PersonalMandatoryFields)
+	assert.Equal(t, []string{"id_number", "tax_id", "country", "company_reg_number", "personal_tax_id"}, req.BusinessMandatoryFields)
 	assert.True(t, req.ServiceDescriptionRequired)
 	assert.Equal(t, enums.NumberTypeLocal, req.NumberType)
 
@@ -52,7 +57,9 @@ func TestAddressRequirementsFindWithIncludes(t *testing.T) {
 	// Verify resolved proof types
 	require.Len(t, req.PersonalProofTypes, 1)
 	assert.Equal(t, "Drivers License", req.PersonalProofTypes[0].Name)
+	assert.Equal(t, "personal", req.PersonalProofTypes[0].EntityType)
 	require.Len(t, req.BusinessProofTypes, 7)
+	assert.Equal(t, "business", req.BusinessProofTypes[0].EntityType)
 	require.Len(t, req.AddressProofTypes, 1)
 	assert.Equal(t, "Copy of Phone Bill", req.AddressProofTypes[0].Name)
 }

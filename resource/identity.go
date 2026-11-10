@@ -7,6 +7,9 @@ import (
 )
 
 // Identity represents a customer identity.
+//
+// VatID is listed as "tax_id" in the mandatory fields of AddressRequirement
+// and EmergencyRequirement.
 type Identity struct {
 	ID                  string             `json:"-" jsonapi:"identities"`
 	FirstName           string             `json:"first_name"`

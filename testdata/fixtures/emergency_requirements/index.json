@@ -9,15 +9,15 @@
         "personal_area_level": "world_wide",
         "business_area_level": "country",
         "address_mandatory_fields": [
-          "city",
-          "postal_code"
+          "area"
         ],
         "personal_mandatory_fields": [
-          "first_name",
-          "last_name"
+          "birth_date",
+          "contact_email"
         ],
         "business_mandatory_fields": [
-          "company_name"
+          "tax_id",
+          "company_reg_number"
         ],
         "estimate_setup_time": "7-14 days",
         "requirement_restriction_message": null,
@@ -45,12 +45,12 @@
         "personal_area_level": null,
         "business_area_level": "world_wide",
         "address_mandatory_fields": [
-          "city",
-          "postal_code"
+          "area"
         ],
         "personal_mandatory_fields": [],
         "business_mandatory_fields": [
-          "company_name"
+          "tax_id",
+          "company_reg_number"
         ],
         "estimate_setup_time": "3-5 business days",
         "requirement_restriction_message": null,
