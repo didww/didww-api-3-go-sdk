@@ -91,8 +91,8 @@ func TestTokenMintedPerAudience(t *testing.T) {
 	assert.NotEqual(t, api.AccessToken, vin.AccessToken)
 	assert.Equal(t, []string{audienceVoiceIn}, vin.Audience)
 	require.Equal(t, 2, srv.mints())
-	assert.JSONEq(t, `{"aud":["api.didww.com"],"api_version":"2026-10-22"}`, string(srv.mintBody(0)))
-	assert.JSONEq(t, `{"aud":["api-vin.didww.com"],"api_version":"2026-10-22"}`, string(srv.mintBody(1)))
+	assert.JSONEq(t, `{"aud":["api.didww.com"],"api_version":"2026-11-19"}`, string(srv.mintBody(0)))
+	assert.JSONEq(t, `{"aud":["api-vin.didww.com"],"api_version":"2026-11-19"}`, string(srv.mintBody(1)))
 }
 
 func TestTokenSharedThroughStore(t *testing.T) {
@@ -128,7 +128,7 @@ func (s *recordingTokenStore) Set(ctx context.Context, key string, t Token, ttl 
 func TestTokenCachedForGrantedLifetime(t *testing.T) {
 	srv := newAuthTestServer(t, func(_ int, w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte(`{"access_token":"t","token_type":"Bearer","expires_in":300,"aud":["api.didww.com"],"scope":"full","api_version":"2026-10-22"}`))
+		w.Write([]byte(`{"access_token":"t","token_type":"Bearer","expires_in":300,"aud":["api.didww.com"],"scope":"full","api_version":"2026-11-19"}`))
 	}, nil)
 	store := &recordingTokenStore{TokenStore: NewMemoryTokenStore()}
 	client := newTestClient(t, srv.URL, WithTokenStore(store))
@@ -796,8 +796,8 @@ func TestTokenTLSAlertNotRetried(t *testing.T) {
 
 func TestTokenInvalidGrant(t *testing.T) {
 	for name, body := range map[string]string{
-		"audience mismatch": `{"access_token":"t","token_type":"Bearer","expires_in":900,"aud":["api-sms.didww.com"],"scope":"full","api_version":"2026-10-22"}`,
-		"empty token":       `{"access_token":"","token_type":"Bearer","expires_in":900,"aud":["api.didww.com"],"scope":"full","api_version":"2026-10-22"}`,
+		"audience mismatch": `{"access_token":"t","token_type":"Bearer","expires_in":900,"aud":["api-sms.didww.com"],"scope":"full","api_version":"2026-11-19"}`,
+		"empty token":       `{"access_token":"","token_type":"Bearer","expires_in":900,"aud":["api.didww.com"],"scope":"full","api_version":"2026-11-19"}`,
 		"not JSON":          `ok`,
 	} {
 		t.Run(name, func(t *testing.T) {
@@ -850,7 +850,7 @@ func TestTokenAPIVersionMismatchWarning(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.Equal(t, "t", tok.AccessToken)
-	assert.Contains(t, logs.String(), `msg="DIDWW token api_version mismatch" requested=2026-10-22 granted=2099-01-01`)
+	assert.Contains(t, logs.String(), `msg="DIDWW token api_version mismatch" requested=2026-11-19 granted=2099-01-01`)
 }
 
 func TestTokenNoWarningWhenGrantMatches(t *testing.T) {
@@ -872,7 +872,7 @@ func TestTokenMintedDebugLog(t *testing.T) {
 	_, err := client.tokens.token(context.Background(), audienceAPI)
 	require.NoError(t, err)
 
-	assert.Contains(t, logs.String(), `msg="DIDWW token minted" aud=[api.didww.com] scope=full api_version=2026-10-22 expires_in=900`)
+	assert.Contains(t, logs.String(), `msg="DIDWW token minted" aud=[api.didww.com] scope=full api_version=2026-11-19 expires_in=900`)
 	assert.NotContains(t, logs.String(), "token-1")
 	assert.NotContains(t, logs.String(), "test-api-key")
 }

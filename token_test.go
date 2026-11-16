@@ -18,7 +18,7 @@ func testToken() Token {
 		ExpiresIn:   900,
 		Audience:    []string{"api.didww.com"},
 		Scope:       "full",
-		APIVersion:  "2026-10-22",
+		APIVersion:  "2026-11-19",
 		MintedAt:    time.Date(2026, 10, 22, 12, 0, 0, 0, time.UTC),
 	}
 }
@@ -44,7 +44,7 @@ func TestTokenLogValueHidesAccessToken(t *testing.T) {
 
 	assert.NotContains(t, buf.String(), "secret-access-token")
 	assert.Contains(t, buf.String(), `"aud":["api.didww.com"]`)
-	assert.Contains(t, buf.String(), `"api_version":"2026-10-22"`)
+	assert.Contains(t, buf.String(), `"api_version":"2026-11-19"`)
 }
 
 func TestTokenJSONRoundTrip(t *testing.T) {
@@ -68,5 +68,5 @@ func TestTokenFromFixture(t *testing.T) {
 	assert.Equal(t, 900, tok.ExpiresIn)
 	assert.Equal(t, []string{"api.didww.com"}, tok.Audience)
 	assert.Equal(t, "full", tok.Scope)
-	assert.Equal(t, "2026-10-22", tok.APIVersion)
+	assert.Equal(t, "2026-11-19", tok.APIVersion)
 }

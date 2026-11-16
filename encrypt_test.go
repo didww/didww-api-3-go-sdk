@@ -181,8 +181,8 @@ func TestUploadEncryptedFileRetriedAfter401(t *testing.T) {
 	assert.Equal(t, "Bearer token-1", requests[0].authorization)
 	assert.Equal(t, "Bearer token-2", requests[1].authorization)
 	assert.Equal(t, 2, srv.mints())
-	assert.JSONEq(t, `{"aud":["api.didww.com"],"api_version":"2026-10-22"}`, string(srv.mintBody(0)))
-	assert.JSONEq(t, `{"aud":["api.didww.com"],"api_version":"2026-10-22"}`, string(srv.mintBody(1)))
+	assert.JSONEq(t, `{"aud":["api.didww.com"],"api_version":"2026-11-19"}`, string(srv.mintBody(0)))
+	assert.JSONEq(t, `{"aud":["api.didww.com"],"api_version":"2026-11-19"}`, string(srv.mintBody(1)))
 }
 
 func TestUploadEncryptedFileSecond401(t *testing.T) {
