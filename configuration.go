@@ -17,7 +17,7 @@ const (
 
 // DefaultAPIVersion is the API version requested when no other is configured.
 // Earlier versions are not supported by this major version of the SDK.
-const DefaultAPIVersion = "2026-10-22"
+const DefaultAPIVersion = "2026-11-19"
 
 // Scope is the scope requested for access tokens.
 type Scope string

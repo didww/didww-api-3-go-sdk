@@ -300,8 +300,8 @@ func TestDownloadExportRetriedAfter401(t *testing.T) {
 	assert.Equal(t, gzData, buf.Bytes())
 	assert.Len(t, log.all(), 2)
 	assert.Equal(t, 2, srv.mints())
-	assert.JSONEq(t, `{"aud":["api.didww.com"],"api_version":"2026-10-22"}`, string(srv.mintBody(0)))
-	assert.JSONEq(t, `{"aud":["api.didww.com"],"api_version":"2026-10-22"}`, string(srv.mintBody(1)))
+	assert.JSONEq(t, `{"aud":["api.didww.com"],"api_version":"2026-11-19"}`, string(srv.mintBody(0)))
+	assert.JSONEq(t, `{"aud":["api.didww.com"],"api_version":"2026-11-19"}`, string(srv.mintBody(1)))
 }
 
 func TestDownloadExportRefusesURLOutsideBaseURL(t *testing.T) {

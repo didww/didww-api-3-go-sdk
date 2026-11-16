@@ -16,15 +16,15 @@ Read more https://doc.didww.com/api
 
 ## API Version
 
-This SDK targets DIDWW API version `2026-10-22` (`didww.DefaultAPIVersion`). The version is not sent as a header: it is requested in the `api_version` of every access token the SDK mints (see [Authentication](#authentication)).
+This SDK targets DIDWW API version `2026-11-19` (`didww.DefaultAPIVersion`). The version is not sent as a header: it is requested in the `api_version` of every access token the SDK mints (see [Authentication](#authentication)).
 
 | Module Version | Branch | DIDWW API Version |
 |----------------|--------|-------------------|
-| **4.x** | [`main`](https://github.com/didww/didww-api-3-go-sdk) | [`2026-10-22`](https://doc.didww.com/api3/2026-10-22/index.html) |
+| **4.x** | [`main`](https://github.com/didww/didww-api-3-go-sdk) | [`2026-11-19`](https://doc.didww.com/api3/2026-11-19/index.html) |
 | **3.x** | [`release-3`](https://github.com/didww/didww-api-3-go-sdk/tree/release-3) | [`2026-04-16`](https://doc.didww.com/api3/2026-04-16/index.html) |
 | **2.x** | [`2022-05-10`](https://github.com/didww/didww-api-3-go-sdk/tree/2022-05-10) | [`2022-05-10`](https://doc.didww.com/api3/2022-05-10/index.html) |
 
-`didww.WithAPIVersion` requests a later version. `NewClient` returns an error for a value that is not a `YYYY-MM-DD` date and for a version earlier than `2026-10-22`. The resources of earlier API versions are not in this module: use the 3.x line from the [`release-3`](https://github.com/didww/didww-api-3-go-sdk/tree/release-3) branch for API `2026-04-16`.
+`didww.WithAPIVersion` requests a later version. `NewClient` returns an error for a value that is not a `YYYY-MM-DD` date and for a version earlier than `2026-11-19`. The resources of earlier API versions are not in this module: use the 3.x line from the [`release-3`](https://github.com/didww/didww-api-3-go-sdk/tree/release-3) branch for API `2026-04-16`.
 
 ## Requirements
 
@@ -936,7 +936,7 @@ For the SMS trunk configuration types, see [SMS Trunks](#sms-trunks).
 
 ## Filter Reference
 
-> See [`FILTERS.md`](FILTERS.md) for the list of `filter[KEY]` keys accepted by every list endpoint at API version `2026-10-22`.
+> See [`FILTERS.md`](FILTERS.md) for the list of `filter[KEY]` keys accepted by every list endpoint at API version `2026-11-19`.
 
 ## Error Handling
 
