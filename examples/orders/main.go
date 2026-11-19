@@ -1,4 +1,4 @@
-// Lists orders and creates/cancels a DID order using live SKU lookup.
+// Lists recent orders, orders a DID by SKU and cancels (deletes) that order.
 //
 // Usage: DIDWW_API_KEY=your_api_key go run ./examples/orders/
 package main
@@ -6,6 +6,8 @@ package main
 import (
 	"context"
 	"fmt"
+	"strconv"
+	"time"
 
 	didww "github.com/didww/didww-api-3-go-sdk/v4"
 	"github.com/didww/didww-api-3-go-sdk/v4/examples"
@@ -17,8 +19,10 @@ func main() {
 	client := examples.ClientFromEnv()
 	ctx := context.Background()
 
-	// List orders
-	orders, err := client.Orders().List(ctx, nil)
+	// List the five most recent orders
+	fmt.Println("=== Recent Orders ===")
+	listParams := didww.NewQueryParams().Sort("-created_at").Page(1, 5)
+	orders, err := client.Orders().List(ctx, listParams)
 	if err != nil {
 		panic(err)
 	}
@@ -33,7 +37,7 @@ func main() {
 		}
 	}
 
-	// Create an order with DID order items
+	// Find a SKU to order
 	params := didww.NewQueryParams().
 		Include("stock_keeping_units").
 		Page(1, 1)
@@ -46,8 +50,10 @@ func main() {
 	}
 	skuID := didGroups[0].StockKeepingUnits[0].ID
 
-	extRef := "go-order-example"
-	newOrder := &resource.Order{
+	// Order a DID by SKU
+	fmt.Println("\n=== Creating DID Order ===")
+	extRef := "go-order-" + strconv.FormatInt(time.Now().UnixNano(), 36)
+	created, err := client.Orders().Create(ctx, &resource.Order{
 		ExternalReferenceID: &extRef,
 		Items: []orderitem.OrderItem{
 			&orderitem.DidOrderItem{
@@ -55,14 +61,17 @@ func main() {
 				Qty:   1,
 			},
 		},
-	}
-	created, err := client.Orders().Create(ctx, newOrder)
+	})
 	if err != nil {
 		panic(err)
 	}
 	fmt.Printf("Created order: %s - %s\n", created.ID, created.Status)
+	fmt.Printf("  Amount: %s\n", created.Amount)
+	fmt.Printf("  Reference: %s\n", created.Reference)
+	fmt.Printf("  External reference: %s\n", extRef)
 
-	// Delete order (cancel)
+	// Cancel the order (delete it)
+	fmt.Println("\n=== Cancelling Order ===")
 	if err := client.Orders().Delete(ctx, created.ID); err != nil {
 		panic(err)
 	}

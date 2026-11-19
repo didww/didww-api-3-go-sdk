@@ -1,4 +1,10 @@
-// CRUD for trunk groups with trunk relationships.
+// CRUD for trunk groups with trunk relationships: creates two trunks, creates
+// a trunk group with them, lists groups, renames the group and deletes the
+// group and the trunks.
+//
+// A trunk in a trunk group cannot be deleted, and deleting a group keeps its
+// trunks, so the group is deleted first and the trunks after it, also when a
+// step fails.
 //
 // Usage: DIDWW_API_KEY=your_api_key go run ./examples/voice_in_trunk_groups/
 package main
@@ -50,6 +56,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	defer deleteTrunk(ctx, client, trunkA.ID)
 	fmt.Println("Created trunk A:", trunkA.ID)
 
 	trunkB, err := client.VoiceInTrunks().Create(ctx, &resource.VoiceInTrunk{
@@ -59,6 +66,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	defer deleteTrunk(ctx, client, trunkB.ID)
 	fmt.Println("Created trunk B:", trunkB.ID)
 
 	// Create a trunk group with both trunks
@@ -72,6 +80,8 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	// Deferred last, so it runs first: the trunks can be deleted only outside a group
+	defer deleteTrunkGroup(ctx, client, group.ID)
 	fmt.Printf("Created trunk group: %s - %s\n", group.ID, group.Name)
 
 	// List trunk groups with included trunks
@@ -90,17 +100,27 @@ func main() {
 		fmt.Println()
 	}
 
-	// Update group name
-	group.Name = "Updated Group"
+	// Rename the group: only the changed name is sent
+	group.Name = fmt.Sprintf("Updated Group %d", ts)
 	updated, err := client.VoiceInTrunkGroups().Update(ctx, group)
 	if err != nil {
 		panic(err)
 	}
 	fmt.Println("\nUpdated name:", updated.Name)
+}
 
-	// Cleanup: deleting the group cascades to delete assigned trunks
-	if err := client.VoiceInTrunkGroups().Delete(ctx, group.ID); err != nil {
-		panic(err)
+func deleteTrunkGroup(ctx context.Context, client *didww.Client, id string) {
+	if err := client.VoiceInTrunkGroups().Delete(ctx, id); err != nil {
+		fmt.Println("Could not delete trunk group:", err)
+		return
 	}
-	fmt.Println("Deleted trunk group (cascaded to trunks)")
+	fmt.Println("Deleted trunk group")
+}
+
+func deleteTrunk(ctx context.Context, client *didww.Client, id string) {
+	if err := client.VoiceInTrunks().Delete(ctx, id); err != nil {
+		fmt.Println("Could not delete trunk:", err)
+		return
+	}
+	fmt.Println("Deleted trunk", id)
 }
