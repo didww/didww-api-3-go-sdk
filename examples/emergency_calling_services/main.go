@@ -1,7 +1,7 @@
 // Lists emergency calling services (2026-04-16).
 //
 // Emergency calling services are customer-owned subscriptions that enable 911/112
-// on DIDs. They are created via the Orders API with an EmergencyOrderItem.
+// on DIDs. They are created by an emergency verification, not through the Orders API.
 //
 // Usage: DIDWW_API_KEY=your_api_key go run ./examples/emergency_calling_services/
 package main
