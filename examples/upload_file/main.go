@@ -1,9 +1,10 @@
-// Encrypts and uploads a file using DIDWW public keys.
+// Encrypts a file with the DIDWW public keys and uploads it to encrypted_files.
+// The returned ID can be attached to a proof (see examples/identity_address_proofs).
 //
 // Usage:
 //
-//	DIDWW_API_KEY=your_api_key go run ./examples/upload_encrypted_file/
-//	DIDWW_API_KEY=your_api_key FILE_PATH=/path/to/file.pdf go run ./examples/upload_encrypted_file/
+//	DIDWW_API_KEY=your_api_key go run ./examples/upload_file/
+//	DIDWW_API_KEY=your_api_key FILE_PATH=/path/to/file.pdf go run ./examples/upload_file/
 //
 // If FILE_PATH is not set, the bundled example.pdf ("Hello From Go SDK") is used.
 package main

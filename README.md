@@ -658,7 +658,7 @@ created, _ := client.Addresses().Create(ctx, address)
 
 ```go
 cbURL := "http://example.com/callback"
-cbMethod := "GET"
+cbMethod := string(enums.CallbackMethodGET) // "get"; the API takes lowercase methods
 verification := &resource.AddressVerification{
     CallbackURL:    &cbURL,
     CallbackMethod: &cbMethod,
@@ -690,7 +690,7 @@ services, _ := client.EmergencyCallingServices().List(ctx, nil)
 
 ```go
 // List DID history entries
-params := didww.NewQueryParams().Filter("did.id", "did-uuid")
+params := didww.NewQueryParams().Filter("did_number", "12125551234")
 history, _ := client.DIDHistory().List(ctx, params)
 ```
 
@@ -698,13 +698,20 @@ history, _ := client.DIDHistory().List(ctx, params)
 
 ```go
 import (
+    "time"
+
     "github.com/didww/didww-api-3-go-sdk/v4/resource"
     "github.com/didww/didww-api-3-go-sdk/v4/resource/enums"
 )
 
+// from and to must fall within the current month and the two previous ones
+const layout = "2006-01-02 15:04:05"
+to := time.Now().UTC().Truncate(24 * time.Hour)
+from := to.AddDate(0, 0, -14)
+
 export := &resource.Export{
     ExportType: enums.ExportTypeCdrIn,
-    Filters:    map[string]interface{}{"from": "2026-04-01 00:00:00", "to": "2026-04-16 00:00:00"},
+    Filters:    map[string]interface{}{"from": from.Format(layout), "to": to.Format(layout)},
 }
 created, _ := client.Exports().Create(ctx, export)
 
@@ -712,8 +719,8 @@ created, _ := client.Exports().Create(ctx, export)
 smsOut, _ := client.Exports().Create(ctx, &resource.Export{
     ExportType: enums.ExportTypeSmsOut,
     Filters: map[string]interface{}{
-        "from":         "2026-10-01 00:00:00", // inclusive
-        "to":           "2026-10-02 00:00:00", // exclusive
+        "from":         from.Format(layout), // inclusive
+        "to":           to.Format(layout),   // exclusive
         "service_type": enums.ExportServiceTypeA2P,
         "sms_trunk.id": []string{"sms-trunk-uuid"},
     },
