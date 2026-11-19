@@ -66,8 +66,15 @@ func (s *memoryTokenStore) Set(_ context.Context, key string, t Token, ttl time.
 	e := memoryTokenEntry{token: t}
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	now := s.now()
+	// Expired entries of keys no longer read would otherwise stay forever.
+	for k, old := range s.entries {
+		if !old.expiresAt.IsZero() && !now.Before(old.expiresAt) {
+			delete(s.entries, k)
+		}
+	}
 	if ttl > 0 {
-		e.expiresAt = s.now().Add(ttl)
+		e.expiresAt = now.Add(ttl)
 	}
 	s.entries[key] = e
 	return nil

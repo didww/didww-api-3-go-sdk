@@ -43,6 +43,22 @@ func TestMemoryTokenStoreExpiry(t *testing.T) {
 	assert.Empty(t, store.entries)
 }
 
+func TestMemoryTokenStoreSetDropsExpiredEntries(t *testing.T) {
+	ctx := context.Background()
+	clock := newFakeClock()
+	store := newTestMemoryTokenStore(clock)
+	require.NoError(t, store.Set(ctx, "abandoned", testToken(), 60*time.Second))
+	require.NoError(t, store.Set(ctx, "forever", testToken(), 0))
+
+	clock.Advance(60 * time.Second)
+	require.NoError(t, store.Set(ctx, "key", testToken(), 60*time.Second))
+
+	assert.Equal(t, "MemoryTokenStore{entries: 2}", store.String())
+	_, ok, err := store.Get(ctx, "forever")
+	require.NoError(t, err)
+	assert.True(t, ok)
+}
+
 func TestMemoryTokenStoreWithoutTTL(t *testing.T) {
 	ctx := context.Background()
 	clock := newFakeClock()
