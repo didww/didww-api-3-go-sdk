@@ -4,8 +4,12 @@
 // Each check runs the code of its snippet, with the placeholders such as
 // "uuid" replaced by real IDs, and deletes or restores what it creates or
 // changes, also when it fails. A failing check is reported and the next one
-// runs. Only the production client snippet is skipped: the client is built,
-// nothing is sent.
+// runs.
+//
+// Every check uses the sandbox except the production client check, which runs
+// only with DIDWW_README_PRODUCTION_API_KEY and is read-only: its client asks
+// for read-scoped tokens and only mints them, reads the balance and the
+// countries and looks up one price. Without the variable it is skipped.
 //
 // The address and emergency verification checks submit real verifications
 // (ordering a DID when needed), which cannot be deleted; each prints a line
@@ -41,6 +45,7 @@ import (
 )
 
 func main() {
+	// The client of every check but the read-only production one
 	client := examples.ClientFromEnv()
 	if client.BaseURL() != string(didww.Sandbox) {
 		fmt.Fprintln(os.Stderr, "test_readme runs against the sandbox only")

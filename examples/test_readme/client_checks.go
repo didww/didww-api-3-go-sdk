@@ -48,18 +48,7 @@ func (s *suite) usage() {
 // README: Configuration, Custom HTTP Client
 func (s *suite) configuration() {
 	s.section("Configuration")
-	s.check("Production client", func() error {
-		client, err := didww.NewClient(s.apiKey,
-			didww.WithEnvironment(didww.Production),
-		)
-		if err != nil {
-			return err
-		}
-		if client.BaseURL() != string(didww.Production) {
-			return fmt.Errorf("base URL %s", client.BaseURL())
-		}
-		return skip("production environment: the client is built, no request is sent")
-	})
+	s.check("Production client (read-only)", s.productionReadOnly)
 
 	s.check("Custom HTTP client with a proxy (sandbox)", func() error {
 		proxyEnv := os.Getenv("DIDWW_README_PROXY_URL")
@@ -97,6 +86,81 @@ func (s *suite) configuration() {
 		s.logf("balance %s, %d requests through the proxy", balance.TotalBalance, proxied.Load())
 		return expect(proxied.Load() >= 2, "%d requests went through the proxy, want the token and the API request", proxied.Load())
 	})
+}
+
+// productionReadOnly runs the README's production client snippet with its own
+// production key, read-only: the read scope makes the token service issue a
+// token that the API accepts for GET and HEAD only, so a write would be
+// refused with 403. It mints the token, reads the balance and the countries
+// and looks up one price, and prints no key, token, amount or account data.
+// This is the only check that talks to production.
+func (s *suite) productionReadOnly() error {
+	ctx := s.ctx
+	apiKey := os.Getenv("DIDWW_README_PRODUCTION_API_KEY")
+	if apiKey == "" {
+		return skip("set DIDWW_README_PRODUCTION_API_KEY to run it read-only against production")
+	}
+
+	tokens := &scopeRecorder{TokenStore: didww.NewMemoryTokenStore()}
+	client, err := didww.NewClient(apiKey,
+		didww.WithEnvironment(didww.Production),
+		didww.WithScope(didww.ScopeRead), // not in the README: read-only, whatever is called
+		didww.WithTokenStore(tokens),
+	)
+	if err != nil {
+		return err
+	}
+	if client.BaseURL() != string(didww.Production) {
+		return fmt.Errorf("base URL %s", client.BaseURL())
+	}
+
+	if _, err = client.Balance().Find(ctx); err != nil {
+		return fmt.Errorf("balance: %w", err)
+	}
+	countries, err := client.Countries().List(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("countries: %w", err)
+	}
+	priceFact := "price lookup ok"
+	_, err = client.VoiceInPrices().Lookup(ctx, map[string]string{"number": "12125551234"})
+	switch {
+	case errors.Is(err, didww.ErrPriceNotFound):
+		priceFact = "price lookup answered: no price for the number"
+	case errors.Is(err, didww.ErrPricePlanNotAssigned):
+		priceFact = "price lookup answered: no Voice IN price plan"
+	case err != nil:
+		return fmt.Errorf("price lookup: %w", err)
+	}
+
+	scopes := tokens.grantedScopes()
+	for _, scope := range scopes {
+		if scope != string(didww.ScopeRead) {
+			return fmt.Errorf("a token was granted scope %q, want read", scope)
+		}
+	}
+	s.logf("production: %d tokens minted (scope read), balance read, %d countries, %s", len(scopes), len(countries), priceFact)
+	return expect(len(scopes) >= 2, "%d tokens minted, want 2 (API and Voice IN prices)", len(scopes))
+}
+
+// scopeRecorder is a token store that records the scope of the tokens it
+// stores, never the tokens themselves.
+type scopeRecorder struct {
+	didww.TokenStore
+	mu     sync.Mutex
+	scopes []string
+}
+
+func (r *scopeRecorder) Set(ctx context.Context, key string, t didww.Token, ttl time.Duration) error { //nolint:gocritic // signature of didww.TokenStore
+	r.mu.Lock()
+	r.scopes = append(r.scopes, t.Scope)
+	r.mu.Unlock()
+	return r.TokenStore.Set(ctx, key, t, ttl)
+}
+
+func (r *scopeRecorder) grantedScopes() []string {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	return append([]string(nil), r.scopes...)
 }
 
 // README: Authentication (Scope, Token cache)
