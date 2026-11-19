@@ -59,7 +59,7 @@ DIDWW_API_KEY=your_api_key go run ./examples/balance/
 | [`emergency_scenario`](emergency_scenario/) | End-to-end: find DID → check requirements → validate → create verification → get service. |
 | [`prices_lookup`](prices_lookup/) | Looks up Voice IN, Voice OUT, SMS OUT (A2P, P2P, OTP) and SMS IN prices for a number. |
 | [`prices_download`](prices_download/) | Downloads the gzipped Voice IN price file to the directory given as argument, or to `didww-prices` in the user cache directory, re-checks it with If-Modified-Since and reads a few rows. |
-| [`includes`](includes/) | Reads regions, DID groups, available DIDs and DIDs with included relationships, and shows that a relationship that is not included stays nil. |
+| [`includes`](includes/) | Reads regions, DID groups, available DIDs and DIDs with included relationships: the SDK fills a relationship from the response's included data, so request the ones you read with `Include`. |
 | [`webhook`](webhook/) | Signs a sample callback the way DIDWW does and validates it with `RequestValidator`: `valid: true`, then `valid: false` for a tampered payload. No API key needed. |
 | [`test_readme`](test_readme/) | Runs the code snippets of the SDK README against the sandbox, cleans up, prints `Results: N passed, M failed` and exits 1 on a failure. |
 

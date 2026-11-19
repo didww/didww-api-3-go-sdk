@@ -167,6 +167,7 @@ func (s *suite) pricesErrors() {
 			s.logf("Prices rate limit, retry after %s", pricesErr.RetryAfter)
 		case err != nil:
 			s.logf("Error: %v", err)
+			return priceSkip(err) // only a missing price plan is not a failure
 		default:
 			s.logf("price found")
 		}

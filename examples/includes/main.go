@@ -1,10 +1,10 @@
 // Reads resources with included relationships (the JSON:API include parameter).
 //
-// The SDK resolves a relationship only when it is listed in Include: the
-// pointer (or slice) field of the related resource is then set from the
-// included data. A relationship that is not included stays nil, the same as a
-// relationship without a related resource, and its ID is not kept, so include
-// every relationship you read.
+// The SDK sets the pointer (or slice) field of a relationship from the
+// resources in the response's included data. Request the relationships you
+// read with Include: a relationship whose resource is not in the response
+// stays nil, the same as a relationship without a related resource, and its
+// ID is not kept.
 //
 // Usage: DIDWW_API_KEY=your_api_key go run ./examples/includes/
 package main
@@ -21,14 +21,14 @@ func main() {
 	client := examples.ClientFromEnv()
 	ctx := context.Background()
 
-	// --- Not included vs included ---
-	fmt.Println("=== Regions without include: country is nil ===")
+	// --- Without and with Include ---
+	fmt.Println("=== Regions without include ===")
 	regions, err := client.Regions().List(ctx, didww.NewQueryParams().Page(1, 3))
 	if err != nil {
 		panic(err)
 	}
 	for _, region := range regions {
-		fmt.Printf("  %s - country included: %t\n", region.Name, region.Country != nil)
+		fmt.Printf("  %s - country resolved: %t\n", region.Name, region.Country != nil)
 	}
 
 	fmt.Println("\n=== Regions with country ===")
@@ -79,12 +79,12 @@ func main() {
 		panic(err)
 	}
 	for _, did := range dids {
-		// Included, so nil here means the DID has no trunk
+		// Requested with Include, so nil here means the DID has no trunk
 		trunk := "(none)"
 		if did.VoiceInTrunk != nil {
 			trunk = did.VoiceInTrunk.Name
 		}
-		// Not included, so nil here says nothing about the DID's trunk group
-		fmt.Printf("  %s - trunk: %s, trunk group included: %t\n", did.Number, trunk, did.VoiceInTrunkGroup != nil)
+		// Not requested, so nil here says nothing about the DID's trunk group
+		fmt.Printf("  %s - trunk: %s, trunk group resolved: %t\n", did.Number, trunk, did.VoiceInTrunkGroup != nil)
 	}
 }
