@@ -29,6 +29,9 @@ type redisTokenStore struct {
 
 	hits, sets int
 	keys       map[string]bool
+	// broken is the I/O error after which the connection was closed: the
+	// reply stream can no longer be trusted, so it is not reused.
+	broken error
 }
 
 var _ didww.TokenStore = (*redisTokenStore)(nil)
@@ -133,21 +136,30 @@ func (r *redisTokenStore) close(ctx context.Context) error {
 	for _, key := range keys {
 		errs = append(errs, r.Delete(ctx, key))
 	}
-	errs = append(errs, r.conn.Close())
+	r.mu.Lock()
+	if r.broken == nil {
+		errs = append(errs, r.conn.Close())
+	}
+	r.mu.Unlock()
 	return errors.Join(errs...)
 }
 
 // do sends one command and reads its reply: a string, an int64, nil for a
-// missing value, or an error for a Redis error reply.
+// missing value, or a redisReplyError for a Redis error reply. Any other
+// error, such as a timeout or a partial write, closes the connection, since a
+// late reply could otherwise be read as the reply to the next command.
 func (r *redisTokenStore) do(ctx context.Context, args ...string) (any, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
+	if r.broken != nil {
+		return nil, fmt.Errorf("redis connection closed after an I/O error: %w", r.broken)
+	}
 	deadline, ok := ctx.Deadline()
 	if !ok {
 		deadline = time.Now().Add(10 * time.Second)
 	}
 	if err := r.conn.SetDeadline(deadline); err != nil {
-		return nil, err
+		return nil, r.discard(err)
 	}
 
 	var cmd strings.Builder
@@ -156,10 +168,27 @@ func (r *redisTokenStore) do(ctx context.Context, args ...string) (any, error) {
 		fmt.Fprintf(&cmd, "$%d\r\n%s\r\n", len(arg), arg)
 	}
 	if _, err := io.WriteString(r.conn, cmd.String()); err != nil {
-		return nil, err
+		return nil, r.discard(err)
 	}
-	return r.readReply()
+	reply, err := r.readReply()
+	var replyErr redisReplyError
+	if err != nil && !errors.As(err, &replyErr) {
+		return nil, r.discard(err)
+	}
+	return reply, err
 }
+
+// discard closes the connection after an I/O error; r.mu is held.
+func (r *redisTokenStore) discard(err error) error {
+	r.broken = err
+	_ = r.conn.Close()
+	return err
+}
+
+// redisReplyError is an error reply of Redis; the connection stays usable.
+type redisReplyError string
+
+func (e redisReplyError) Error() string { return "redis: " + string(e) }
 
 func (r *redisTokenStore) readReply() (any, error) {
 	line, err := r.rd.ReadString('\n')
@@ -174,7 +203,7 @@ func (r *redisTokenStore) readReply() (any, error) {
 	case '+':
 		return line[1:], nil
 	case '-':
-		return nil, fmt.Errorf("redis: %s", line[1:])
+		return nil, redisReplyError(line[1:])
 	case ':':
 		return strconv.ParseInt(line[1:], 10, 64)
 	case '$':

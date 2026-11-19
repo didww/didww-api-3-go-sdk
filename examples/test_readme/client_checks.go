@@ -251,26 +251,45 @@ func (s *suite) redisTokenCache() (err error) {
 // shared between processes such as Redis.
 type mapTokenStore struct {
 	mu     sync.Mutex
-	tokens map[string]didww.Token
+	tokens map[string]storedToken
+}
+
+// storedToken is a token with the end of its ttl; a zero expiresAt never expires.
+type storedToken struct {
+	token     didww.Token
+	expiresAt time.Time
 }
 
 var _ didww.TokenStore = (*mapTokenStore)(nil)
 
 func newMapTokenStore() *mapTokenStore {
-	return &mapTokenStore{tokens: map[string]didww.Token{}}
+	return &mapTokenStore{tokens: map[string]storedToken{}}
 }
 
+// Get returns the token stored under key; an expired one is dropped and not returned.
 func (m *mapTokenStore) Get(_ context.Context, key string) (t didww.Token, ok bool, err error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	t, ok = m.tokens[key]
-	return t, ok, nil
+	stored, ok := m.tokens[key]
+	if !ok {
+		return didww.Token{}, false, nil
+	}
+	if !stored.expiresAt.IsZero() && !time.Now().Before(stored.expiresAt) {
+		delete(m.tokens, key)
+		return didww.Token{}, false, nil
+	}
+	return stored.token, true, nil
 }
 
-func (m *mapTokenStore) Set(_ context.Context, key string, t didww.Token, _ time.Duration) error { //nolint:gocritic // signature of didww.TokenStore
+// Set stores t under key for ttl; a ttl of zero or less means no expiry.
+func (m *mapTokenStore) Set(_ context.Context, key string, t didww.Token, ttl time.Duration) error { //nolint:gocritic // signature of didww.TokenStore
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	m.tokens[key] = t
+	stored := storedToken{token: t}
+	if ttl > 0 {
+		stored.expiresAt = time.Now().Add(ttl)
+	}
+	m.tokens[key] = stored
 	return nil
 }
 
