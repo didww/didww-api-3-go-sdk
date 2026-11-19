@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/didww/didww-api-3-go-sdk/v3/jsonapi"
-	"github.com/didww/didww-api-3-go-sdk/v3/resource/authenticationmethod"
-	"github.com/didww/didww-api-3-go-sdk/v3/resource/enums"
+	"github.com/didww/didww-api-3-go-sdk/v4/jsonapi"
+	"github.com/didww/didww-api-3-go-sdk/v4/resource/authenticationmethod"
+	"github.com/didww/didww-api-3-go-sdk/v4/resource/enums"
 )
 
 // VoiceOutTrunk represents a voice outbound trunk.
@@ -31,6 +31,14 @@ type VoiceOutTrunk struct {
 	EmergencyEnableAll   bool                                      `json:"emergency_enable_all,omitempty"`
 	RtpTimeout           *int                                      `json:"rtp_timeout,omitempty"`
 	AuthenticationMethod authenticationmethod.AuthenticationMethod `json:"-"`
+	// Codecs offered on calls from the trunk, in priority order: the first has
+	// the highest priority. Left empty, a new trunk offers pcma, pcmu and
+	// telephone_event.
+	Codecs []enums.VoiceOutCodec `json:"codecs,omitempty"`
+	// IceMode, RtcpMuxMode and RtcpFeedbackMode default to accept.
+	IceMode          enums.IceMode          `json:"ice_mode,omitempty"`
+	RtcpMuxMode      enums.RtcpMuxMode      `json:"rtcp_mux_mode,omitempty"`
+	RtcpFeedbackMode enums.RtcpFeedbackMode `json:"rtcp_feedback_mode,omitempty"`
 	// Relationship IDs for create/update
 	DefaultDIDID    string   `json:"-" rel:"default_did,dids"`
 	DIDIDs          []string `json:"-" rel:"dids,dids"`

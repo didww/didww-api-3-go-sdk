@@ -7,6 +7,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/didww/didww-api-3-go-sdk/v4/resource/enums"
 )
 
 func TestAddressRequirementsList(t *testing.T) {
@@ -17,7 +19,12 @@ func TestAddressRequirementsList(t *testing.T) {
 	requirements, err := client.AddressRequirements().List(context.Background(), nil)
 	require.NoError(t, err)
 
-	require.NotEmpty(t, requirements)
+	require.Len(t, requirements, 5)
+	assert.Equal(t, enums.NumberTypeLocal, requirements[0].NumberType)
+	assert.Equal(t, enums.NumberTypeMobile, requirements[1].NumberType)
+	assert.Equal(t, []string{"birth_date", "country"}, requirements[0].PersonalMandatoryFields)
+	assert.Equal(t, []string{}, requirements[0].BusinessMandatoryFields)
+	assert.Equal(t, []string{"tax_id", "country"}, requirements[1].BusinessMandatoryFields)
 }
 
 func TestAddressRequirementsFindWithIncludes(t *testing.T) {
@@ -25,22 +32,21 @@ func TestAddressRequirementsFindWithIncludes(t *testing.T) {
 		"GET /v3/address_requirements/25d12afe-1ec6-4fe3-9621-b250dd1fb959": {status: http.StatusOK, fixture: "address_requirements/show.json"},
 	})
 
-	params := NewQueryParams().Include("country,did_group_type,personal_permanent_document,business_permanent_document,personal_onetime_document,business_onetime_document,personal_proof_types,business_proof_types,address_proof_types")
+	params := NewQueryParams().Include("country,personal_permanent_document,business_permanent_document,personal_onetime_document,business_onetime_document,personal_proof_types,business_proof_types,address_proof_types")
 	req, err := client.AddressRequirements().Find(context.Background(), "25d12afe-1ec6-4fe3-9621-b250dd1fb959", params)
 	require.NoError(t, err)
 
 	assert.Equal(t, "25d12afe-1ec6-4fe3-9621-b250dd1fb959", req.ID)
 	assert.Equal(t, "any", req.IdentityType)
 	assert.Equal(t, 1, req.PersonalProofQty)
+	assert.Equal(t, []string{"birth_date", "country", "personal_tax_id"}, req.PersonalMandatoryFields)
+	assert.Equal(t, []string{"id_number", "tax_id", "country", "company_reg_number", "personal_tax_id"}, req.BusinessMandatoryFields)
 	assert.True(t, req.ServiceDescriptionRequired)
+	assert.Equal(t, enums.NumberTypeLocal, req.NumberType)
 
 	// Verify resolved country
 	require.NotNil(t, req.Country)
 	assert.Equal(t, "Spain", req.Country.Name)
-
-	// Verify resolved DIDGroupType
-	require.NotNil(t, req.DIDGroupType)
-	assert.Equal(t, "Local", req.DIDGroupType.Name)
 
 	// Verify resolved document templates
 	require.NotNil(t, req.PersonalPermanentDocument)
@@ -51,7 +57,9 @@ func TestAddressRequirementsFindWithIncludes(t *testing.T) {
 	// Verify resolved proof types
 	require.Len(t, req.PersonalProofTypes, 1)
 	assert.Equal(t, "Drivers License", req.PersonalProofTypes[0].Name)
+	assert.Equal(t, "personal", req.PersonalProofTypes[0].EntityType)
 	require.Len(t, req.BusinessProofTypes, 7)
+	assert.Equal(t, "business", req.BusinessProofTypes[0].EntityType)
 	require.Len(t, req.AddressProofTypes, 1)
 	assert.Equal(t, "Copy of Phone Bill", req.AddressProofTypes[0].Name)
 }

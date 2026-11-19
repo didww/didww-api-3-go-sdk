@@ -10,7 +10,8 @@
         "activated_at": "2026-04-01T10:00:00.000Z",
         "canceled_at": null,
         "created_at": "2026-03-15T08:00:00.000Z",
-        "renew_date": "2026-05-01"
+        "renew_date": "2026-05-01",
+        "number_type": "local"
       },
       "meta": {
         "setup_price": "0.0",
@@ -18,10 +19,10 @@
       },
       "relationships": {
         "country": {
-          "data": { "type": "countries", "id": "us-country" }
-        },
-        "did_group_type": {
-          "data": { "type": "did_group_types", "id": "local-dgt" }
+          "data": {
+            "type": "countries",
+            "id": "us-country"
+          }
         }
       }
     }

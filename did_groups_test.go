@@ -7,6 +7,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/didww/didww-api-3-go-sdk/v4/resource/enums"
 )
 
 func TestDIDGroupsList(t *testing.T) {
@@ -17,7 +19,9 @@ func TestDIDGroupsList(t *testing.T) {
 	groups, err := client.DIDGroups().List(context.Background(), nil)
 	require.NoError(t, err)
 
-	require.NotEmpty(t, groups)
+	require.Len(t, groups, 1)
+	assert.Equal(t, enums.NumberTypeLocal, groups[0].NumberType)
+	assert.True(t, groups[0].IsDemo)
 }
 
 func TestDIDGroupsFindWithIncludes(t *testing.T) {
@@ -25,7 +29,7 @@ func TestDIDGroupsFindWithIncludes(t *testing.T) {
 		"GET /v3/did_groups/2187c36d-28fb-436f-8861-5a0f5b5a3ee1": {status: http.StatusOK, fixture: "did_groups/show.json"},
 	})
 
-	params := NewQueryParams().Include("country,city,did_group_type,stock_keeping_units")
+	params := NewQueryParams().Include("country,city,stock_keeping_units")
 	group, err := client.DIDGroups().Find(context.Background(), "2187c36d-28fb-436f-8861-5a0f5b5a3ee1", params)
 	require.NoError(t, err)
 
@@ -33,6 +37,8 @@ func TestDIDGroupsFindWithIncludes(t *testing.T) {
 	assert.Equal(t, "241", group.Prefix)
 	assert.Equal(t, "Aachen", group.AreaName)
 	assert.True(t, group.AllowAdditionalChannels)
+	assert.Equal(t, enums.NumberTypeLocal, group.NumberType)
+	assert.False(t, group.IsDemo)
 
 	// Verify included country
 	require.NotNil(t, group.Country)
@@ -42,10 +48,6 @@ func TestDIDGroupsFindWithIncludes(t *testing.T) {
 	// Verify included city
 	require.NotNil(t, group.City)
 	assert.Equal(t, "Aachen", group.City.Name)
-
-	// Verify included DID group type
-	require.NotNil(t, group.DIDGroupType)
-	assert.Equal(t, "Local", group.DIDGroupType.Name)
 
 	// Verify included stock keeping units
 	require.Len(t, group.StockKeepingUnits, 2)

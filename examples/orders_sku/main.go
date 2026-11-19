@@ -1,4 +1,6 @@
-// Creates a DID order by SKU resolved from DID groups.
+// Orders DIDs by SKU and quantity: one did_order_items item with sku_id and
+// qty, the SKU resolved from DID groups. See examples/orders_all_item_types
+// for one order with every DID item variant.
 //
 // Usage: DIDWW_API_KEY=your_api_key go run ./examples/orders_sku/
 package main
@@ -7,10 +9,10 @@ import (
 	"context"
 	"fmt"
 
-	didww "github.com/didww/didww-api-3-go-sdk/v3"
-	"github.com/didww/didww-api-3-go-sdk/v3/examples"
-	"github.com/didww/didww-api-3-go-sdk/v3/resource"
-	"github.com/didww/didww-api-3-go-sdk/v3/resource/orderitem"
+	didww "github.com/didww/didww-api-3-go-sdk/v4"
+	"github.com/didww/didww-api-3-go-sdk/v4/examples"
+	"github.com/didww/didww-api-3-go-sdk/v4/resource"
+	"github.com/didww/didww-api-3-go-sdk/v4/resource/orderitem"
 )
 
 func main() {

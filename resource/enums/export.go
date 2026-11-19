@@ -1,11 +1,28 @@
 package enums
 
-// ExportType defines the type of CDR export.
+// ExportType defines the type of export.
 type ExportType string
 
 const (
 	ExportTypeCdrIn  ExportType = "cdr_in"
 	ExportTypeCdrOut ExportType = "cdr_out"
+	ExportTypeSmsIn  ExportType = "sms_in"
+	ExportTypeSmsOut ExportType = "sms_out"
+)
+
+// Values of the "trunk_type" filter of sms_in exports (Export.Filters).
+// The filter takes one value or a slice of them.
+const (
+	ExportTrunkTypeSmppSmsc   = "smpp_smsc"
+	ExportTrunkTypeSmppEsme   = "smpp_esme"
+	ExportTrunkTypeSmsToEmail = "sms_to_email"
+	ExportTrunkTypeHTTPIn     = "http_in"
+)
+
+// Values of the "service_type" filter of sms_out exports (Export.Filters).
+const (
+	ExportServiceTypeA2P = "a2p"
+	ExportServiceTypeP2P = "p2p"
 )
 
 // ExportStatus defines the processing status of an export.

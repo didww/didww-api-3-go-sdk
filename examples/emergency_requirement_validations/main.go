@@ -15,8 +15,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/didww/didww-api-3-go-sdk/v3/examples"
-	"github.com/didww/didww-api-3-go-sdk/v3/resource"
+	"github.com/didww/didww-api-3-go-sdk/v4/examples"
+	"github.com/didww/didww-api-3-go-sdk/v4/resource"
 )
 
 func main() {

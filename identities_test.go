@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/didww/didww-api-3-go-sdk/v3/resource"
-	"github.com/didww/didww-api-3-go-sdk/v3/resource/enums"
+	"github.com/didww/didww-api-3-go-sdk/v4/resource"
+	"github.com/didww/didww-api-3-go-sdk/v4/resource/enums"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -41,6 +41,7 @@ func TestIdentitiesCreate(t *testing.T) {
 	personalTaxID := "987654321"
 	externalRefID := "111"
 	contactEmail := "john.doe@example.com"
+	companyWebsite := "https://example.com"
 	identity, err := server.client.Identities().Create(context.Background(), &resource.Identity{
 		FirstName:           "John",
 		LastName:            "Doe",
@@ -55,6 +56,7 @@ func TestIdentitiesCreate(t *testing.T) {
 		IdentityType:        enums.IdentityTypeBusiness,
 		ExternalReferenceID: &externalRefID,
 		ContactEmail:        &contactEmail,
+		CompanyWebsite:      &companyWebsite,
 		CountryID:           "1f6fc2bd-f081-4202-9b1a-d9cb88d942b9",
 	})
 	require.NoError(t, err)
@@ -62,6 +64,8 @@ func TestIdentitiesCreate(t *testing.T) {
 	assert.Equal(t, "e96ae7d1-11d5-42bc-a5c5-211f3c3788ae", identity.ID)
 	assert.Equal(t, "John", identity.FirstName)
 	assert.Equal(t, enums.IdentityTypeBusiness, identity.IdentityType)
+	require.NotNil(t, identity.CompanyWebsite)
+	assert.Equal(t, "https://example.com", *identity.CompanyWebsite)
 
 	// Verify included country
 	require.NotNil(t, identity.Country)
@@ -130,6 +134,39 @@ func TestIdentitiesUpdate(t *testing.T) {
 	assert.Equal(t, "jake.johnson@example.com", *identity.ContactEmail)
 
 	assertRequestJSON(t, *capturedBodyPtr, "identities/update_request.json")
+}
+
+func TestIdentitiesUpdateCompanyWebsite(t *testing.T) {
+	server, capturedBodyPtr := captureRequestBody(t, map[string]testRoute{
+		"PATCH /v3/identities/e96ae7d1-11d5-42bc-a5c5-211f3c3788ae": {status: http.StatusOK, fixture: "identities/update_company_website.json"},
+	})
+
+	identity, err := server.client.Identities().Update(context.Background(), &resource.Identity{
+		ID:             "e96ae7d1-11d5-42bc-a5c5-211f3c3788ae",
+		CompanyWebsite: Ptr("https://www.example.org"),
+	})
+	require.NoError(t, err)
+
+	assertRequestJSON(t, *capturedBodyPtr, "identities/update_company_website_request.json")
+	require.NotNil(t, identity.CompanyWebsite)
+	assert.Equal(t, "https://www.example.org", *identity.CompanyWebsite)
+}
+
+func TestIdentitiesCreatePersonalOmitsCompanyWebsite(t *testing.T) {
+	server, capturedBodyPtr := captureRequestBody(t, map[string]testRoute{
+		"POST /v3/identities": {status: http.StatusCreated, fixture: "identities/create.json"},
+	})
+
+	_, err := server.client.Identities().Create(context.Background(), &resource.Identity{
+		FirstName:    "John",
+		LastName:     "Doe",
+		PhoneNumber:  "123456789",
+		IdentityType: enums.IdentityTypePersonal,
+		CountryID:    "1f6fc2bd-f081-4202-9b1a-d9cb88d942b9",
+	})
+	require.NoError(t, err)
+
+	assert.NotContains(t, string(*capturedBodyPtr), "company_website")
 }
 
 func TestIdentitiesFindWithContactEmail(t *testing.T) {

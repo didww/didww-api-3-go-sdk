@@ -1,7 +1,7 @@
 // Lists emergency calling services (2026-04-16).
 //
 // Emergency calling services are customer-owned subscriptions that enable 911/112
-// on DIDs. They are created via the Orders API with an EmergencyOrderItem.
+// on DIDs. They are created by an emergency verification, not through the Orders API.
 //
 // Usage: DIDWW_API_KEY=your_api_key go run ./examples/emergency_calling_services/
 package main
@@ -11,8 +11,8 @@ import (
 	"fmt"
 	"time"
 
-	didww "github.com/didww/didww-api-3-go-sdk/v3"
-	"github.com/didww/didww-api-3-go-sdk/v3/examples"
+	didww "github.com/didww/didww-api-3-go-sdk/v4"
+	"github.com/didww/didww-api-3-go-sdk/v4/examples"
 )
 
 func main() {
@@ -20,7 +20,7 @@ func main() {
 	ctx := context.Background()
 
 	fmt.Println("=== Emergency Calling Services ===")
-	params := didww.NewQueryParams().Include("country,did_group_type")
+	params := didww.NewQueryParams().Include("country")
 	services, err := client.EmergencyCallingServices().List(ctx, params)
 	if err != nil {
 		panic(err)
@@ -39,9 +39,7 @@ func main() {
 		if svc.Country != nil {
 			fmt.Printf("  Country: %s\n", svc.Country.Name)
 		}
-		if svc.DIDGroupType != nil {
-			fmt.Printf("  DID Group Type: %s\n", svc.DIDGroupType.Name)
-		}
+		fmt.Printf("  Number Type: %s\n", svc.NumberType)
 		if svc.Meta != nil {
 			fmt.Printf("  Setup Price: %s\n", svc.Meta["setup_price"])
 			fmt.Printf("  Monthly Price: %s\n", svc.Meta["monthly_price"])

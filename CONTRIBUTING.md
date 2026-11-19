@@ -59,7 +59,7 @@ This project uses GitHub Actions for CI/CD with the following workflows:
 
 ### CI Workflow (`.github/workflows/ci.yml`)
 
-- **Triggers**: Push/PR to `main`, `master`, `develop` branches
+- **Triggers**: Push/PR to `main`, `master`, `develop`, `prerelease` branches
 - **Go versions**: 1.22, 1.23
 - **Platforms**: Ubuntu, Windows, macOS
 - **Features**:
@@ -71,7 +71,7 @@ This project uses GitHub Actions for CI/CD with the following workflows:
 
 ### Lint Workflow (`.github/workflows/lint.yml`)
 
-- **Triggers**: Push/PR to `main`, `master`, `develop` branches
+- **Triggers**: Push/PR to `main`, `master`, `develop`, `prerelease` branches
 - **Features**:
   - golangci-lint analysis
   - Code formatting verification

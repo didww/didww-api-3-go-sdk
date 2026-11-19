@@ -22,6 +22,15 @@
       "threshold_reached": false,
       "threshold_amount": "200.0",
       "media_encryption_mode": "srtp_sdes",
+      "codecs": [
+        "opus",
+        "g722",
+        "pcma",
+        "telephone_event"
+      ],
+      "ice_mode": "initiate",
+      "rtcp_mux_mode": "disabled",
+      "rtcp_feedback_mode": "initiate",
       "default_dst_action": "reject_all",
       "dst_prefixes": [
         "370"

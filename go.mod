@@ -1,4 +1,4 @@
-module github.com/didww/didww-api-3-go-sdk/v3
+module github.com/didww/didww-api-3-go-sdk/v4
 
 go 1.23.5
 

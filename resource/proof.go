@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/didww/didww-api-3-go-sdk/v3/jsonapi"
+	"github.com/didww/didww-api-3-go-sdk/v4/jsonapi"
 )
 
 // Proof represents a proof document.
@@ -57,7 +57,8 @@ func (p *Proof) UnmarshalRelationships(rels map[string]json.RawMessage) error {
 	return nil
 }
 
-// ProofType represents a type of proof document.
+// ProofType represents a type of proof document. EntityType is what the
+// document proves: "address", "business" or "personal".
 type ProofType struct {
 	ID         string `json:"-" jsonapi:"proof_types"`
 	Name       string `json:"name"`

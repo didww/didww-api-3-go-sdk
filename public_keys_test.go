@@ -24,35 +24,36 @@ func TestPublicKeysList(t *testing.T) {
 }
 
 func TestPublicKeysNoAuthHeader(t *testing.T) {
-	var capturedAuth string
-	var capturedAPIVersion string
-	server := newTestServerWithInspector(t, map[string]testRoute{
-		"GET /v3/public_keys": {status: http.StatusOK, fixture: "public_keys/index.json"},
-	}, func(r *http.Request) {
-		capturedAuth = r.Header.Get("Api-Key")
-		capturedAPIVersion = r.Header.Get("X-DIDWW-API-Version")
+	var capturedHeader http.Header
+	srv := newAuthTestServer(t, nil, func(w http.ResponseWriter, r *http.Request) {
+		capturedHeader = r.Header.Clone()
+		w.Header().Set("Content-Type", "application/vnd.api+json")
+		w.Write(loadFixture(t, "public_keys/index.json"))
 	})
+	client := newTestClient(t, srv.URL)
 
-	_, err := server.client.PublicKeys().List(context.Background(), nil)
+	_, err := client.PublicKeys().List(context.Background(), nil)
 	require.NoError(t, err)
 
-	assert.Equal(t, "", capturedAuth)
-	assert.Equal(t, apiVersion, capturedAPIVersion)
+	assert.NotContains(t, capturedHeader, "Authorization")
+	assert.NotContains(t, capturedHeader, "Api-Key")
+	assert.NotContains(t, capturedHeader, "X-Didww-Api-Version")
+	assert.Equal(t, "didww-go-sdk/"+sdkVersion, capturedHeader.Get("User-Agent"))
+	assert.Equal(t, 0, srv.mints())
 }
 
 func TestNonPublicEndpointHasAuthHeader(t *testing.T) {
-	var capturedAuth string
-	var capturedAPIVersion string
+	var capturedHeader http.Header
 	server := newTestServerWithInspector(t, map[string]testRoute{
 		"GET /v3/countries": {status: http.StatusOK, fixture: "countries/index.json"},
 	}, func(r *http.Request) {
-		capturedAuth = r.Header.Get("Api-Key")
-		capturedAPIVersion = r.Header.Get("X-DIDWW-API-Version")
+		capturedHeader = r.Header.Clone()
 	})
 
 	_, err := server.client.Countries().List(context.Background(), nil)
 	require.NoError(t, err)
 
-	assert.Equal(t, "test-api-key", capturedAuth)
-	assert.Equal(t, apiVersion, capturedAPIVersion)
+	assert.Equal(t, "Bearer "+testAccessToken, capturedHeader.Get("Authorization"))
+	assert.NotContains(t, capturedHeader, "Api-Key")
+	assert.NotContains(t, capturedHeader, "X-Didww-Api-Version")
 }

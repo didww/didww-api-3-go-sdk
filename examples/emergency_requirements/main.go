@@ -1,4 +1,4 @@
-// Lists emergency service requirements for a country/did_group_type (2026-04-16).
+// Lists emergency service requirements for a country/number_type.
 //
 // Emergency requirements describe what address precision, identity type,
 // and supporting fields an end-customer must provide to enable 911/112
@@ -12,8 +12,8 @@ import (
 	"fmt"
 	"strings"
 
-	didww "github.com/didww/didww-api-3-go-sdk/v3"
-	"github.com/didww/didww-api-3-go-sdk/v3/examples"
+	didww "github.com/didww/didww-api-3-go-sdk/v4"
+	"github.com/didww/didww-api-3-go-sdk/v4/examples"
 )
 
 func main() {
@@ -21,7 +21,7 @@ func main() {
 	ctx := context.Background()
 
 	fmt.Println("=== Emergency Requirements ===")
-	params := didww.NewQueryParams().Include("country,did_group_type")
+	params := didww.NewQueryParams().Include("country")
 	requirements, err := client.EmergencyRequirements().List(ctx, params)
 	if err != nil {
 		panic(err)
@@ -37,9 +37,7 @@ func main() {
 		if req.Country != nil {
 			fmt.Printf("  Country: %s\n", req.Country.Name)
 		}
-		if req.DIDGroupType != nil {
-			fmt.Printf("  DID Group Type: %s\n", req.DIDGroupType.Name)
-		}
+		fmt.Printf("  Number Type: %s\n", req.NumberType)
 		fmt.Printf("  Identity type required: %s\n", req.IdentityType)
 		fmt.Printf("  Address area level: %s\n", req.AddressAreaLevel)
 		if len(req.AddressMandatoryFields) > 0 {

@@ -10,6 +10,8 @@ func TestExportType(t *testing.T) {
 	}{
 		{"CDR In", ExportTypeCdrIn, "cdr_in"},
 		{"CDR Out", ExportTypeCdrOut, "cdr_out"},
+		{"SMS In", ExportTypeSmsIn, "sms_in"},
+		{"SMS Out", ExportTypeSmsOut, "sms_out"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -52,6 +54,44 @@ func TestCallbackMethod(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if string(tt.value) != tt.expected {
 				t.Errorf("expected %q, got %q", tt.expected, string(tt.value))
+			}
+		})
+	}
+}
+
+func TestExportTrunkType(t *testing.T) {
+	tests := []struct {
+		name     string
+		value    string
+		expected string
+	}{
+		{"SmppSmsc", ExportTrunkTypeSmppSmsc, "smpp_smsc"},
+		{"SmppEsme", ExportTrunkTypeSmppEsme, "smpp_esme"},
+		{"SmsToEmail", ExportTrunkTypeSmsToEmail, "sms_to_email"},
+		{"HTTPIn", ExportTrunkTypeHTTPIn, "http_in"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.value != tt.expected {
+				t.Errorf("expected %q, got %q", tt.expected, tt.value)
+			}
+		})
+	}
+}
+
+func TestExportServiceType(t *testing.T) {
+	tests := []struct {
+		name     string
+		value    string
+		expected string
+	}{
+		{"A2P", ExportServiceTypeA2P, "a2p"},
+		{"P2P", ExportServiceTypeP2P, "p2p"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.value != tt.expected {
+				t.Errorf("expected %q, got %q", tt.expected, tt.value)
 			}
 		})
 	}

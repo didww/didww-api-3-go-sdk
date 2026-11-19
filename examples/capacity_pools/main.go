@@ -1,4 +1,5 @@
-// Lists capacity pools with included shared capacity groups and qty-based pricings.
+// Lists capacity pools with included shared capacity groups and qty-based
+// pricings, then finds one pool by ID with its countries.
 //
 // Usage: DIDWW_API_KEY=your_api_key go run ./examples/capacity_pools/
 package main
@@ -7,8 +8,8 @@ import (
 	"context"
 	"fmt"
 
-	didww "github.com/didww/didww-api-3-go-sdk/v3"
-	"github.com/didww/didww-api-3-go-sdk/v3/examples"
+	didww "github.com/didww/didww-api-3-go-sdk/v4"
+	"github.com/didww/didww-api-3-go-sdk/v4/examples"
 )
 
 func main() {
@@ -47,4 +48,18 @@ func main() {
 			}
 		}
 	}
+
+	if len(pools) == 0 {
+		return
+	}
+
+	// Find one pool by ID
+	pool, err := client.CapacityPools().Find(ctx, pools[0].ID, didww.NewQueryParams().Include("countries"))
+	if err != nil {
+		panic(err)
+	}
+	fmt.Printf("\nFound pool: %s (%s)\n", pool.Name, pool.ID)
+	fmt.Printf("  setup=%s monthly=%s metered rate=%s\n", pool.SetupPrice, pool.MonthlyPrice, pool.MeteredRate)
+	fmt.Printf("  minimum limit=%d minimum qty per order=%d\n", pool.MinimumLimit, pool.MinimumQtyPerOrder)
+	fmt.Printf("  countries: %d\n", len(pool.Countries))
 }

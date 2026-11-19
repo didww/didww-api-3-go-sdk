@@ -3,10 +3,13 @@ package resource
 import (
 	"time"
 
-	"github.com/didww/didww-api-3-go-sdk/v3/resource/enums"
+	"github.com/didww/didww-api-3-go-sdk/v4/resource/enums"
 )
 
 // Identity represents a customer identity.
+//
+// VatID is listed as "tax_id" in the mandatory fields of AddressRequirement
+// and EmergencyRequirement.
 type Identity struct {
 	ID                  string             `json:"-" jsonapi:"identities"`
 	FirstName           string             `json:"first_name"`
@@ -17,6 +20,7 @@ type Identity struct {
 	CompanyName         *string            `json:"company_name"`
 	CompanyRegNumber    *string            `json:"company_reg_number"`
 	VatID               *string            `json:"vat_id"`
+	CompanyWebsite      *string            `json:"company_website,omitempty"`
 	Description         *string            `json:"description"`
 	PersonalTaxID       *string            `json:"personal_tax_id"`
 	IdentityType        enums.IdentityType `json:"identity_type"`
