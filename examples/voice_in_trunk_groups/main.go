@@ -11,7 +11,9 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"net/http"
 	"time"
 
 	didww "github.com/didww/didww-api-3-go-sdk/v4"
@@ -118,9 +120,14 @@ func deleteTrunkGroup(ctx context.Context, client *didww.Client, id string) {
 }
 
 func deleteTrunk(ctx context.Context, client *didww.Client, id string) {
-	if err := client.VoiceInTrunks().Delete(ctx, id); err != nil {
+	err := client.VoiceInTrunks().Delete(ctx, id)
+	var apiErr *didww.APIError
+	switch {
+	case errors.As(err, &apiErr) && apiErr.HTTPStatus == http.StatusNotFound:
+		fmt.Println("Trunk", id, "was deleted with its group")
+	case err != nil:
 		fmt.Println("Could not delete trunk:", err)
-		return
+	default:
+		fmt.Println("Deleted trunk", id)
 	}
-	fmt.Println("Deleted trunk", id)
 }

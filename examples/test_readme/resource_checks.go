@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"time"
 
 	didww "github.com/didww/didww-api-3-go-sdk/v4"
 	"github.com/didww/didww-api-3-go-sdk/v4/resource"
@@ -180,7 +181,7 @@ func (s *suite) smsRouting() (err error) {
 		return err
 	}
 	group, err := client.SmsTrunkGroups().Create(ctx, &resource.SmsTrunkGroup{
-		Name:        "README SMS routing " + s.suffix,
+		Name:        "README SMS routing group " + s.suffix, // SMS trunks and groups share one name space
 		SmsTrunkIDs: []string{member.ID},
 	})
 	if err != nil {
@@ -469,7 +470,7 @@ func (s *suite) didHistory() {
 		}
 
 		// List DID history entries
-		params := didww.NewQueryParams().Filter("did.id", did.ID)
+		params := didww.NewQueryParams().Filter("did_number", did.Number)
 		history, err := client.DIDHistory().List(ctx, params)
 		return s.count("history entries of "+did.Number, len(history), err)
 	})
@@ -480,10 +481,15 @@ func (s *suite) exports() {
 	ctx, client := s.ctx, s.client
 	s.section("Exports")
 
+	// from and to must fall within the current month and the two previous ones
+	const layout = "2006-01-02 15:04:05"
+	to := time.Now().UTC().Truncate(24 * time.Hour)
+	from := to.AddDate(0, 0, -14)
+
 	s.check("Create a CDR IN export", func() error {
 		export := &resource.Export{
 			ExportType: enums.ExportTypeCdrIn,
-			Filters:    map[string]interface{}{"from": "2026-04-01 00:00:00", "to": "2026-04-16 00:00:00"},
+			Filters:    map[string]interface{}{"from": from.Format(layout), "to": to.Format(layout)},
 		}
 		created, err := client.Exports().Create(ctx, export)
 		if err != nil {
@@ -495,8 +501,8 @@ func (s *suite) exports() {
 
 	s.check("Create an SMS OUT export, read it and download a completed export", func() error {
 		filters := map[string]interface{}{
-			"from":         "2026-10-01 00:00:00", // inclusive
-			"to":           "2026-10-02 00:00:00", // exclusive
+			"from":         from.Format(layout), // inclusive
+			"to":           to.Format(layout),   // exclusive
 			"service_type": enums.ExportServiceTypeA2P,
 		}
 		trunks, err := client.SmsTrunks().List(ctx, didww.NewQueryParams().Page(1, 1))

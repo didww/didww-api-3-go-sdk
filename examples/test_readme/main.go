@@ -18,6 +18,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
 	"os"
 	"strconv"
 	"strings"
@@ -283,5 +284,12 @@ func (s *suite) deleteSmsTrunk(id string) func() error {
 }
 
 func (s *suite) deleteVoiceInTrunk(id string) func() error {
-	return func() error { return s.client.VoiceInTrunks().Delete(s.ctx, id) }
+	return func() error {
+		err := s.client.VoiceInTrunks().Delete(s.ctx, id)
+		var apiErr *didww.APIError
+		if errors.As(err, &apiErr) && apiErr.HTTPStatus == http.StatusNotFound {
+			return nil // deleting a trunk group deletes its trunks
+		}
+		return err
+	}
 }
