@@ -658,7 +658,7 @@ created, _ := client.Addresses().Create(ctx, address)
 
 ```go
 cbURL := "http://example.com/callback"
-cbMethod := "GET"
+cbMethod := string(enums.CallbackMethodGET) // "get"; the API takes lowercase methods
 verification := &resource.AddressVerification{
     CallbackURL:    &cbURL,
     CallbackMethod: &cbMethod,

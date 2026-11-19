@@ -60,7 +60,7 @@ func (s *suite) addressVerification() (err error) {
 	s.logf("the identity and the address meet the requirement")
 
 	cbURL := "http://example.com/callback"
-	cbMethod := "GET"
+	cbMethod := string(enums.CallbackMethodGET) // "get"; the API takes lowercase methods
 	verification := &resource.AddressVerification{
 		CallbackURL:    &cbURL,
 		CallbackMethod: &cbMethod,
