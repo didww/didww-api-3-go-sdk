@@ -103,8 +103,8 @@ func main() {
 	}
 	fmt.Printf("  Order: %s -- %s\n", order.ID, order.Status)
 
-	// Wait for order to complete
-	for i := 0; i < 10; i++ {
+	// Wait for order to complete (up to 120 s)
+	for i := 0; i < 24; i++ {
 		if order.Status == "completed" {
 			break
 		}

@@ -125,25 +125,30 @@ func (s *suite) groupWithAddressRequirement() (*resource.DIDGroup, *resource.Add
 	if err != nil {
 		return nil, nil, err
 	}
+	const pageSize = 100 // the largest page the API serves
 	ukrainianGroups := func(areaName string) (*resource.DIDGroup, error) {
-		params := didww.NewQueryParams().
-			Filter("country.id", ukraineID).
-			Filter("number_type", string(enums.NumberTypeLocal)).
-			Include("address_requirement,city,stock_keeping_units").
-			Page(1, 500)
-		if areaName != "" {
-			params = params.Filter("area_name", areaName)
-		}
-		groups, listErr := client.DIDGroups().List(ctx, params)
-		if listErr != nil {
-			return nil, listErr
-		}
-		for _, g := range groups {
-			if g.AddressRequirement != nil && len(g.StockKeepingUnits) > 0 {
-				return g, nil
+		for page := 1; ; page++ {
+			params := didww.NewQueryParams().
+				Filter("country.id", ukraineID).
+				Filter("number_type", string(enums.NumberTypeLocal)).
+				Include("address_requirement,city,stock_keeping_units").
+				Page(page, pageSize)
+			if areaName != "" {
+				params = params.Filter("area_name", areaName)
+			}
+			groups, listErr := client.DIDGroups().List(ctx, params)
+			if listErr != nil {
+				return nil, listErr
+			}
+			for _, g := range groups {
+				if g.AddressRequirement != nil && len(g.StockKeepingUnits) > 0 {
+					return g, nil
+				}
+			}
+			if len(groups) < pageSize {
+				return nil, nil
 			}
 		}
-		return nil, nil
 	}
 
 	group, err := ukrainianGroups("Kiev")
@@ -441,7 +446,7 @@ func (s *suite) orderAvailableDID(params *didww.QueryParams) (*resource.DID, err
 	if err != nil {
 		return nil, err
 	}
-	for i := 0; i < 12 && !order.IsCompleted(); i++ {
+	for i := 0; i < 24 && !order.IsCompleted(); i++ { // up to 120 s
 		if order.IsCanceled() {
 			return nil, fmt.Errorf("order %s was canceled", order.ID)
 		}
