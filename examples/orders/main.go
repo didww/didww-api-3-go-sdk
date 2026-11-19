@@ -71,7 +71,7 @@ func main() {
 	fmt.Printf("  External reference: %s\n", extRef)
 
 	// Cancel the order (delete it)
-	fmt.Println("\n=== Cancelling Order ===")
+	fmt.Println("\n=== Canceling Order ===")
 	if err := client.Orders().Delete(ctx, created.ID); err != nil {
 		panic(err)
 	}

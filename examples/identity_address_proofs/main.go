@@ -105,15 +105,7 @@ func main() {
 		panic(err)
 	}
 	for _, label := range []string{"identity_proof", "address_proof"} {
-		encrypted, err := enc.Encrypt(examplePDF)
-		if err != nil {
-			panic(err)
-		}
-		id, err := client.UploadEncryptedFile(ctx, encrypted, label+".pdf.enc", enc.Fingerprint(), label+".pdf")
-		if err != nil {
-			panic(err)
-		}
-		fileIDs = append(fileIDs, id)
+		fileIDs = append(fileIDs, uploadFile(ctx, client, enc, label))
 	}
 	fmt.Printf("Uploaded encrypted files: %v\n", fileIDs)
 
@@ -154,6 +146,19 @@ func main() {
 		fmt.Printf("  Birth Country: %s\n", identity.BirthCountry.Name)
 	}
 	fmt.Printf("Address %s: verified=%t, proofs=%d\n", address.ID, address.Verified, len(address.Proofs))
+}
+
+// uploadFile encrypts the bundled PDF and uploads it; one file per request.
+func uploadFile(ctx context.Context, client *didww.Client, enc *didww.Encrypt, label string) string {
+	encrypted, err := enc.Encrypt(examplePDF)
+	if err != nil {
+		panic(err)
+	}
+	id, err := client.UploadEncryptedFile(ctx, encrypted, label+".pdf.enc", enc.Fingerprint(), label+".pdf")
+	if err != nil {
+		panic(err)
+	}
+	return id
 }
 
 func findProofType(proofTypes []*resource.ProofType, entityType string) *resource.ProofType {

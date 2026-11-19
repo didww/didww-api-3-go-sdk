@@ -43,8 +43,8 @@ func main() {
 		panic(err)
 	}
 	defer func() {
-		if err := client.SharedCapacityGroups().Delete(ctx, created.ID); err != nil {
-			fmt.Println("Could not delete shared capacity group:", err)
+		if delErr := client.SharedCapacityGroups().Delete(ctx, created.ID); delErr != nil {
+			fmt.Println("Could not delete shared capacity group:", delErr)
 			return
 		}
 		fmt.Println("\nDeleted shared capacity group")
