@@ -103,7 +103,7 @@ client, err := didww.NewClient("YOUR_API_KEY",
 | `WithEnvironment(env)` | `didww.Sandbox` | `didww.Sandbox` or `didww.Production`. Selects the API, token service and price hosts. See [Environments](#environments). |
 | `WithAPIVersion(v)` | `didww.DefaultAPIVersion` | API version requested in every token. See [API Version](#api-version). |
 | `WithScope(s)` | none | `didww.ScopeRead` or `didww.ScopeFull`. Without it no scope is requested and the token service grants `full`. See [Scope](#scope). |
-| `WithTokenStore(s)` | `didww.NewMemoryTokenStore()` | Cache for access tokens. See [Token cache](#token-cache). |
+| `WithTokenStore(s)` | a memory store shared by the process | Cache for access tokens. See [Token cache](#token-cache). |
 | `WithLogger(l)` | `slog.Default()` | `*slog.Logger` for the token warnings and debug events. `nil` silences them. See [Logging](#logging). |
 | `WithHTTPClient(hc)` | see below | `*http.Client` used for every call. See [Custom HTTP Client](#custom-http-client-proxy-ssl-etc). |
 | `WithBaseURL(url)` | API URL of the environment | JSON:API base URL only. |
@@ -162,7 +162,7 @@ Every request carries `Authorization: Bearer <token>`. The SDK mints the tokens 
   | SMS OUT (A2P, P2P, OTP) and SMS IN prices | `api-sms.didww.com` |
 
   `client.PublicKeys().List` is sent without a token.
-- **Expiry and 401.** A cached token lives for the `expires_in` granted; the SDK adds no local expiry margin. When a request is answered 401, the SDK drops that token, mints a new one and sends the request once more. A second 401 drops the new token too and is returned (see [Error Handling](#error-handling)). A 403, such as `insufficient_scope`, is never retried.
+- **Expiry and 401.** The SDK asks for the longest lifetime the token service grants, one hour (`expires_in: 3600`), and caches a token for the `expires_in` granted, with no local expiry margin. When a request is answered 401, the SDK drops that token, mints a new one and sends the request once more. A second 401 drops the new token too and is returned (see [Error Handling](#error-handling)). A 403, such as `insufficient_scope`, is never retried.
 - **Concurrency.** Concurrent calls of one `Client` that need the same token wait for a single mint. A caller whose context ends stops waiting; the mint itself goes on for the other callers.
 - **Token service errors** are returned as `*didww.AuthError` from any call that needs a new token:
   - A 429 returns `didww.ErrRateLimited` with `RetryAfter` (the `Retry-After` seconds, at least 1 s). Every further mint for the same token service and API key in the process fails the same way without a request until that time has passed, plus a small random delay so that clients do not retry in step.
@@ -188,7 +188,7 @@ The SDK compares each token it receives with what it asked for:
 
 Tokens are cached in a `didww.TokenStore`, keyed by the token service URL, the API key (as a SHA-256 hash), the audience, the API version and the scope. Each entry is stored for the token's `expires_in`.
 
-The default `didww.NewMemoryTokenStore()` keeps the tokens in process memory. Each `Client` built without `WithTokenStore` has its own, so create one `Client` and reuse it: it is safe for concurrent use. To share tokens between clients or processes, pass one store to all of them, for example your own implementation backed by Redis:
+The default store keeps the tokens in process memory and is shared by every `Client` built without `WithTokenStore`, so clients with the same API key reuse each other's tokens. A `Client` is safe for concurrent use, so you can also create one and reuse it. To share tokens between processes, pass one store to all of them, for example your own implementation backed by Redis:
 
 ```go
 type TokenStore interface {
@@ -214,7 +214,8 @@ Neither the token nor the API key is ever logged.
 ### SDK design decisions
 
 - **Audience strategy.** One token per audience, minted on first use, rather than one token naming every service. An account that never calls the prices services never requests their audiences, so a refused audience cannot break DID management, and every token is valid for one service only.
-- **Cache store.** In-process memory by default, because a Go service usually keeps one `Client` for its lifetime. A shared store is opt-in through `WithTokenStore`. Lifetime is decided by the server through the 401 refresh, not by a local expiry margin.
+- **Cache store.** In-process memory by default, shared by every `Client` of the process. A store shared between processes is opt-in through `WithTokenStore`.
+- **Token lifetime.** The longest the token service grants, one hour, so that a process mints each token as rarely as possible. Lifetime is decided by the server through the 401 refresh, not by a local expiry margin.
 - **Gzip handling.** Price files are streamed to your writer or file exactly as served, still gzipped, without being held in memory. The SDK never decompresses them on its own: `didww.EachPriceRow` reads a downloaded file when you want rows.
 - **Upload retry.** The 401 retry sends the request body a second time. `UploadEncryptedFile` takes the encrypted bytes and builds the multipart body in memory, so the retry always resends the complete body; there is no streamed-upload limitation.
 

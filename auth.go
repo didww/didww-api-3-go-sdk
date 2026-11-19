@@ -31,6 +31,9 @@ const (
 	backoffBase         = 500 * time.Millisecond
 	backoffCap          = 8 * time.Second
 	storeReadFailedMsg  = "DIDWW token store read failed"
+	// requestedLifetime is the longest token lifetime the token service grants,
+	// in seconds: the fewer mints, the better.
+	requestedLifetime = 3600
 )
 
 // send authenticates the request built by build for audience and sends it.
@@ -308,6 +311,7 @@ type tokenRequest struct {
 	Audience   []string `json:"aud"`
 	APIVersion string   `json:"api_version"`
 	Scope      string   `json:"scope,omitempty"`
+	ExpiresIn  int      `json:"expires_in"`
 }
 
 type tokenResponse struct {
@@ -321,7 +325,7 @@ func (p *tokenProvider) mint(ctx context.Context, audience string) (Token, error
 		return Token{}, err
 	}
 
-	body, err := json.Marshal(tokenRequest{Audience: []string{audience}, APIVersion: p.apiVersion, Scope: string(p.scope)})
+	body, err := json.Marshal(tokenRequest{Audience: []string{audience}, APIVersion: p.apiVersion, Scope: string(p.scope), ExpiresIn: requestedLifetime})
 	if err != nil {
 		return Token{}, &AuthError{Err: err}
 	}

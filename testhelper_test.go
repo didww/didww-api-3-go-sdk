@@ -72,7 +72,7 @@ func writeTestToken(w http.ResponseWriter, r *http.Request, accessToken string) 
 // served at url, with logging disabled. opts are applied last.
 func newTestClient(t *testing.T, url string, opts ...ClientOption) *Client {
 	t.Helper()
-	opts = append([]ClientOption{WithBaseURL(url), WithAuthURL(url), WithLogger(nil)}, opts...)
+	opts = append([]ClientOption{WithBaseURL(url), WithAuthURL(url), WithLogger(nil), WithTokenStore(NewMemoryTokenStore())}, opts...)
 	client, err := NewClient("test-api-key", opts...)
 	require.NoError(t, err)
 	return client

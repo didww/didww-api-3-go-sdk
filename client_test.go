@@ -395,8 +395,8 @@ func TestClientRetriesOnceWithNewTokenAfter401(t *testing.T) {
 
 	assert.NotEmpty(t, countries)
 	assert.Equal(t, 2, srv.mints())
-	assert.JSONEq(t, `{"aud":["api.didww.com"],"api_version":"2026-11-19"}`, string(srv.mintBody(0)))
-	assert.JSONEq(t, `{"aud":["api.didww.com"],"api_version":"2026-11-19"}`, string(srv.mintBody(1)))
+	assert.JSONEq(t, `{"aud":["api.didww.com"],"api_version":"2026-11-19","expires_in":3600}`, string(srv.mintBody(0)))
+	assert.JSONEq(t, `{"aud":["api.didww.com"],"api_version":"2026-11-19","expires_in":3600}`, string(srv.mintBody(1)))
 	requests := log.all()
 	require.Len(t, requests, 2)
 	assert.Equal(t, "Bearer token-1", requests[0].authorization)
@@ -570,7 +570,7 @@ func TestSendStripsIfNoneMatch(t *testing.T) {
 	assert.NotContains(t, header, "If-None-Match")
 	assert.Equal(t, "Wed, 14 Oct 2026 06:00:00 GMT", header.Get("If-Modified-Since"))
 	assert.Equal(t, "Bearer token-1", header.Get("Authorization"))
-	assert.JSONEq(t, `{"aud":["api-vin.didww.com"],"api_version":"2026-11-19"}`, string(srv.mintBody(0)))
+	assert.JSONEq(t, `{"aud":["api-vin.didww.com"],"api_version":"2026-11-19","expires_in":3600}`, string(srv.mintBody(0)))
 }
 
 func TestDefaultClientsShareTransport(t *testing.T) {

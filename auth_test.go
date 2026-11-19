@@ -63,7 +63,7 @@ func TestTokenMintRequestWithAPIVersion(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.Equal(t, "2099-01-01", tok.APIVersion)
-	assert.JSONEq(t, `{"aud":["api.didww.com"],"api_version":"2099-01-01"}`, string(srv.mintBody(0)))
+	assert.JSONEq(t, `{"aud":["api.didww.com"],"api_version":"2099-01-01","expires_in":3600}`, string(srv.mintBody(0)))
 }
 
 func TestTokenReused(t *testing.T) {
@@ -91,8 +91,8 @@ func TestTokenMintedPerAudience(t *testing.T) {
 	assert.NotEqual(t, api.AccessToken, vin.AccessToken)
 	assert.Equal(t, []string{audienceVoiceIn}, vin.Audience)
 	require.Equal(t, 2, srv.mints())
-	assert.JSONEq(t, `{"aud":["api.didww.com"],"api_version":"2026-11-19"}`, string(srv.mintBody(0)))
-	assert.JSONEq(t, `{"aud":["api-vin.didww.com"],"api_version":"2026-11-19"}`, string(srv.mintBody(1)))
+	assert.JSONEq(t, `{"aud":["api.didww.com"],"api_version":"2026-11-19","expires_in":3600}`, string(srv.mintBody(0)))
+	assert.JSONEq(t, `{"aud":["api-vin.didww.com"],"api_version":"2026-11-19","expires_in":3600}`, string(srv.mintBody(1)))
 }
 
 func TestTokenSharedThroughStore(t *testing.T) {
@@ -102,6 +102,23 @@ func TestTokenSharedThroughStore(t *testing.T) {
 	second := newTestClient(t, srv.URL, WithTokenStore(store))
 
 	_, err := first.tokens.token(context.Background(), audienceAPI)
+	require.NoError(t, err)
+	tok, err := second.tokens.token(context.Background(), audienceAPI)
+	require.NoError(t, err)
+
+	assert.Equal(t, "token-1", tok.AccessToken)
+	assert.Equal(t, 1, srv.mints())
+}
+
+func TestTokenSharedByDefault(t *testing.T) {
+	srv := newAuthTestServer(t, nil, nil)
+	apiKey := fmt.Sprintf("key-%d", time.Now().UnixNano())
+	first, err := NewClient(apiKey, WithBaseURL(srv.URL), WithAuthURL(srv.URL), WithLogger(nil))
+	require.NoError(t, err)
+	second, err := NewClient(apiKey, WithBaseURL(srv.URL), WithAuthURL(srv.URL), WithLogger(nil))
+	require.NoError(t, err)
+
+	_, err = first.tokens.token(context.Background(), audienceAPI)
 	require.NoError(t, err)
 	tok, err := second.tokens.token(context.Background(), audienceAPI)
 	require.NoError(t, err)
@@ -1093,16 +1110,17 @@ func TestTokenWarningsGoToDefaultLogger(t *testing.T) {
 		log.SetFlags(previousFlags)
 	})
 
-	client, err := NewClient("test-api-key", WithBaseURL(srv.URL), WithAuthURL(srv.URL), WithScope(ScopeRead))
+	client, err := NewClient("test-api-key", WithBaseURL(srv.URL), WithAuthURL(srv.URL), WithScope(ScopeRead), WithTokenStore(NewMemoryTokenStore()))
 	require.NoError(t, err)
 	_, err = client.tokens.token(context.Background(), audienceAPI)
 	require.NoError(t, err)
 	assert.Contains(t, logs.String(), "DIDWW token scope mismatch")
 
 	logs.Reset()
-	silent, err := NewClient("test-api-key", WithBaseURL(srv.URL), WithAuthURL(srv.URL), WithScope(ScopeRead), WithLogger(nil))
+	silent, err := NewClient("test-api-key", WithBaseURL(srv.URL), WithAuthURL(srv.URL), WithScope(ScopeRead), WithLogger(nil), WithTokenStore(NewMemoryTokenStore()))
 	require.NoError(t, err)
 	_, err = silent.tokens.token(context.Background(), audienceAPI)
 	require.NoError(t, err)
+	assert.Equal(t, 2, srv.mints())
 	assert.Empty(t, logs.String())
 }
