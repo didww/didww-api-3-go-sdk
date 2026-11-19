@@ -90,7 +90,8 @@ func WithScope(s Scope) ClientOption {
 
 // WithTokenStore sets the store that caches access tokens, for example one
 // shared by several processes. The store holds live bearer tokens and must be
-// protected accordingly. The default is NewMemoryTokenStore.
+// protected accordingly. The default is a memory store shared by every Client
+// built without WithTokenStore.
 func WithTokenStore(s TokenStore) ClientOption {
 	return func(c *Client) {
 		c.tokenStore = s
@@ -166,7 +167,7 @@ func NewClient(apiKey string, opts ...ClientOption) (*Client, error) {
 	noRedirect.CheckRedirect = func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }
 	c.noRedirectClient = &noRedirect
 	if c.tokenStore == nil {
-		c.tokenStore = NewMemoryTokenStore()
+		c.tokenStore = defaultTokenStore
 	}
 	c.tokens = newTokenProvider(c)
 

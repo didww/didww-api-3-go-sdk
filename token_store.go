@@ -27,6 +27,10 @@ type TokenStore interface {
 	Delete(ctx context.Context, key string) error
 }
 
+// defaultTokenStore is shared by every Client built without WithTokenStore: the
+// cache key already separates API keys, audiences, versions and scopes.
+var defaultTokenStore = NewMemoryTokenStore()
+
 // NewMemoryTokenStore returns a TokenStore that keeps tokens in process
 // memory. Expired entries are dropped when read. It is safe for concurrent use.
 func NewMemoryTokenStore() TokenStore {
@@ -62,8 +66,15 @@ func (s *memoryTokenStore) Set(_ context.Context, key string, t Token, ttl time.
 	e := memoryTokenEntry{token: t}
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	now := s.now()
+	// Expired entries of keys no longer read would otherwise stay forever.
+	for k := range s.entries {
+		if exp := s.entries[k].expiresAt; !exp.IsZero() && !now.Before(exp) {
+			delete(s.entries, k)
+		}
+	}
 	if ttl > 0 {
-		e.expiresAt = s.now().Add(ttl)
+		e.expiresAt = now.Add(ttl)
 	}
 	s.entries[key] = e
 	return nil
