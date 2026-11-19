@@ -7,8 +7,10 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"os"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	didww "github.com/didww/didww-api-3-go-sdk/v4"
@@ -59,23 +61,41 @@ func (s *suite) configuration() {
 		return skip("production environment: the client is built, no request is sent")
 	})
 
-	s.check("Custom HTTP client with a proxy", func() error {
-		proxyURL, _ := url.Parse("http://proxy.example.com:8080")
+	s.check("Custom HTTP client with a proxy (sandbox)", func() error {
+		proxyEnv := os.Getenv("DIDWW_README_PROXY_URL")
+		if proxyEnv == "" {
+			return skip("set DIDWW_README_PROXY_URL to an HTTP proxy to run it")
+		}
+		proxyURL, err := url.Parse(proxyEnv)
+		if err != nil {
+			return err
+		}
+		var proxied atomic.Int32 // counts the requests sent through the proxy
 		httpClient := &http.Client{
 			Transport: &http.Transport{
-				Proxy: http.ProxyURL(proxyURL),
+				Proxy: func(r *http.Request) (*url.URL, error) {
+					proxied.Add(1)
+					return http.ProxyURL(proxyURL)(r)
+				},
 			},
 		}
 
+		// The sandbox instead of the README's production environment; a store
+		// of its own, so that the token is minted through the proxy as well
 		client, err := didww.NewClient(s.apiKey,
-			didww.WithEnvironment(didww.Production),
+			didww.WithEnvironment(didww.Sandbox),
 			didww.WithHTTPClient(httpClient),
+			didww.WithTokenStore(didww.NewMemoryTokenStore()),
 		)
 		if err != nil {
 			return err
 		}
-		_ = client
-		return skip("production environment through a placeholder proxy: the client is built, no request is sent")
+		balance, err := client.Balance().Find(s.ctx)
+		if err != nil {
+			return err
+		}
+		s.logf("balance %s, %d requests through the proxy", balance.TotalBalance, proxied.Load())
+		return expect(proxied.Load() >= 2, "%d requests went through the proxy, want the token and the API request", proxied.Load())
 	})
 }
 
@@ -116,6 +136,51 @@ func (s *suite) authentication() {
 		s.logf("tokens in the store: %d", stored)
 		return expect(stored == 1, "the store holds %d tokens, want 1", stored)
 	})
+
+	s.check("Token cache: a TokenStore backed by Redis, shared by two clients", s.redisTokenCache)
+}
+
+// redisTokenCache mints a token through a Redis store and checks that a second
+// client, with its own connection to Redis, reuses it instead of minting one.
+func (s *suite) redisTokenCache() (err error) {
+	ctx := s.ctx
+	redisURL := os.Getenv("DIDWW_README_REDIS_URL")
+	if redisURL == "" {
+		return skip("set DIDWW_README_REDIS_URL to a Redis server to run it")
+	}
+	prefix := "didww-readme:" + s.suffix + ":" // keys of this run only
+
+	first, err := dialRedis(ctx, redisURL, prefix)
+	if err != nil {
+		return err
+	}
+	defer s.undo(&err, "delete the tokens from Redis", func() error { return first.close(ctx) })
+	second, err := dialRedis(ctx, redisURL, prefix)
+	if err != nil {
+		return err
+	}
+	defer s.undo(&err, "close the second Redis connection", func() error { return second.close(ctx) })
+
+	firstClient, err := didww.NewClient(s.apiKey, didww.WithTokenStore(first))
+	if err != nil {
+		return err
+	}
+	if _, err = firstClient.Balance().Find(ctx); err != nil {
+		return err
+	}
+	secondClient, err := didww.NewClient(s.apiKey, didww.WithTokenStore(second))
+	if err != nil {
+		return err
+	}
+	if _, err = secondClient.Balance().Find(ctx); err != nil {
+		return err
+	}
+
+	_, firstSets := first.counts()
+	secondHits, secondSets := second.counts()
+	s.logf("first client stored %d token(s); second client read %d and stored %d", firstSets, secondHits, secondSets)
+	return expect(firstSets == 1 && secondHits >= 1 && secondSets == 0,
+		"the second client did not reuse the token of the first one")
 }
 
 // mapTokenStore is a didww.TokenStore kept in a map, in place of a store

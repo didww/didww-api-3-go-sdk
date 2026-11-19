@@ -4,9 +4,19 @@
 // Each check runs the code of its snippet, with the placeholders such as
 // "uuid" replaced by real IDs, and deletes or restores what it creates or
 // changes, also when it fails. A failing check is reported and the next one
-// runs. Snippets that need the production environment, or that submit
-// requests which cannot be deleted afterwards, are reported as skipped with
-// the reason.
+// runs. Only the production client snippet is skipped: the client is built,
+// nothing is sent.
+//
+// The address and emergency verification checks submit real verifications
+// (ordering a DID when needed), which cannot be deleted; each prints a line
+// "REVIEW address_verification <id> <reference>" or
+// "REVIEW emergency_verification <id> <reference>" for the review.
+//
+// Optional environment variables (the check is skipped when one is missing):
+//   - DIDWW_README_PROXY_URL: an HTTP proxy for the custom HTTP client snippet,
+//     which then sends sandbox requests through it
+//   - DIDWW_README_REDIS_URL: a redis:// URL for the token cache shared by two
+//     clients through Redis
 //
 // Prints "Results: N passed, M failed" and exits with status 1 when a check
 // fails.
@@ -177,12 +187,17 @@ func (s *suite) summary() int {
 
 // usCountryID returns the ID of the United States.
 func (s *suite) usCountryID() (string, error) {
-	countries, err := s.client.Countries().List(s.ctx, didww.NewQueryParams().Filter("iso", "US"))
+	return s.countryID("US")
+}
+
+// countryID returns the ID of the country with the ISO code.
+func (s *suite) countryID(iso string) (string, error) {
+	countries, err := s.client.Countries().List(s.ctx, didww.NewQueryParams().Filter("iso", iso))
 	if err != nil {
 		return "", err
 	}
 	if len(countries) == 0 {
-		return "", errors.New("country US not found")
+		return "", fmt.Errorf("country %s not found", iso)
 	}
 	return countries[0].ID, nil
 }

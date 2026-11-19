@@ -320,16 +320,18 @@ func (s *suite) sharedCapacityGroups() {
 		if err != nil {
 			return err
 		}
+		// The pool with the most unassigned channels; the group takes 20 of them
 		var pool *resource.CapacityPool
 		for _, p := range pools {
-			if p.TotalChannelsCount-p.AssignedChannelsCount >= sharedChannels {
+			if pool == nil || p.TotalChannelsCount-p.AssignedChannelsCount > pool.TotalChannelsCount-pool.AssignedChannelsCount {
 				pool = p
-				break
 			}
 		}
 		if pool == nil {
-			return skip("no capacity pool with %d unassigned channels", sharedChannels)
+			return errors.New("the account has no capacity pool")
 		}
+		s.logf("pool %s: %d of %d channels unassigned", pool.Name,
+			pool.TotalChannelsCount-pool.AssignedChannelsCount, pool.TotalChannelsCount)
 
 		group := &resource.SharedCapacityGroup{
 			Name:                 "Shared Group " + s.suffix,
@@ -408,21 +410,7 @@ func (s *suite) identitiesAndAddresses() {
 		})
 	}
 
-	s.check("Create an address verification", func() error {
-		cbURL := "http://example.com/callback"
-		cbMethod := "GET"
-		verification := &resource.AddressVerification{
-			CallbackURL:    &cbURL,
-			CallbackMethod: &cbMethod,
-			AddressID:      "address-uuid",
-			DIDIDs:         []string{"did-uuid"},
-		}
-		submit := func() (*resource.AddressVerification, error) {
-			return client.AddressVerifications().Create(ctx, verification)
-		}
-		_ = submit
-		return skip("submits DIDs for an address review, which cannot be deleted; needs a DID whose DID group requires an address")
-	})
+	s.check("Create an address verification", s.addressVerification)
 }
 
 // README: Emergency Services
@@ -440,18 +428,7 @@ func (s *suite) emergencyServices() {
 		return s.count("emergency requirements in the US", len(reqs), err)
 	})
 
-	s.check("Create an emergency verification", func() error {
-		verification := &resource.EmergencyVerification{
-			AddressID: "address-uuid",
-			DIDIDs:    []string{"did-uuid"},
-		}
-		submit := func() (*resource.EmergencyVerification, error) {
-			return client.EmergencyVerifications().Create(ctx, verification)
-		}
-		_ = submit
-		return skip("submits DIDs for an emergency review, which cannot be deleted; needs an emergency-capable DID " +
-			"and a matching address (see examples/emergency_scenario)")
-	})
+	s.check("Create an emergency verification", s.emergencyVerification)
 
 	s.check("Emergency calling services", func() error {
 		services, err := client.EmergencyCallingServices().List(ctx, nil)
