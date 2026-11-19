@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"sort"
-	"strings"
 	"time"
 
 	didww "github.com/didww/didww-api-3-go-sdk/v4"
@@ -118,32 +117,41 @@ func (s *suite) cleanupRegistration(err *error, reg *registration) { //nolint:go
 }
 
 // groupWithAddressRequirement returns a Ukrainian local DID group that needs
-// an address, Odesa when listed, with its address requirement.
+// an address, Kiev when it does, with its address requirement. The
+// address_requirement relationship is only set when it is included.
 func (s *suite) groupWithAddressRequirement() (*resource.DIDGroup, *resource.AddressRequirement, error) {
 	ctx, client := s.ctx, s.client
 	ukraineID, err := s.countryID("UA")
 	if err != nil {
 		return nil, nil, err
 	}
-	params := didww.NewQueryParams().
-		Filter("country.id", ukraineID).
-		Filter("number_type", string(enums.NumberTypeLocal)).
-		Filter("needs_registration", "true").
-		Filter("available_dids_enabled", "true").
-		Include("address_requirement,city,stock_keeping_units").
-		Page(1, 100)
-	groups, err := client.DIDGroups().List(ctx, params)
+	ukrainianGroups := func(areaName string) (*resource.DIDGroup, error) {
+		params := didww.NewQueryParams().
+			Filter("country.id", ukraineID).
+			Filter("number_type", string(enums.NumberTypeLocal)).
+			Include("address_requirement,city,stock_keeping_units").
+			Page(1, 500)
+		if areaName != "" {
+			params = params.Filter("area_name", areaName)
+		}
+		groups, listErr := client.DIDGroups().List(ctx, params)
+		if listErr != nil {
+			return nil, listErr
+		}
+		for _, g := range groups {
+			if g.AddressRequirement != nil && len(g.StockKeepingUnits) > 0 {
+				return g, nil
+			}
+		}
+		return nil, nil
+	}
+
+	group, err := ukrainianGroups("Kiev")
+	if err == nil && group == nil {
+		group, err = ukrainianGroups("") // any other Ukrainian local group with a requirement
+	}
 	if err != nil {
 		return nil, nil, err
-	}
-	var group *resource.DIDGroup
-	for _, g := range groups {
-		if g.AddressRequirement == nil || len(g.StockKeepingUnits) == 0 {
-			continue
-		}
-		if group == nil || strings.HasPrefix(g.AreaName, "Odes") {
-			group = g
-		}
 	}
 	if group == nil {
 		return nil, nil, errors.New("no Ukrainian local DID group with an address requirement")
