@@ -581,15 +581,17 @@ Deleting an SMS trunk leaves the verifications routed through it without a trunk
 ### Orders
 
 ```go
+import (
+    "github.com/didww/didww-api-3-go-sdk/v4/resource"
+    "github.com/didww/didww-api-3-go-sdk/v4/resource/orderitem"
+)
+
 // Create order with DID order item
-order := &didww.Order{
-    Items: []didww.OrderItem{
-        {
-            Type: "did_order_items",
-            Attributes: didww.OrderItemAttributes{
-                SkuID: "sku-uuid",
-                Qty:   2,
-            },
+order := &resource.Order{
+    Items: []orderitem.OrderItem{
+        &orderitem.DidOrderItem{
+            SkuID: "sku-uuid",
+            Qty:   2,
         },
     },
 }
@@ -602,7 +604,7 @@ client.Orders().Delete(ctx, created.ID)
 ### DID Reservations
 
 ```go
-reservation := &didww.DIDReservation{
+reservation := &resource.DIDReservation{
     Description:    "Reserved for client",
     AvailableDIDID: "available-did-uuid",
 }
@@ -615,7 +617,7 @@ client.DIDReservations().Delete(ctx, created.ID)
 ### Shared Capacity Groups
 
 ```go
-group := &didww.SharedCapacityGroup{
+group := &resource.SharedCapacityGroup{
     Name:                 "Shared Group",
     SharedChannelsCount:  20,
     MeteredChannelsCount: 0,
@@ -629,7 +631,7 @@ created, _ := client.SharedCapacityGroups().Create(ctx, group)
 ```go
 import "github.com/didww/didww-api-3-go-sdk/v4/resource/enums"
 
-identity := &didww.Identity{
+identity := &resource.Identity{
     FirstName:    "John",
     LastName:     "Doe",
     PhoneNumber:  "12125551234",
@@ -642,7 +644,7 @@ created, _ := client.Identities().Create(ctx, identity)
 ### Addresses
 
 ```go
-address := &didww.Address{
+address := &resource.Address{
     CityName:   "New York",
     PostalCode: "10001",
     Address:    "123 Main St",
@@ -657,7 +659,7 @@ created, _ := client.Addresses().Create(ctx, address)
 ```go
 cbURL := "http://example.com/callback"
 cbMethod := "GET"
-verification := &didww.AddressVerification{
+verification := &resource.AddressVerification{
     CallbackURL:    &cbURL,
     CallbackMethod: &cbMethod,
     AddressID:      address.ID,
@@ -674,10 +676,9 @@ params := didww.NewQueryParams().Filter("country.id", "country-uuid")
 reqs, _ := client.EmergencyRequirements().List(ctx, params)
 
 // Create emergency verification
-verification := &didww.EmergencyVerification{
-    AddressID:  "address-uuid",
-    IdentityID: "identity-uuid",
-    DIDIDs:     []string{"did-uuid"},
+verification := &resource.EmergencyVerification{
+    AddressID: "address-uuid",
+    DIDIDs:    []string{"did-uuid"},
 }
 created, _ := client.EmergencyVerifications().Create(ctx, verification)
 
@@ -872,7 +873,7 @@ Create a struct with just the ID to send a PATCH without fetching first:
 
 ```go
 desc := "New description"
-updated, _ := client.DIDs().Update(ctx, &didww.DID{
+updated, _ := client.DIDs().Update(ctx, &resource.DID{
     ID:          "uuid",
     Description: &desc,
 })
@@ -932,7 +933,7 @@ For the SMS trunk configuration types, see [SMS Trunks](#sms-trunks).
 | Available DID | `available_did_order_items` |
 | Reservation DID | `reservation_did_order_items` |
 | Capacity | `capacity_order_items` |
-| Emergency | `emergency_order_items` |
+| Emergency (response only) | `emergency_order_items` |
 | Generic (response only) | `generic_order_items` |
 
 ## Filter Reference

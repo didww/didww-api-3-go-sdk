@@ -56,7 +56,7 @@ DIDWW_API_KEY=your_api_key go run ./examples/balance/
 | [`emergency_requirement_validations`](emergency_requirement_validations/) | Validates emergency requirement data. |
 | [`emergency_scenario`](emergency_scenario/) | End-to-end: find DID → check requirements → validate → create verification → get service. |
 | [`address_verifications`](address_verifications/) | Lists address verifications with reject_comment / external_reference_id. |
-| [`orders_emergency`](orders_emergency/) | Creates an emergency order with EmergencyOrderItem. |
+| [`orders_emergency`](orders_emergency/) | Inspects server-created Emergency orders and `emergency_order_items`. |
 
 ## Troubleshooting
 
