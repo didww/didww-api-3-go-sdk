@@ -390,8 +390,10 @@ func (s *suite) emergencyAddress() (*resource.Address, error) {
 	return nil, errors.New("the account has no address with a country and an identity")
 }
 
-// emergencyDID returns an active emergency-capable DID of the country without
-// an emergency calling service, or orders one.
+// emergencyDID returns an active emergency-capable DID of the country that is
+// not bound to an identity and has no emergency verification or calling
+// service, or orders one. An emergency verification binds its DIDs to the
+// identity of its address, so such a DID cannot be used with another one.
 func (s *suite) emergencyDID(countryID string) (*resource.DID, error) {
 	params := didww.NewQueryParams().
 		Filter("did_group.features", string(enums.FeatureEmergency)).
@@ -399,14 +401,15 @@ func (s *suite) emergencyDID(countryID string) (*resource.DID, error) {
 		Filter("emergency_enabled", "false").
 		Filter("awaiting_registration", "false").
 		Filter("terminated", "false").
-		Include("did_group,emergency_calling_service").
+		Include("did_group,identity,emergency_verification,emergency_calling_service").
 		Page(1, 50)
 	dids, err := s.client.DIDs().List(s.ctx, params)
 	if err != nil {
 		return nil, err
 	}
 	for _, did := range dids {
-		if did.EmergencyCallingService == nil && did.DIDGroup != nil {
+		free := did.Identity == nil && did.EmergencyVerification == nil && did.EmergencyCallingService == nil
+		if free && did.DIDGroup != nil {
 			return did, nil
 		}
 	}
